@@ -1,6 +1,7 @@
 {
   "name": "domus-ia-espana",
   "version": "1.1.0",
+  "type": "module",
   "description": "SuperAgente Inmobiliario con IA - Domus-IA España by MontCastell-AI",
   "private": true,
   "scripts": {
