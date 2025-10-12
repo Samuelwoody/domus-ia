@@ -1108,7 +1108,7 @@ window.openChat = () => window.domusIA.openChat();
 window.closeChat = () => window.domusIA.closeChat();
 
 // ===== SERVICE WORKER REGISTRATION =====
-if ('serviceWorker' in navigator) {
+/*if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
@@ -1118,4 +1118,4 @@ if ('serviceWorker' in navigator) {
                 console.log('SW registration failed: ', registrationError);
             });
     });
-}
+}*/
