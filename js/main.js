@@ -223,14 +223,10 @@ class DomusIA {
 
     initializeChat() {
         const welcomeMessage = this.getWelcomeMessage();
-        this.addMessage('assistant', welcomeMessage);
+        this.addMessage('assistant', welcomeMessage, false);
         
-        // Show API status if not configured
-        if (!this.sofiaAI.isAPIConfigured()) {
-            setTimeout(() => {
-                this.addMessage('assistant', '💡 <strong>Modo Demo:</strong> Estoy funcionando con respuestas simuladas. Para activar mi inteligencia completa con OpenAI, necesitas un plan premium y configurar tu API key.');
-            }, 1000);
-        }
+        // API status check removed - GPT-4o is always active
+        // No need to show demo message since backend is configured
     }
 
     getWelcomeMessage() {
@@ -558,7 +554,7 @@ class DomusIA {
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 35) {
+    async typeMessage(element, content, speed = 15) {
         // Speed: characters per second (15 = natural human typing speed when reading)
         const delay = 1000 / speed;
         
