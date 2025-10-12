@@ -448,7 +448,9 @@ Enfócate en:
 
     // ===== UTILITY METHODS =====
     isAPIConfigured() {
-        return !!this.getApiKey();
+        // Always return true since backend handles API key via Vercel env variables
+        // No need for client-side API key storage
+        return true;
     }
 
     getCapabilities() {
