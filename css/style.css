@@ -420,6 +420,35 @@ header {
     border: 1px solid #e5e7eb;
 }
 
+/* Message content formatting */
+.message-content p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content strong {
+    font-weight: 600;
+    color: var(--domus-gold);
+}
+
+.message-content br {
+    display: block;
+    content: "";
+    margin-top: 0.5rem;
+}
+
+/* Typing cursor effect */
+.message-content.typing::after {
+    content: '|';
+    animation: blink 1s infinite;
+    margin-left: 2px;
+    opacity: 0.7;
+}
+
 .message-avatar {
     width: 32px;
     height: 32px;
