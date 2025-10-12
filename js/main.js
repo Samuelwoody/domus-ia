@@ -277,7 +277,9 @@ class DomusIA {
             // Process message and get response
             const response = await this.processMessage(message);
             this.hideTypingIndicator();
-            this.addMessage('assistant', response);
+            
+            // Add message with typing effect
+            this.addMessage('assistant', response, true);
             
             // Save conversation
             this.conversationHistory.push(
@@ -288,7 +290,7 @@ class DomusIA {
             
         } catch (error) {
             this.hideTypingIndicator();
-            this.addMessage('assistant', 'Disculpa, he tenido un problema técnico. ¿Podrías repetir tu mensaje?');
+            this.addMessage('assistant', 'Disculpa, he tenido un problema técnico. ¿Podrías repetir tu mensaje?', false);
             console.error('Chat error:', error);
         }
     }
@@ -477,7 +479,7 @@ class DomusIA {
         return generalResponses;
     }
 
-    addMessage(sender, content) {
+    addMessage(sender, content, useTypingEffect = false) {
         const messagesContainer = document.getElementById('chatMessages');
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4 chat-message ${sender}`;
@@ -488,6 +490,9 @@ class DomusIA {
         });
         
         if (sender === 'assistant') {
+            // Format content with better paragraph structure
+            const formattedContent = this.formatMessageContent(content);
+            
             messageDiv.innerHTML = `
                 <div class="flex space-x-3 max-w-4xl">
                     <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-md">
@@ -496,7 +501,7 @@ class DomusIA {
                             <span class="font-semibold text-sm text-domus-gold">Sofía</span>
                             <span class="text-xs text-gray-500">${timestamp}</span>
                         </div>
-                        <p class="text-sm text-domus-navy leading-relaxed">${content}</p>
+                        <div class="message-content text-sm text-domus-navy leading-relaxed">${useTypingEffect ? '' : formattedContent}</div>
                     </div>
                 </div>
             `;
@@ -519,8 +524,76 @@ class DomusIA {
         
         messagesContainer.appendChild(messageDiv);
         
-        // Smooth scroll to bottom with mobile consideration
-        this.scrollToBottom();
+        // Apply typing effect for assistant messages if requested
+        if (sender === 'assistant' && useTypingEffect) {
+            const contentElement = messageDiv.querySelector('.message-content');
+            this.typeMessage(contentElement, this.formatMessageContent(content));
+        } else {
+            // Smooth scroll to bottom with mobile consideration
+            this.scrollToBottom();
+        }
+    }
+    
+    formatMessageContent(content) {
+        // Convert line breaks to paragraphs
+        // Split by double line breaks for proper paragraphs
+        let formatted = content
+            .replace(/\n\n+/g, '</p><p class="mb-3">')
+            .replace(/\n/g, '<br>');
+        
+        // Wrap in paragraph if not already
+        if (!formatted.startsWith('<p')) {
+            formatted = '<p class="mb-3">' + formatted;
+        }
+        if (!formatted.endsWith('</p>')) {
+            formatted = formatted + '</p>';
+        }
+        
+        // Convert markdown-style bold
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // Convert bullet points
+        formatted = formatted.replace(/^[-•]\s/gm, '<span class="inline-block w-2 h-2 bg-domus-gold rounded-full mr-2"></span>');
+        
+        return formatted;
+    }
+    
+    async typeMessage(element, content, speed = 15) {
+        // Speed: characters per second (15 = natural human typing speed when reading)
+        const delay = 1000 / speed;
+        
+        // Remove HTML tags for character-by-character typing
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        const textContent = tempDiv.textContent || tempDiv.innerText;
+        
+        let currentText = '';
+        let currentIndex = 0;
+        
+        return new Promise((resolve) => {
+            const typeChar = () => {
+                if (currentIndex < textContent.length) {
+                    currentText += textContent[currentIndex];
+                    
+                    // Re-apply formatting to visible text
+                    element.innerHTML = this.formatMessageContent(currentText);
+                    
+                    currentIndex++;
+                    
+                    // Auto-scroll during typing
+                    this.scrollToBottom();
+                    
+                    setTimeout(typeChar, delay);
+                } else {
+                    // Ensure final formatted content is displayed
+                    element.innerHTML = content;
+                    this.scrollToBottom();
+                    resolve();
+                }
+            };
+            
+            typeChar();
+        });
     }
 
     scrollToBottom() {
@@ -1108,7 +1181,9 @@ window.openChat = () => window.domusIA.openChat();
 window.closeChat = () => window.domusIA.closeChat();
 
 // ===== SERVICE WORKER REGISTRATION =====
-/*if ('serviceWorker' in navigator) {
+// TEMPORALMENTE DESACTIVADO para debugging backend
+/*
+if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
@@ -1118,4 +1193,5 @@ window.closeChat = () => window.domusIA.closeChat();
                 console.log('SW registration failed: ', registrationError);
             });
     });
-}*/
+}
+*/
