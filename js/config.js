@@ -8,10 +8,8 @@
 const CONFIG = {
     // Backend API Configuration
     API: {
-        // IMPORTANTE: Cambiar esta URL cuando tengas tu backend desplegado
-        BASE_URL: process.env.NODE_ENV === 'production' 
-            ? 'https://api.domus-ia-espana.com'  // Tu backend en producción
-            : 'http://localhost:3000',             // Backend local para desarrollo
+        // Backend desplegado en Vercel (mismo dominio)
+        BASE_URL: '',  // Empty string = same domain (Vercel serverless functions)
         
         ENDPOINTS: {
             CHAT: '/api/chat',
@@ -37,8 +35,8 @@ const CONFIG = {
         
         // Features
         FEATURES: {
-            USE_BACKEND: false,  // 🔴 CAMBIAR A true cuando tengas backend
-            USE_MOCK_RESPONSES: true,  // Usar respuestas simuladas si no hay backend
+            USE_BACKEND: true,  // ✅ Backend activo en Vercel
+            USE_MOCK_RESPONSES: false,  // ✅ No usar respuestas simuladas
             ENABLE_PAYMENT: false,  // Habilitar cuando integres Stripe
             ENABLE_ADVANCED_FEATURES: false  // Imágenes, TTS, documentos, etc.
         }
