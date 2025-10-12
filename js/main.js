@@ -558,7 +558,7 @@ class DomusIA {
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 15) {
+    async typeMessage(element, content, speed = 35) {
         // Speed: characters per second (15 = natural human typing speed when reading)
         const delay = 1000 / speed;
         
