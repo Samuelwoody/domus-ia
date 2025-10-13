@@ -559,18 +559,18 @@
                 </div>
 
                 <!-- Chat Input -->
-                <div class="border-t border-gray-100 p-4 md:p-4 p-3" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+                <div class="border-t border-gray-100 p-3 md:p-4" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); min-height: 70px;">
                     <!-- Preview de archivos subidos -->
-                    <div id="filePreview" class="mb-3 hidden">
-                        <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <div id="previewContent" class="flex-1"></div>
-                            <button type="button" id="removeFileBtn" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <div id="filePreview" class="mb-2 hidden">
+                        <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                            <div id="previewContent" class="flex-1 text-sm"></div>
+                            <button type="button" id="removeFileBtn" class="text-gray-400 hover:text-red-500 transition-colors p-1">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
                     
-                    <form id="chatForm" class="flex items-center space-x-2 md:space-x-3">
+                    <form id="chatForm" class="flex items-center gap-2">
                         <!-- Hidden file inputs -->
                         <input type="file" id="imageInput" accept="image/*" class="hidden">
                         <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden">
@@ -579,27 +579,32 @@
                         <button 
                             type="button"
                             id="uploadImageBtn"
-                            class="bg-gray-100 text-domus-navy p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
                             title="Subir imagen para análisis"
+                            aria-label="Subir imagen"
                         >
-                            <i class="fas fa-image"></i>
+                            <i class="fas fa-image text-sm md:text-base"></i>
                         </button>
                         
                         <!-- Botón subir documento -->
                         <button 
                             type="button"
                             id="uploadDocBtn"
-                            class="bg-gray-100 text-domus-navy p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
                             title="Subir documento (PDF, Word, Excel)"
+                            aria-label="Subir documento"
                         >
-                            <i class="fas fa-file-alt"></i>
+                            <i class="fas fa-file-alt text-sm md:text-base"></i>
                         </button>
                         
                         <input 
                             type="text" 
                             id="chatInput" 
-                            placeholder="Escribe o habla a Sofía..." 
-                            class="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-domus-gold text-base"
+                            placeholder="Escribe a Sofía..." 
+                            class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 md:px-4 md:py-3 focus:outline-none focus:border-domus-gold"
+                            style="font-size: 16px !important;"
                             maxlength="500"
                             autocomplete="off"
                             autocorrect="off"
@@ -609,22 +614,26 @@
                         <button 
                             type="button"
                             id="voiceBtn"
-                            class="bg-gray-100 text-domus-navy p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
                             title="Mantén presionado para hablar"
+                            aria-label="Grabar voz"
                         >
-                            <i class="fas fa-microphone"></i>
+                            <i class="fas fa-microphone text-sm md:text-base"></i>
                         </button>
                         
                         <button 
                             type="submit" 
-                            class="bg-gradient-to-r from-domus-gold to-domus-accent text-white p-3 rounded-xl hover:opacity-90 transition-all flex-shrink-0"
+                            class="bg-gradient-to-r from-domus-gold to-domus-accent text-white p-2.5 md:p-3 rounded-xl hover:opacity-90 transition-all flex-shrink-0"
+                            style="min-width: 44px !important; min-height: 44px !important;"
+                            aria-label="Enviar mensaje"
                         >
-                            <i class="fas fa-paper-plane"></i>
+                            <i class="fas fa-paper-plane text-sm md:text-base"></i>
                         </button>
                     </form>
-                    <div class="flex justify-between items-center mt-2 text-xs text-domus-sage">
-                        <span>Mensajes hoy: <span id="messageCount">0</span>/15 (Plan Gratuito)</span>
-                        <span class="hidden md:inline">Powered by OpenAI</span>
+                    <div class="flex justify-between items-center mt-2 text-xs text-domus-sage px-1">
+                        <span class="text-[10px] md:text-xs">Mensajes: <span id="messageCount">0</span>/15 (Gratuito)</span>
+                        <span class="hidden md:inline text-[10px] md:text-xs">Powered by OpenAI</span>
                     </div>
                 </div>
             </div>
@@ -699,8 +708,12 @@
     
     <!-- Application Scripts - Load after libraries -->
     <script defer src="js/config.js"></script>
+    <script defer src="js/payments.js"></script>
+    <script defer src="js/auth.js"></script>
     <script defer src="js/sofia-ai.js"></script>
     <script defer src="js/main.js"></script>
 </body>
+</html>
+
 </html>
 
