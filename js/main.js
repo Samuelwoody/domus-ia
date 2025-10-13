@@ -520,40 +520,93 @@ class DomusIA {
                             console.log('🎨 Sofía quiere generar imagen - Activando DALL-E automáticamente...');
                             
                             // Extraer descripción de la imagen del mensaje
-                            // Buscar entre comillas o después de "imagen de/con/que"
                             let imagePrompt = message; // Usar mensaje original del usuario como base
                             
-                            // Llamar a DALL-E automáticamente
+                            // Mostrar inmediatamente mensaje "Generando..."
+                            const messagesContainer = document.getElementById('chatMessages');
+                            const loadingHtml = `<div class="dalle-loading-container mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-dashed border-purple-300">
+                                <div class="flex items-center space-x-3">
+                                    <div class="animate-spin">
+                                        <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-purple-700">🎨 Generando imagen con DALL-E 3...</p>
+                                        <p class="text-xs text-purple-600">Esto puede tardar 10-15 segundos</p>
+                                    </div>
+                                </div>
+                            </div>`;
+                            
+                            // Añadir loading al último mensaje de Sofía
+                            const messages = messagesContainer.querySelectorAll('.message.assistant');
+                            const lastMessage = messages[messages.length - 1];
+                            if (lastMessage) {
+                                const contentDiv = lastMessage.querySelector('.message-content');
+                                if (contentDiv) {
+                                    contentDiv.insertAdjacentHTML('beforeend', loadingHtml);
+                                    this.scrollToBottom();
+                                }
+                            }
+                            
+                            // Llamar a DALL-E
                             setTimeout(async () => {
                                 try {
                                     console.log('🎨 Generando imagen con DALL-E:', imagePrompt);
                                     const imageUrl = await this.sofiaAI.generateImage(imagePrompt);
                                     
+                                    // Quitar loading
+                                    const loadingDiv = document.querySelector('.dalle-loading-container');
+                                    if (loadingDiv) {
+                                        loadingDiv.remove();
+                                    }
+                                    
                                     if (imageUrl) {
-                                        // Añadir imagen generada al chat
-                                        const imageHtml = `<div class="generated-image-container mt-4 p-4 bg-gray-50 rounded-lg">
-                                            <p class="text-sm text-gray-600 mb-2">✨ Imagen generada con DALL-E 3:</p>
-                                            <img src="${imageUrl}" alt="Imagen generada" class="w-full rounded-lg shadow-md" />
-                                            <p class="text-xs text-gray-500 mt-2">Imagen generada por DALL-E 3</p>
+                                        // Añadir imagen generada
+                                        const imageHtml = `<div class="generated-image-container mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                                            <p class="text-sm font-semibold text-purple-700 mb-3">✨ Imagen generada con DALL-E 3</p>
+                                            <img src="${imageUrl}" alt="Imagen generada" class="w-full rounded-lg shadow-lg hover:shadow-xl transition-shadow" />
+                                            <p class="text-xs text-gray-500 mt-2 text-center">Generado por DALL-E 3 • OpenAI</p>
                                         </div>`;
                                         
                                         // Añadir al último mensaje de Sofía
-                                        const lastAssistantMessage = document.querySelector('.message.assistant:last-child .message-content');
-                                        if (lastAssistantMessage) {
-                                            lastAssistantMessage.innerHTML += imageHtml;
-                                            this.scrollToBottom();
+                                        const messages = messagesContainer.querySelectorAll('.message.assistant');
+                                        const lastMessage = messages[messages.length - 1];
+                                        if (lastMessage) {
+                                            const contentDiv = lastMessage.querySelector('.message-content');
+                                            if (contentDiv) {
+                                                contentDiv.insertAdjacentHTML('beforeend', imageHtml);
+                                                this.scrollToBottom();
+                                            }
                                         }
                                     }
                                 } catch (error) {
-                                    console.error('❌ Error generando imagen automáticamente:', error);
-                                    // Añadir mensaje de error al chat
-                                    const errorMsg = `<p class="text-red-600 mt-2">⚠️ Lo siento, hubo un problema al generar la imagen. ¿Puedes intentarlo de nuevo?</p>`;
-                                    const lastAssistantMessage = document.querySelector('.message.assistant:last-child .message-content');
-                                    if (lastAssistantMessage) {
-                                        lastAssistantMessage.innerHTML += errorMsg;
+                                    console.error('❌ Error generando imagen:', error);
+                                    
+                                    // Quitar loading
+                                    const loadingDiv = document.querySelector('.dalle-loading-container');
+                                    if (loadingDiv) {
+                                        loadingDiv.remove();
+                                    }
+                                    
+                                    // Mostrar error
+                                    const errorMsg = `<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p class="text-sm text-red-600">⚠️ Error al generar la imagen: ${error.message}</p>
+                                        <p class="text-xs text-red-500 mt-1">Por favor, intenta de nuevo o reformula tu petición.</p>
+                                    </div>`;
+                                    
+                                    const messages = messagesContainer.querySelectorAll('.message.assistant');
+                                    const lastMessage = messages[messages.length - 1];
+                                    if (lastMessage) {
+                                        const contentDiv = lastMessage.querySelector('.message-content');
+                                        if (contentDiv) {
+                                            contentDiv.insertAdjacentHTML('beforeend', errorMsg);
+                                            this.scrollToBottom();
+                                        }
                                     }
                                 }
-                            }, 1000); // Esperar 1 segundo después de mostrar el mensaje
+                            }, 500); // Esperar medio segundo
                         }
                         
                         return finalMessage;
@@ -612,8 +665,8 @@ class DomusIA {
             const reader = new FileReader();
             reader.onload = async function() {
                 try {
-                    // Configure PDF.js worker
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    // Configure PDF.js worker (jsDelivr CDN)
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
                     
                     const typedArray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedArray).promise;
