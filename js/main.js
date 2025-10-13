@@ -531,7 +531,7 @@ class DomusIA {
                                         // Añadir al último mensaje de Sofía
                                         const lastAssistantMessage = document.querySelector('.message.assistant:last-child .message-content');
                                         if (lastAssistantMessage) {
-                            lastAssistantMessage.innerHTML += imageHtml;
+                                            lastAssistantMessage.innerHTML += imageHtml;
                                             this.scrollToBottom();
                                         }
                                     }
@@ -1692,5 +1692,4 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
-}
 */
