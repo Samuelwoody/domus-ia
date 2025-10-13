@@ -439,6 +439,14 @@ class DomusIA {
                     }
                 }
                 
+                console.log('🚀 Enviando request al backend:', {
+                    endpoint: endpoint,
+                    hasImageFile: !!requestBody.imageFile,
+                    hasDocumentText: !!requestBody.documentText,
+                    documentTextLength: requestBody.documentText?.length || 0,
+                    documentTextPreview: requestBody.documentText?.substring(0, 100) || 'N/A'
+                });
+                
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
