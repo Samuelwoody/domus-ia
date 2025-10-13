@@ -522,91 +522,109 @@ class DomusIA {
                             // Extraer descripción de la imagen del mensaje
                             let imagePrompt = message; // Usar mensaje original del usuario como base
                             
-                            // Mostrar inmediatamente mensaje "Generando..."
-                            const messagesContainer = document.getElementById('chatMessages');
-                            const loadingHtml = `<div class="dalle-loading-container mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-dashed border-purple-300">
-                                <div class="flex items-center space-x-3">
-                                    <div class="animate-spin">
-                                        <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-purple-700">🎨 Generando imagen con DALL-E 3...</p>
-                                        <p class="text-xs text-purple-600">Esto puede tardar 10-15 segundos</p>
-                                    </div>
-                                </div>
-                            </div>`;
-                            
-                            // Añadir loading al último mensaje de Sofía
-                            const messages = messagesContainer.querySelectorAll('.message.assistant');
-                            const lastMessage = messages[messages.length - 1];
-                            if (lastMessage) {
-                                const contentDiv = lastMessage.querySelector('.message-content');
-                                if (contentDiv) {
-                                    contentDiv.insertAdjacentHTML('beforeend', loadingHtml);
-                                    this.scrollToBottom();
-                                }
-                            }
-                            
-                            // Llamar a DALL-E
+                            // ⚠️ IMPORTANTE: Esperar un momento para que el DOM se actualice completamente
+                            // Esto asegura que el mensaje de Sofía esté completamente renderizado
                             setTimeout(async () => {
                                 try {
+                                    // Obtener el último mensaje de Sofía
+                                    const messagesContainer = document.getElementById('chatMessages');
+                                    const allMessages = messagesContainer.querySelectorAll('.chat-message.assistant');
+                                    const lastSofiaMessage = allMessages[allMessages.length - 1];
+                                    
+                                    if (!lastSofiaMessage) {
+                                        console.error('❌ No se encontró el mensaje de Sofía para insertar la imagen');
+                                        return;
+                                    }
+                                    
+                                    const contentDiv = lastSofiaMessage.querySelector('.message-content');
+                                    if (!contentDiv) {
+                                        console.error('❌ No se encontró el contenido del mensaje');
+                                        return;
+                                    }
+                                    
+                                    // Crear un ID único para este proceso de generación
+                                    const generationId = 'dalle-' + Date.now();
+                                    
+                                    // Insertar indicador de carga
+                                    const loadingHtml = `<div id="${generationId}" class="dalle-loading-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 2px dashed rgb(192 132 252);">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div style="animation: spin 1s linear infinite;">
+                                                <svg style="width: 24px; height: 24px; color: rgb(147 51 234);" fill="none" viewBox="0 0 24 24">
+                                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206);">🎨 Generando imagen con DALL-E 3...</p>
+                                                <p style="font-size: 12px; color: rgb(147 51 234);">Esto puede tardar 10-15 segundos</p>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                    
+                                    contentDiv.insertAdjacentHTML('beforeend', loadingHtml);
+                                    this.scrollToBottom();
+                                    
+                                    console.log('✅ Indicador de carga insertado correctamente');
                                     console.log('🎨 Generando imagen con DALL-E:', imagePrompt);
+                                    
+                                    // Generar imagen con DALL-E
                                     const imageUrl = await this.sofiaAI.generateImage(imagePrompt);
                                     
-                                    // Quitar loading
-                                    const loadingDiv = document.querySelector('.dalle-loading-container');
-                                    if (loadingDiv) {
-                                        loadingDiv.remove();
+                                    console.log('✅ Imagen generada:', imageUrl);
+                                    
+                                    // Buscar y eliminar el indicador de carga
+                                    const loadingElement = document.getElementById(generationId);
+                                    if (loadingElement) {
+                                        loadingElement.remove();
+                                        console.log('✅ Indicador de carga eliminado');
                                     }
                                     
                                     if (imageUrl) {
-                                        // Añadir imagen generada
-                                        const imageHtml = `<div class="generated-image-container mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-                                            <p class="text-sm font-semibold text-purple-700 mb-3">✨ Imagen generada con DALL-E 3</p>
-                                            <img src="${imageUrl}" alt="Imagen generada" class="w-full rounded-lg shadow-lg hover:shadow-xl transition-shadow" />
-                                            <p class="text-xs text-gray-500 mt-2 text-center">Generado por DALL-E 3 • OpenAI</p>
+                                        // Insertar imagen generada
+                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 1px solid rgb(192 132 252);">
+                                            <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206); margin-bottom: 12px;">✨ Imagen generada con DALL-E 3</p>
+                                            <img src="${imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transition: box-shadow 0.3s;" onload="this.style.opacity=1" style="opacity: 0; transition: opacity 0.5s;" />
+                                            <p style="font-size: 11px; color: rgb(107 114 128); margin-top: 8px; text-align: center;">Generado por DALL-E 3 • OpenAI</p>
                                         </div>`;
                                         
-                                        // Añadir al último mensaje de Sofía
-                                        const messages = messagesContainer.querySelectorAll('.message.assistant');
-                                        const lastMessage = messages[messages.length - 1];
-                                        if (lastMessage) {
-                                            const contentDiv = lastMessage.querySelector('.message-content');
-                                            if (contentDiv) {
-                                                contentDiv.insertAdjacentHTML('beforeend', imageHtml);
-                                                this.scrollToBottom();
-                                            }
+                                        // Volver a buscar el contentDiv por si acaso
+                                        const updatedContentDiv = lastSofiaMessage.querySelector('.message-content');
+                                        if (updatedContentDiv) {
+                                            updatedContentDiv.insertAdjacentHTML('beforeend', imageHtml);
+                                            this.scrollToBottom();
+                                            console.log('✅ Imagen insertada correctamente en el chat');
+                                        } else {
+                                            console.error('❌ No se pudo encontrar el contentDiv para insertar la imagen');
                                         }
+                                    } else {
+                                        console.error('❌ No se recibió URL de imagen de DALL-E');
                                     }
+                                    
                                 } catch (error) {
-                                    console.error('❌ Error generando imagen:', error);
+                                    console.error('❌ Error en proceso DALL-E:', error);
                                     
-                                    // Quitar loading
-                                    const loadingDiv = document.querySelector('.dalle-loading-container');
-                                    if (loadingDiv) {
-                                        loadingDiv.remove();
-                                    }
+                                    // Buscar y eliminar indicador de carga si existe
+                                    const loadingDivs = document.querySelectorAll('.dalle-loading-container');
+                                    loadingDivs.forEach(div => div.remove());
                                     
-                                    // Mostrar error
-                                    const errorMsg = `<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                                        <p class="text-sm text-red-600">⚠️ Error al generar la imagen: ${error.message}</p>
-                                        <p class="text-xs text-red-500 mt-1">Por favor, intenta de nuevo o reformula tu petición.</p>
-                                    </div>`;
+                                    // Mostrar mensaje de error
+                                    const messagesContainer = document.getElementById('chatMessages');
+                                    const allMessages = messagesContainer.querySelectorAll('.chat-message.assistant');
+                                    const lastSofiaMessage = allMessages[allMessages.length - 1];
                                     
-                                    const messages = messagesContainer.querySelectorAll('.message.assistant');
-                                    const lastMessage = messages[messages.length - 1];
-                                    if (lastMessage) {
-                                        const contentDiv = lastMessage.querySelector('.message-content');
+                                    if (lastSofiaMessage) {
+                                        const contentDiv = lastSofiaMessage.querySelector('.message-content');
                                         if (contentDiv) {
+                                            const errorMsg = `<div style="margin-top: 16px; padding: 12px; background-color: rgb(254 242 242); border: 1px solid rgb(254 202 202); border-radius: 8px;">
+                                                <p style="font-size: 14px; color: rgb(220 38 38);">⚠️ Error al generar la imagen</p>
+                                                <p style="font-size: 12px; color: rgb(239 68 68); margin-top: 4px;">Por favor, intenta de nuevo o reformula tu petición.</p>
+                                            </div>`;
                                             contentDiv.insertAdjacentHTML('beforeend', errorMsg);
                                             this.scrollToBottom();
                                         }
                                     }
                                 }
-                            }, 500); // Esperar medio segundo
+                            }, 1000); // Esperar 1 segundo para asegurar que el DOM está listo
                         }
                         
                         return finalMessage;
