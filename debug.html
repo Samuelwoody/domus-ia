@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Verificación de Bibliotecas</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        h1 { color: #00aaff; }
+        pre { background: #000; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Verificación de Bibliotecas Cargadas</h1>
+    
+    <h2>📦 Bibliotecas de Extracción de Documentos:</h2>
+    <div id="libraries"></div>
+    
+    <h2>📄 Archivos JavaScript:</h2>
+    <div id="scripts"></div>
+    
+    <h2>🌐 Variables Globales:</h2>
+    <div id="globals"></div>
+    
+    <h2>📋 Console Logs:</h2>
+    <pre id="logs"></pre>
+
+    <!-- Document Processing Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
+    
+    <script>
+        const logs = [];
+        
+        // Override console.log
+        const originalLog = console.log;
+        console.log = function(...args) {
+            logs.push(args.join(' '));
+            originalLog.apply(console, args);
+            document.getElementById('logs').textContent = logs.join('\n');
+        };
+        
+        // Esperar a que todo cargue
+        window.addEventListener('load', () => {
+            // Check libraries
+            const librariesDiv = document.getElementById('libraries');
+            
+            const checks = [
+                { name: 'PDF.js (pdfjsLib)', check: typeof pdfjsLib !== 'undefined' },
+                { name: 'Mammoth.js (mammoth)', check: typeof mammoth !== 'undefined' },
+                { name: 'SheetJS (XLSX)', check: typeof XLSX !== 'undefined' }
+            ];
+            
+            let html = '<ul>';
+            checks.forEach(lib => {
+                const status = lib.check ? '✅' : '❌';
+                const className = lib.check ? 'success' : 'error';
+                html += `<li class="${className}">${status} ${lib.name}: ${lib.check ? 'CARGADA' : 'NO DISPONIBLE'}</li>`;
+                console.log(`${status} ${lib.name}: ${lib.check ? 'OK' : 'ERROR'}`);
+            });
+            html += '</ul>';
+            librariesDiv.innerHTML = html;
+            
+            // Check scripts
+            const scriptsDiv = document.getElementById('scripts');
+            const scripts = Array.from(document.scripts);
+            let scriptsHtml = '<ul>';
+            scripts.forEach(script => {
+                if (script.src) {
+                    scriptsHtml += `<li class="success">✅ ${script.src}</li>`;
+                }
+            });
+            scriptsHtml += '</ul>';
+            scriptsDiv.innerHTML = scriptsHtml;
+            
+            // Check globals
+            const globalsDiv = document.getElementById('globals');
+            const globalVars = [
+                'window.domusIA',
+                'window.openChat',
+                'window.closeChat',
+                'window.CONFIG'
+            ];
+            
+            let globalsHtml = '<ul>';
+            globalVars.forEach(varName => {
+                const parts = varName.split('.');
+                let obj = window;
+                let exists = true;
+                
+                for (let i = 1; i < parts.length; i++) {
+                    if (obj && typeof obj[parts[i]] !== 'undefined') {
+                        obj = obj[parts[i]];
+                    } else {
+                        exists = false;
+                        break;
+                    }
+                }
+                
+                const status = exists ? '✅' : '❌';
+                const className = exists ? 'success' : 'warning';
+                globalsHtml += `<li class="${className}">${status} ${varName}</li>`;
+            });
+            globalsHtml += '</ul>';
+            globalsDiv.innerHTML = globalsHtml;
+            
+            // Test PDF.js
+            if (typeof pdfjsLib !== 'undefined') {
+                console.log('✅ PDF.js version:', pdfjsLib.version);
+                console.log('✅ PDF.js worker:', pdfjsLib.GlobalWorkerOptions.workerSrc || 'No configurado');
+            }
+            
+            // Test Mammoth
+            if (typeof mammoth !== 'undefined') {
+                console.log('✅ Mammoth.js cargado correctamente');
+            }
+            
+            // Test XLSX
+            if (typeof XLSX !== 'undefined') {
+                console.log('✅ SheetJS version:', XLSX.version);
+            }
+            
+            console.log('🎉 Verificación completada');
+        });
+    </script>
+</body>
+</html>
