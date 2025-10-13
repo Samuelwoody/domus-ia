@@ -1692,3 +1692,5 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+}
+*/
