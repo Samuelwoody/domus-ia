@@ -560,7 +560,41 @@
 
                 <!-- Chat Input -->
                 <div class="border-t border-gray-100 p-4 md:p-4 p-3" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+                    <!-- Preview de archivos subidos -->
+                    <div id="filePreview" class="mb-3 hidden">
+                        <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div id="previewContent" class="flex-1"></div>
+                            <button type="button" id="removeFileBtn" class="text-gray-400 hover:text-red-500 transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <form id="chatForm" class="flex items-center space-x-2 md:space-x-3">
+                        <!-- Hidden file inputs -->
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden">
+                        
+                        <!-- Botón subir imagen -->
+                        <button 
+                            type="button"
+                            id="uploadImageBtn"
+                            class="bg-gray-100 text-domus-navy p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            title="Subir imagen para análisis"
+                        >
+                            <i class="fas fa-image"></i>
+                        </button>
+                        
+                        <!-- Botón subir documento -->
+                        <button 
+                            type="button"
+                            id="uploadDocBtn"
+                            class="bg-gray-100 text-domus-navy p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            title="Subir documento (PDF, Word, Excel)"
+                        >
+                            <i class="fas fa-file-alt"></i>
+                        </button>
+                        
                         <input 
                             type="text" 
                             id="chatInput" 
@@ -571,6 +605,7 @@
                             autocorrect="off"
                             autocapitalize="sentences"
                         >
+                        
                         <button 
                             type="button"
                             id="voiceBtn"
@@ -579,6 +614,7 @@
                         >
                             <i class="fas fa-microphone"></i>
                         </button>
+                        
                         <button 
                             type="submit" 
                             class="bg-gradient-to-r from-domus-gold to-domus-accent text-white p-3 rounded-xl hover:opacity-90 transition-all flex-shrink-0"
