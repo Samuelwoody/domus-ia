@@ -722,31 +722,35 @@ class DomusIA {
     }
     
     formatMessageContent(content) {
-        // Convert line breaks to paragraphs
-        // Split by double line breaks for proper paragraphs
-        let formatted = content
-            .replace(/\n\n+/g, '</p><p class="mb-3">')
-            .replace(/\n/g, '<br>');
+        // Convertir markdown-style bold PRIMERO
+        let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         
-        // Wrap in paragraph if not already
+        // Separar por párrafos (doble salto de línea o punto seguido de salto)
+        // Esto crea párrafos más naturales
+        formatted = formatted
+            .replace(/\.\s*\n/g, '.</p><p class="mb-4">') // Punto + salto = nuevo párrafo
+            .replace(/\n\n+/g, '</p><p class="mb-4">') // Doble salto = nuevo párrafo
+            .replace(/\n/g, ' '); // Salto simple = espacio
+        
+        // Envolver en párrafos si no está ya envuelto
         if (!formatted.startsWith('<p')) {
-            formatted = '<p class="mb-3">' + formatted;
+            formatted = '<p class="mb-4">' + formatted;
         }
         if (!formatted.endsWith('</p>')) {
             formatted = formatted + '</p>';
         }
         
-        // Convert markdown-style bold
-        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        // Convert bullet points
+        // Convertir listas con viñetas
         formatted = formatted.replace(/^[-•]\s/gm, '<span class="inline-block w-2 h-2 bg-domus-gold rounded-full mr-2"></span>');
+        
+        // Limpiar párrafos vacíos
+        formatted = formatted.replace(/<p class="mb-4">\s*<\/p>/g, '');
         
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 15) {
-        // Speed: characters per second (15 = natural human typing speed when reading)
+    async typeMessage(element, content, speed = 60) {
+        // Speed: characters per second (60 = rápido pero legible)
         const delay = 1000 / speed;
         
         // Remove HTML tags for character-by-character typing
