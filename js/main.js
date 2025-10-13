@@ -13,11 +13,6 @@ class DomusIA {
         this.apiKey = null; // Will be set when user subscribes
         this.conversationHistory = [];
         
-        // File upload properties
-        this.currentFile = null;
-        this.currentFileType = null;
-        this.currentDocumentText = null;
-        
         // Initialize Sofia AI
         this.sofiaAI = new SofiaAI();
         
@@ -119,9 +114,6 @@ class DomusIA {
         // Chat functionality
         document.getElementById('closeChatBtn').addEventListener('click', () => this.closeChat());
         document.getElementById('chatForm').addEventListener('submit', (e) => this.handleChatSubmit(e));
-        
-        // File upload buttons
-        this.initFileUpload();
         
         // Voice recording
         this.initVoiceRecording();
@@ -257,13 +249,7 @@ class DomusIA {
         const input = document.getElementById('chatInput');
         const message = input.value.trim();
         
-        // Permitir envío si hay mensaje o archivo
-        if (!message && !this.currentFile) return;
-        
-        // Si no hay mensaje pero sí archivo, usar mensaje por defecto
-        const finalMessage = message || (this.currentFileType === 'image' ? 
-            '¿Qué ves en esta imagen?' : 
-            'Por favor analiza este documento');
+        if (!message) return;
         
         // Check message limits for free users
         if (this.subscriptionPlan === 'free' && this.dailyMessageCount >= this.dailyMessageLimit) {
@@ -271,21 +257,9 @@ class DomusIA {
             return;
         }
         
-        // Guardar archivo actual para procesamiento
-        const fileToProcess = this.currentFile;
-        const fileTypeToProcess = this.currentFileType;
-        
-        // Clear input and file
+        // Clear input and add user message
         input.value = '';
-        this.clearFileUpload();
-        
-        // Add user message (con indicador de archivo si existe)
-        let displayMessage = finalMessage;
-        if (fileToProcess) {
-            const fileIcon = fileTypeToProcess === 'image' ? '🖼️' : '📄';
-            displayMessage = `${fileIcon} ${finalMessage}\n<small class="text-gray-500">${fileToProcess.name}</small>`;
-        }
-        this.addMessage('user', displayMessage);
+        this.addMessage('user', message);
         
         // Update message count
         this.dailyMessageCount++;
@@ -296,8 +270,8 @@ class DomusIA {
         this.showTypingIndicator();
         
         try {
-            // Process message with file if exists
-            const response = await this.processMessage(finalMessage, fileToProcess, fileTypeToProcess);
+            // Process message and get response
+            const response = await this.processMessage(message);
             this.hideTypingIndicator();
             
             // Add message with typing effect
@@ -305,7 +279,7 @@ class DomusIA {
             
             // Save conversation
             this.conversationHistory.push(
-                { role: 'user', content: finalMessage, timestamp: new Date().toISOString() },
+                { role: 'user', content: message, timestamp: new Date().toISOString() },
                 { role: 'assistant', content: response, timestamp: new Date().toISOString() }
             );
             this.saveConversationHistory();
@@ -317,7 +291,7 @@ class DomusIA {
         }
     }
 
-    async processMessage(message, file = null, fileType = null) {
+    async processMessage(message) {
         // Handle document analysis if message starts with DOCUMENTO:
         if (message.startsWith('DOCUMENTO:')) {
             const docContent = message.replace('DOCUMENTO:', '').trim();
@@ -347,8 +321,8 @@ class DomusIA {
             return advancedResponse;
         }
         
-        // Process with AI (con archivo si existe)
-        return await this.generateAIResponse(message, file, fileType);
+        // Process with AI
+        return await this.generateAIResponse(message);
     }
 
     detectUserFromMessage(message) {
@@ -390,7 +364,7 @@ class DomusIA {
         return `Gracias ${this.userName || ''}. Para personalizar mejor mi ayuda, ¿podrías decirme si eres propietario particular que quiere vender o agente inmobiliario profesional?`;
     }
 
-    async generateAIResponse(message, file = null, fileType = null) {
+    async generateAIResponse(message) {
         // Try to use Vercel/Netlify Function (ChatGPT real via backend)
         const endpoints = [
             '/api/chat',                      // Vercel
@@ -399,79 +373,27 @@ class DomusIA {
 
         for (const endpoint of endpoints) {
             try {
-                // Preparar body con archivo si existe
-                const requestBody = {
-                    messages: [{ role: 'user', content: message }],
-                    userType: this.userType,
-                    userName: this.userName,
-                    userPlan: this.subscriptionPlan || 'particular',
-                    webSearch: 'auto'  // Búsqueda automática cuando sea necesario
-                };
-                
-                // Añadir imagen si existe
-                if (file && fileType === 'image') {
-                    console.log('👁️ Enviando imagen para análisis Vision...');
-                    const base64 = await this.fileToBase64(file);
-                    requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
-                }
-                
-                // Añadir documento si existe
-                if (file && fileType === 'document') {
-                    console.log('📄 Enviando documento para análisis...');
-                    
-                    // Usar texto extraído si está disponible
-                    if (this.currentDocumentText) {
-                        const wordCount = this.currentDocumentText.split(/\s+/).length;
-                        console.log(`📄 Texto extraído: ${wordCount} palabras`);
-                        
-                        // Limitar a primeras 8000 palabras para no exceder límites de tokens
-                        const words = this.currentDocumentText.split(/\s+/);
-                        const limitedText = words.slice(0, 8000).join(' ');
-                        
-                        requestBody.documentText = `[Documento: ${file.name}]\n\n${limitedText}`;
-                        
-                        if (words.length > 8000) {
-                            requestBody.documentText += `\n\n[NOTA: Documento truncado. Mostrando primeras 8000 de ${words.length} palabras totales]`;
-                        }
-                    } else {
-                        // Fallback si no se pudo extraer texto
-                        requestBody.documentText = `[Documento: ${file.name} - ${(file.size/1024).toFixed(1)}KB]\n\nNOTA: No se pudo extraer el texto del documento.`;
-                    }
-                }
-                
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: message }],
+                        userType: this.userType,
+                        userName: this.userName
+                    })
                 });
 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        let logMessage = '✅ ChatGPT Real (GPT-4o)';
-                        if (data.visionUsed) logMessage += ' + Vision API';
-                        if (data.webSearchUsed) logMessage += ' + Web Search';
-                        logMessage += ' - Tokens: ' + data.tokensUsed;
-                        
-                        console.log(logMessage);
-                        
-                        // Añadir fuentes si hay búsqueda web
-                        let finalMessage = data.message;
-                        if (data.webSearchUsed && data.sources && data.sources.length > 0) {
-                            finalMessage += '\n\n---\n📚 **Fuentes consultadas:**\n';
-                            data.sources.forEach((source, i) => {
-                                finalMessage += `${i + 1}. [${source.title}](${source.url})\n`;
-                            });
-                        }
-                        
-                        return finalMessage;
+                        console.log('✅ ChatGPT Real (GPT-4o) - Tokens usados:', data.tokensUsed);
+                        return data.message;
                     }
                 }
             } catch (error) {
                 // Try next endpoint
-                console.error('Error en endpoint:', endpoint, error);
                 continue;
             }
         }
@@ -479,15 +401,6 @@ class DomusIA {
         // If all backends fail, use mock
         console.warn('⚠️ Backend no disponible, usando respuestas simuladas');
         console.log('ℹ️ Para ChatGPT real, despliega en Vercel o Netlify.');
-        
-        // Si hay archivo, dar respuesta especial
-        if (file) {
-            if (fileType === 'image') {
-                return "🖼️ He visto tu imagen. En modo demo no puedo analizarla completamente, pero una vez conectado a OpenAI Vision podré identificar características de la propiedad, detectar problemas, sugerir mejoras de home staging, y más.";
-            } else {
-                return "📄 He recibido tu documento. En modo demo no puedo procesarlo, pero cuando esté conectado podré extraer información clave, analizar contratos, revisar escrituras, y darte un resumen ejecutivo.";
-            }
-        }
         
         // Mock AI responses as fallback
         const responses = this.getContextualResponses(message);
@@ -497,97 +410,6 @@ class DomusIA {
         
         // Return appropriate response
         return responses[Math.floor(Math.random() * responses.length)];
-    }
-    
-    // Helper: Convertir archivo a Base64
-    fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // Helper: Extraer texto de PDF
-    async extractTextFromPDF(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = async function() {
-                try {
-                    // Configure PDF.js worker
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    
-                    const typedArray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
-                    
-                    let fullText = '';
-                    
-                    // Extract text from each page
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const page = await pdf.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(' ');
-                        fullText += `\n--- Página ${pageNum} ---\n${pageText}\n`;
-                    }
-                    
-                    resolve(fullText.trim());
-                } catch (error) {
-                    console.error('Error extrayendo texto del PDF:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = error => reject(error);
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    // Helper: Extraer texto de Word (.docx)
-    async extractTextFromWord(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = async function() {
-                try {
-                    const arrayBuffer = this.result;
-                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-                    resolve(result.value);
-                } catch (error) {
-                    console.error('Error extrayendo texto del Word:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = error => reject(error);
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    // Helper: Extraer texto de Excel (.xlsx, .xls)
-    async extractTextFromExcel(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function() {
-                try {
-                    const data = new Uint8Array(this.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    let fullText = '';
-                    
-                    // Process each sheet
-                    workbook.SheetNames.forEach((sheetName, index) => {
-                        const worksheet = workbook.Sheets[sheetName];
-                        const sheetText = XLSX.utils.sheet_to_txt(worksheet);
-                        fullText += `\n--- Hoja ${index + 1}: ${sheetName} ---\n${sheetText}\n`;
-                    });
-                    
-                    resolve(fullText.trim());
-                } catch (error) {
-                    console.error('Error extrayendo texto del Excel:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = error => reject(error);
-            reader.readAsArrayBuffer(file);
-        });
     }
 
     getContextualResponses(message) {
@@ -1180,212 +1002,6 @@ class DomusIA {
         document.body.classList.remove('keyboard-open');
     }
 
-    // ===== FILE UPLOAD =====
-    initFileUpload() {
-        // Estado para almacenar archivos seleccionados
-        this.currentFile = null;
-        this.currentFileType = null; // 'image' | 'document'
-        
-        const uploadImageBtn = document.getElementById('uploadImageBtn');
-        const uploadDocBtn = document.getElementById('uploadDocBtn');
-        const imageInput = document.getElementById('imageInput');
-        const documentInput = document.getElementById('documentInput');
-        const removeFileBtn = document.getElementById('removeFileBtn');
-        
-        // Botón subir imagen
-        if (uploadImageBtn && imageInput) {
-            uploadImageBtn.addEventListener('click', () => {
-                imageInput.click();
-            });
-            
-            imageInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    this.handleImageUpload(file);
-                }
-            });
-        }
-        
-        // Botón subir documento
-        if (uploadDocBtn && documentInput) {
-            uploadDocBtn.addEventListener('click', () => {
-                documentInput.click();
-            });
-            
-            documentInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    this.handleDocumentUpload(file);
-                }
-            });
-        }
-        
-        // Botón remover archivo
-        if (removeFileBtn) {
-            removeFileBtn.addEventListener('click', () => {
-                this.clearFileUpload();
-            });
-        }
-    }
-    
-    handleImageUpload(file) {
-        // Validar tamaño (máximo 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            alert('⚠️ La imagen es demasiado grande. Máximo 10MB.');
-            return;
-        }
-        
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
-            alert('⚠️ Por favor selecciona un archivo de imagen válido.');
-            return;
-        }
-        
-        this.currentFile = file;
-        this.currentFileType = 'image';
-        
-        // Mostrar preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const previewContainer = document.getElementById('filePreview');
-            const previewContent = document.getElementById('previewContent');
-            
-            previewContent.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <img src="${e.target.result}" alt="Preview" class="w-16 h-16 object-cover rounded">
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900">📷 ${file.name}</p>
-                        <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                </div>
-            `;
-            
-            previewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-        
-        console.log('🖼️ Imagen cargada:', file.name);
-    }
-    
-    async handleDocumentUpload(file) {
-        // Validar tamaño (máximo 20MB)
-        if (file.size > 20 * 1024 * 1024) {
-            alert('⚠️ El documento es demasiado grande. Máximo 20MB.');
-            return;
-        }
-        
-        // Validar tipo
-        const validTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        ];
-        
-        if (!validTypes.includes(file.type)) {
-            alert('⚠️ Tipo de documento no soportado. Usa PDF, Word o Excel.');
-            return;
-        }
-        
-        this.currentFile = file;
-        this.currentFileType = 'document';
-        
-        // Mostrar preview con estado de procesamiento
-        const previewContainer = document.getElementById('filePreview');
-        const previewContent = document.getElementById('previewContent');
-        
-        const fileIcon = file.type.includes('pdf') ? '📄' : 
-                        file.type.includes('word') ? '📝' : '📊';
-        
-        previewContent.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded text-3xl">
-                    ${fileIcon}
-                </div>
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">${file.name}</p>
-                    <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
-                    <p class="text-xs text-domus-gold animate-pulse">⏳ Extrayendo texto...</p>
-                </div>
-            </div>
-        `;
-        
-        previewContainer.classList.remove('hidden');
-        
-        console.log('📄 Documento cargado:', file.name);
-        
-        // Extraer texto del documento
-        try {
-            let extractedText = '';
-            
-            if (file.type === 'application/pdf') {
-                console.log('🔍 Extrayendo texto de PDF...');
-                extractedText = await this.extractTextFromPDF(file);
-            } else if (file.type.includes('word')) {
-                console.log('🔍 Extrayendo texto de Word...');
-                extractedText = await this.extractTextFromWord(file);
-            } else if (file.type.includes('sheet') || file.type.includes('excel')) {
-                console.log('🔍 Extrayendo texto de Excel...');
-                extractedText = await this.extractTextFromExcel(file);
-            }
-            
-            // Guardar texto extraído
-            this.currentDocumentText = extractedText;
-            
-            // Actualizar preview con éxito
-            const wordCount = extractedText.split(/\s+/).length;
-            previewContent.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded text-3xl">
-                        ${fileIcon}
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900">${file.name}</p>
-                        <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB - ${wordCount} palabras extraídas</p>
-                        <p class="text-xs text-green-600">✅ Texto extraído correctamente</p>
-                    </div>
-                </div>
-            `;
-            
-            console.log(`✅ Texto extraído: ${wordCount} palabras`);
-            
-        } catch (error) {
-            console.error('❌ Error extrayendo texto:', error);
-            
-            // Actualizar preview con error
-            previewContent.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded text-3xl">
-                        ${fileIcon}
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900">${file.name}</p>
-                        <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
-                        <p class="text-xs text-red-600">⚠️ Error extrayendo texto - Intenta con otro archivo</p>
-                    </div>
-                </div>
-            `;
-            
-            this.currentDocumentText = null;
-        }
-    }
-    
-    clearFileUpload() {
-        this.currentFile = null;
-        this.currentFileType = null;
-        this.currentDocumentText = null; // Limpiar texto extraído
-        
-        // Limpiar inputs
-        document.getElementById('imageInput').value = '';
-        document.getElementById('documentInput').value = '';
-        
-        // Ocultar preview
-        document.getElementById('filePreview').classList.add('hidden');
-        
-        console.log('🗑️ Archivo removido');
-    }
-
     // ===== VOICE RECORDING =====
     initVoiceRecording() {
         const voiceBtn = document.getElementById('voiceBtn');
@@ -1573,5 +1189,7 @@ if ('serviceWorker' in navigator) {
                 console.log('SW registration failed: ', registrationError);
             });
     });
+}
+*/
 }
 */
