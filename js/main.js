@@ -274,6 +274,7 @@ class DomusIA {
         // Guardar archivo actual para procesamiento
         const fileToProcess = this.currentFile;
         const fileTypeToProcess = this.currentFileType;
+        const documentTextToProcess = this.currentDocumentText; // 🔥 GUARDAR TEXTO EXTRAÍDO
         
         // Clear input and file
         input.value = '';
@@ -297,7 +298,7 @@ class DomusIA {
         
         try {
             // Process message with file if exists
-            const response = await this.processMessage(finalMessage, fileToProcess, fileTypeToProcess);
+            const response = await this.processMessage(finalMessage, fileToProcess, fileTypeToProcess, documentTextToProcess);
             this.hideTypingIndicator();
             
             // Add message with typing effect
@@ -317,7 +318,7 @@ class DomusIA {
         }
     }
 
-    async processMessage(message, file = null, fileType = null) {
+    async processMessage(message, file = null, fileType = null, documentText = null) {
         // Handle document analysis if message starts with DOCUMENTO:
         if (message.startsWith('DOCUMENTO:')) {
             const docContent = message.replace('DOCUMENTO:', '').trim();
@@ -348,7 +349,7 @@ class DomusIA {
         }
         
         // Process with AI (con archivo si existe)
-        return await this.generateAIResponse(message, file, fileType);
+        return await this.generateAIResponse(message, file, fileType, documentText);
     }
 
     detectUserFromMessage(message) {
@@ -390,7 +391,7 @@ class DomusIA {
         return `Gracias ${this.userName || ''}. Para personalizar mejor mi ayuda, ¿podrías decirme si eres propietario particular que quiere vender o agente inmobiliario profesional?`;
     }
 
-    async generateAIResponse(message, file = null, fileType = null) {
+    async generateAIResponse(message, file = null, fileType = null, documentText = null) {
         // Try to use Vercel/Netlify Function (ChatGPT real via backend)
         const endpoints = [
             '/api/chat',                      // Vercel
@@ -418,14 +419,17 @@ class DomusIA {
                 // Añadir documento si existe
                 if (file && fileType === 'document') {
                     console.log('📄 Enviando documento para análisis...');
+                    console.log('📄 documentText recibido:', !!documentText);
+                    console.log('📄 Longitud documentText:', documentText?.length || 0);
                     
                     // Usar texto extraído si está disponible
-                    if (this.currentDocumentText) {
-                        const wordCount = this.currentDocumentText.split(/\s+/).length;
+                    if (documentText && documentText.trim().length > 0) {
+                        const wordCount = documentText.split(/\s+/).filter(w => w.length > 0).length;
                         console.log(`📄 Texto extraído: ${wordCount} palabras`);
+                        console.log(`📄 Primeros 100 chars:`, documentText.substring(0, 100));
                         
                         // Limitar a primeras 8000 palabras para no exceder límites de tokens
-                        const words = this.currentDocumentText.split(/\s+/);
+                        const words = documentText.split(/\s+/).filter(w => w.length > 0);
                         const limitedText = words.slice(0, 8000).join(' ');
                         
                         requestBody.documentText = `[Documento: ${file.name}]\n\n${limitedText}`;
@@ -435,6 +439,7 @@ class DomusIA {
                         }
                     } else {
                         // Fallback si no se pudo extraer texto
+                        console.error('❌ documentText vacío o null');
                         requestBody.documentText = `[Documento: ${file.name} - ${(file.size/1024).toFixed(1)}KB]\n\nNOTA: No se pudo extraer el texto del documento.`;
                     }
                 }
