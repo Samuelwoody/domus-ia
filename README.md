@@ -1,387 +1,260 @@
-# Domus-IA España - SuperAgente Inmobiliario con IA
+# 🚀 ARCHIVOS PARA SUBIR A GITHUB - FASE 3
 
-![Domus-IA España](https://img.shields.io/badge/Domus--IA%20Espa%C3%B1a-v1.0.0-8b1a1a)
-![Status](https://img.shields.io/badge/Status-Frontend%20Completo-success)
-![License](https://img.shields.io/badge/License-MontCastell--AI-d4af37)
-
-Una plataforma de inteligencia artificial especializada en el sector inmobiliario español que presenta a **Sofía**, el SuperAgente Inmobiliario General (SIG), desarrollada por MontCastell-AI para Grupo Más Urba Multiservicios.
-
-> 📚 **¿Necesitas orientación?** Consulta [INDICE_DOCUMENTACION.md](INDICE_DOCUMENTACION.md) para encontrar rápidamente la documentación que necesitas.
-
-## 🏠 Descripción
-
-Domus-IA España es una innovadora web de IA similar a ChatGPT, específicamente diseñada para el sector inmobiliario español. Sofía, el primer SuperAgente Inmobiliario de España, está diseñada para **Propietarios Espabilados** y **Agentes Saturados** que quieren vender más y mejor con formación, estrategias y acompañamiento profesional.
-
-### 🤖 Sofía - SuperAgente Inmobiliario General (SIG)
-
-Sofía es una IA avanzada que integra:
-- **Conocimiento profundo** del sector inmobiliario
-- **Especialización** en compraventa de segunda mano y obra nueva
-- **Formación** basada en el programa de consultorías de MontCastell-AI
-- **Capacidades multimodales** de OpenAI (texto, imagen, audio, documentos)
-
-## ✨ Características Principales
-
-### 🎯 Funcionalidades Core
-- ✅ **Interfaz de chat tipo ChatGPT** - Experiencia familiar e intuitiva
-- ✅ **Detección automática de usuario** - Identifica si es particular o profesional
-- ✅ **Sistema de suscripciones** - Planes Free, Particular y Profesional
-- ✅ **Conexión OpenAI completa** - Todas las APIs más avanzadas
-- ✅ **Diseño responsive** - Funciona en desktop, tablet y móvil
-- ✅ **Interfaz elegante** - Colores profesionales y UX sofisticada
-
-### 🏢 Para Agentes Profesionales
-- **Construcción de empresa y marca personal**
-- **Imagen corporativa y publicidad**
-- **Captación formal y bien remunerada**
-- **Gestión VIP de encargos de venta**
-- **Informes de ajuste de precios con datos reales**
-- **Negociación formal y cierre de acuerdos**
-- **Formatos legales y post-venta**
-- **Formación sobre IA y Agentes IA**
-
-### 🏡 Para Propietarios Particulares
-- **Estudio de mercado personalizado**
-- **Preparación del inmueble para venta**
-- **Estudio y revisión de documentación**
-- **Estrategias de publicación de calidad**
-- **Cómo atender y convencer compradores**
-- **Defensa del precio de venta**
-- **Acuerdos escritos y arras penitenciales**
-- **Organización de firma ante notario**
-
-### 🧠 Capacidades IA Avanzadas
-- **Análisis y generación de imágenes**
-- **Creación de logos e imagen corporativa**
-- **Videos y contenido para publicidad**
-- **Construcción de embudos de captación**
-- **Informes de precios con búsquedas profundas**
-- **Roleplay audio para práctica de argumentos**
-- **Redacción de documentos y formatos legales**
-
-## 💰 Planes de Suscripción
-
-### 🆓 Plan Gratuito
-- **Precio**: €0/mes
-- **Mensajes**: 15 diarios
-- **Funciones**: Básicas de Sofía
-- **Detección**: Automática de usuario
-- **Soporte**: Comunidad
-
-### 🏠 Plan Particular
-- **Precio**: €99/mes (antes €299)
-- **Oferta**: Válida hasta 31 Dic 2025
-- **Mensajes**: Ilimitados
-- **Funciones**: Completas para propietarios
-- **Soporte**: Prioritario
-- **Garantía**: Precio fijo mientras no interrumpas
-
-### 💼 Plan Profesional
-- **Precio**: €199/mes (antes €499)
-- **Oferta**: Válida hasta 31 Dic 2025
-- **Mensajes**: Ilimitados
-- **Funciones**: Completas + formación MontCastell-AI
-- **APIs**: Acceso completo OpenAI
-- **Soporte**: VIP 24/7
-- **Garantía**: Precio fijo mientras no interrumpas
-
-## ⚠️ Estado de OpenAI API
-
-**IMPORTANTE**: Por defecto, Domus-IA usa **respuestas simuladas** para demostración.
-
-### Para Activar IA Real:
-1. Obtén API Key en [platform.openai.com](https://platform.openai.com)
-2. Configúrala en la interfaz al elegir plan Premium
-3. Sofía usará OpenAI real (~$1-3/mes uso normal)
-
-📖 **Guía completa**: Ver `OPENAI_SETUP.md`
+## 📅 Fecha: 13 de Octubre 2025
 
 ---
 
-## 🚀 Funcionalidades Técnicas Implementadas
+## ✅ QUÉ CONTIENE ESTA CARPETA
 
-### ✅ Completadas
+Archivos actualizados con las **4 funcionalidades avanzadas**:
+1. 🔍 **Búsqueda Web en tiempo real** (Tavily API)
+2. 👁️ **Vision API** (GPT-4o puede ver imágenes)
+3. 📄 **Documentos** (Procesar PDF/Word/Excel)
+4. 🎨 **DALL-E 3** (Generar imágenes)
 
-#### 🎨 Frontend
-- **HTML5 semántico** con estructura profesional
-- **CSS3 avanzado** con animaciones y efectos
-- **Tailwind CSS** para diseño responsive
-- **Font Awesome** para iconografía
-- **Google Fonts** (Inter + Playfair Display)
+---
 
-#### 💬 Sistema de Chat
-- **Interfaz tipo ChatGPT** con mensajes en tiempo real
-- **Detección automática** de tipo de usuario (particular/profesional)
-- **Historial de conversación** persistente
-- **Contador de mensajes** para plan gratuito
-- **Indicador de escritura** con animación
-- **Respuestas contextualizadas** según perfil de usuario
-- **🎤 Transcripción de voz** - Habla en lugar de escribir (Web Speech API)
+## 📂 ESTRUCTURA DE ARCHIVOS
 
-#### 🔐 Gestión de Usuarios
-- **Registro/Login automático** con detección inteligente
-- **Almacenamiento local** de datos de usuario
-- **Sistema de suscripciones** integrado
-- **Límites por plan** (15 msgs/día gratuito, ilimitado premium)
+```
+SUBIR_A_GITHUB_FASE_3/
+├── README.md (este archivo)
+├── INSTRUCCIONES_PASO_A_PASO.md
+│
+├── backend/
+│   ├── api-chat.js          → Subir a: api/chat.js
+│   ├── api-capabilities.js  → Subir a: api/capabilities.js
+│   └── api-dalle.js         → Subir a: api/dalle.js
+│
+└── frontend/
+    ├── js-config.js         → Subir a: js/config.js
+    ├── js-main.js           → Subir a: js/main.js
+    ├── js-sofia-ai.js       → Subir a: js/sofia-ai.js
+    └── css-style.css        → Subir a: css/style.css
+```
 
-#### 🤖 Integración IA
-- **Conexión completa OpenAI API**
-  - GPT-4o para chat avanzado
-  - DALL-E 3 para generación de imágenes  
-  - GPT-4V para análisis de imágenes
-  - TTS para audio y roleplay
-  - Whisper para transcripción (preparado)
-- **Sistema de prompts especializado** inmobiliario
-- **Respuestas contextualizadas** por tipo de usuario
-- **Manejo de errores** y fallbacks profesionales
+---
 
-#### 📱 UX/UI
-- **Diseño responsive** mobile-first
-- **Colores corporativos** elegantes y profesionales
-- **Animaciones suaves** y transiciones
-- **Countdown timer** para ofertas
-- **Modal system** para chat y registro
-- **Loading states** y feedback visual
+## 🎯 ARCHIVOS QUE NECESITAS SUBIR A GITHUB
 
-### 🔧 APIs y Endpoints Preparados
+### **Backend (carpeta `api/` en GitHub):**
 
-#### OpenAI Integration
+| Archivo Local | Subir a GitHub como | Estado |
+|---------------|---------------------|--------|
+| `backend/api-chat.js` | `api/chat.js` | ✅ Listo |
+| `backend/api-capabilities.js` | `api/capabilities.js` | ✅ Listo |
+| `backend/api-dalle.js` | `api/dalle.js` | ✅ Listo |
+
+### **Frontend (carpetas `js/` y `css/` en GitHub):**
+
+| Archivo Local | Subir a GitHub como | Estado |
+|---------------|---------------------|--------|
+| `frontend/js-config.js` | `js/config.js` | ✅ Listo |
+| `frontend/js-main.js` | `js/main.js` | ✅ Listo |
+| `frontend/js-sofia-ai.js` | `js/sofia-ai.js` | ✅ Listo |
+| `frontend/css-style.css` | `css/style.css` | ✅ Listo |
+
+---
+
+## 🔧 CAMBIOS PRINCIPALES EN CADA ARCHIVO
+
+### **1. api/chat.js** (Backend principal)
+**Qué hace:**
+- ✅ Integración completa con Tavily Search API
+- ✅ Búsqueda automática cuando detecta palabras clave
+- ✅ Soporte para Vision API (imágenes)
+- ✅ Soporte para documentos (texto extraído)
+- ✅ Respuestas con fuentes cuando usa búsqueda web
+
+**Líneas importantes:**
+- **17-56:** Función `searchWeb()` que llama a Tavily
+- **63-77:** Función `shouldSearchWeb()` que decide cuándo buscar
+- **153-171:** Lógica que ejecuta búsqueda antes de llamar a OpenAI
+- **179-202:** Soporte para Vision API (imágenes)
+- **205-215:** Soporte para documentos
+
+---
+
+### **2. api/capabilities.js** (Informa al frontend qué está activo)
+**Qué hace:**
+- ✅ Dice al frontend qué funcionalidades están disponibles
+- ✅ Frontend ajusta UI según esto (muestra/oculta botones)
+
+**Cambios:**
 ```javascript
-// Chat Completions
-POST /chat/completions
+// ANTES (todo false):
+vision: false,
+imageGeneration: false,
+webSearch: false,
+fileUpload: false
 
-// Image Analysis  
-POST /chat/completions (with vision)
-
-// Image Generation
-POST /images/generations
-
-// Text-to-Speech
-POST /audio/speech
-
-// Document Analysis
-POST /chat/completions (with document context)
+// AHORA (todo true):
+vision: true,
+imageGeneration: true,
+webSearch: true,
+fileUpload: true
 ```
-
-#### Funcionalidades Específicas
-- **generateMarketReport()** - Informes de mercado
-- **createRolePlayScenario()** - Práctica de ventas
-- **generateLegalDocument()** - Documentos legales
-- **analyzeProperty()** - Análisis de inmuebles
-- **generateMarketingContent()** - Contenido publicitario
-- **analyzePricing()** - Valoraciones profesionales
-
-## 📁 Estructura del Proyecto
-
-```
-domus-ia/
-├── index.html                 # Página principal
-├── manifest.json             # PWA manifest
-├── sw.js                     # Service Worker para PWA
-├── css/
-│   └── style.css             # Estilos personalizados
-├── js/
-│   ├── main.js               # Lógica principal y UI
-│   ├── sofia-ai.js           # Integración OpenAI avanzada
-│   └── config.js             # Configuración centralizada
-├── images/
-│   └── sofia-avatar.jpg      # Imagen de Sofía con branding Domus-IA
-├── docs/
-│   ├── BACKEND_SPECS.md      # Especificaciones del backend
-│   ├── ESTADO_ACTUAL.md      # Estado operativo actual
-│   ├── OPENAI_SETUP.md       # Guía de configuración OpenAI
-│   ├── BRANDING.md           # Guía de marca
-│   ├── POSITIONING.md        # Estrategia de marketing
-│   └── [otros docs...]       # Documentación adicional
-└── README.md                 # Documentación principal
-```
-
-## 🛠️ Instalación y Configuración
-
-### 1. Despliegue Básico
-La aplicación es completamente client-side y puede desplegarse en cualquier servidor web estático:
-
-```bash
-# Clonar o descargar archivos
-# Subir a servidor web (Apache, Nginx, Netlify, Vercel, etc.)
-# ¡Listo! La app funciona inmediatamente
-```
-
-### 2. 🚀 Activar ChatGPT Real con Netlify Functions (5 minutos)
-
-**✅ YA ESTÁ LISTO** - Solo necesitas desplegarlo:
-
-#### **📋 Guía Completa:** [NETLIFY_DEPLOY.md](NETLIFY_DEPLOY.md)
-
-**Pasos:**
-1. Crear cuenta Netlify (gratis)
-2. Subir proyecto a GitHub
-3. Conectar GitHub con Netlify
-4. Añadir tu API key de OpenAI (variable de entorno)
-5. ¡Listo! ChatGPT funcionando
-
-**Archivos ya creados:**
-- ✅ `netlify/functions/chat.js` - Servidor seguro con tu API key
-- ✅ `netlify.toml` - Configuración
-- ✅ `package.json` - Dependencias
-- ✅ `js/main.js` - Ya integrado
-
-**Ventajas:**
-- ✅ ChatGPT REAL (GPT-4o)
-- ✅ API key 100% segura
-- ✅ Gratis hasta 125K requests/mes
-- ✅ Sin backend complejo
 
 ---
 
-### 3. Alternativa: Backend Completo Railway (1-2 horas)
-   - Registrarse en [OpenAI Platform](https://platform.openai.com)
-   - Crear API Key en el dashboard
-   - Configurar billing y límites
+### **3. api/dalle.js** (Generación de imágenes)
+**Qué hace:**
+- ✅ Endpoint para generar imágenes con DALL-E 3
+- ✅ Verifica límites por plan (10/30/100 imgs/mes)
+- ✅ Registra uso en base de datos
+- ✅ Devuelve URL de imagen generada
 
-2. **Configurar en la aplicación**:
-   ```javascript
-   // Los usuarios premium introducen su API key
-   // O configurar a nivel de aplicación para todos los usuarios
-   window.domusIA.sofiaAI.setApiKey('tu-api-key-aqui');
+**Uso desde frontend:**
+```javascript
+// Llamar desde JavaScript:
+const response = await fetch('/api/dalle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        prompt: 'Casa moderna con piscina en la costa',
+        userId: 'user123',
+        userPlan: 'profesional'
+    })
+});
+```
+
+---
+
+### **4. js/config.js** (Configuración frontend)
+**Cambios:**
+```javascript
+// ANTES:
+USE_BACKEND: false,
+USE_MOCK_RESPONSES: true,
+ENABLE_ADVANCED_FEATURES: false
+
+// AHORA:
+USE_BACKEND: true,
+USE_MOCK_RESPONSES: false,
+ENABLE_ADVANCED_FEATURES: true  // ← Habilita nuevas funcionalidades
+```
+
+---
+
+### **5. js/main.js** (Lógica principal del chat)
+**Cambios:**
+- ✅ Efecto de escritura (texto aparece progresivamente)
+- ✅ Formato de texto mejorado (párrafos cortos)
+- ✅ Sin mensaje "Modo Demo"
+- ⚠️ **FALTA:** Botones para subir imágenes/documentos (próxima fase)
+
+**Función nueva importante:**
+```javascript
+// Línea ~480: Efecto de escritura
+async typeMessage(element, content, speed = 15) {
+    // Escribe caracteres progresivamente
+}
+```
+
+---
+
+### **6. js/sofia-ai.js** (Wrapper de funcionalidades IA)
+**Cambios:**
+```javascript
+// Línea ~450:
+isAPIConfigured() {
+    return true;  // Backend maneja API keys, no localStorage
+}
+```
+
+---
+
+### **7. css/style.css** (Estilos)
+**Cambios:**
+- ✅ Espaciado de párrafos
+- ✅ Estilo para texto en negrita
+- ✅ Animación de cursor de escritura
+
+---
+
+## ⚙️ VARIABLES DE ENTORNO EN VERCEL
+
+**Ya configuradas (según me dijiste):**
+- ✅ `OPENAI_API_KEY` (para GPT-4o, Vision, DALL-E)
+- ✅ `TAVILY_API_KEY` (para búsqueda web)
+
+**Opcional (para seguimiento de uso en futuro):**
+- `DATABASE_URL` (PostgreSQL o Vercel KV)
+
+---
+
+## 🧪 CÓMO PROBAR DESPUÉS DE SUBIR
+
+### **1. Probar Búsqueda Web:**
+Pregunta en el chat:
+```
+"¿Cuál es el precio actual del mercado inmobiliario en Madrid en 2025?"
+```
+Debería buscar en internet y citar fuentes.
+
+### **2. Probar Vision API:**
+*(Cuando añadas el botón de subir imagen)*
+- Sube una foto de una casa
+- Pregunta: "¿Qué opinas de esta propiedad?"
+
+### **3. Probar DALL-E:**
+Pregunta:
+```
+"Genera una imagen de una casa moderna con piscina"
+```
+
+---
+
+## 🚨 IMPORTANTE
+
+### **Antes de hacer commit en GitHub:**
+1. ⚠️ **NO subas archivos `.env`** (nunca subas claves API)
+2. ✅ Verifica que `.gitignore` contiene:
+   ```
+   .env
+   .env.local
+   node_modules/
+   .vercel
    ```
 
-### 3. Personalización de Marca
-
-Editar variables CSS para personalizar colores:
-```css
-:root {
-    --domus-navy: #2c0a0e;      /* Rojo oscuro profundo */
-    --domus-gold: #d4af37;      /* Oro elegante */
-    --domus-sage: #6b7280;      /* Color secundario */
-    --domus-cream: #fafafa;     /* Color de fondo */
-    --domus-accent: #8b1a1a;    /* Rojo corporativo */
-    --gradient-primary: linear-gradient(135deg, #d4af37 0%, #8b1a1a 100%);
-}
-```
-
-## 🌐 URLs y Endpoints
-
-### Producción
-- **Website Principal**: `https://tu-dominio.com/`
-- **Chat Interface**: `https://tu-dominio.com/#chat`
-- **Planes**: `https://tu-dominio.com/#planes`
-
-### APIs Externas Utilizadas
-- **OpenAI API**: `https://api.openai.com/v1/`
-- **CDN Recursos**: 
-  - Tailwind CSS: `https://cdn.tailwindcss.com`
-  - Font Awesome: `https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css`
-  - Google Fonts: `https://fonts.googleapis.com/css2`
-
-## 💾 Modelos de Datos
-
-### User Profile
-```javascript
-{
-  isAuthenticated: boolean,
-  userType: 'particular' | 'profesional' | null,
-  userName: string,
-  subscriptionPlan: 'free' | 'particular' | 'profesional',
-  dailyMessageCount: number,
-  apiKey: string,
-  lastUsageDate: string
-}
-```
-
-### Conversation History
-```javascript
-[
-  {
-    role: 'user' | 'assistant',
-    content: string,
-    timestamp: string
-  }
-]
-```
-
-### Sofia AI Configuration
-```javascript
-{
-  model: 'gpt-4o',
-  maxTokens: 2000,
-  temperature: 0.7,
-  capabilities: {
-    textGeneration: true,
-    imageAnalysis: true,
-    imageGeneration: true,
-    documentAnalysis: true,
-    voiceGeneration: true
-  }
-}
-```
-
-## 🚧 Próximas Funcionalidades
-
-### 📋 En Desarrollo
-- [ ] **Sistema de pagos** integrado (Stripe/PayPal)
-- [ ] **Panel de administración** para gestionar usuarios
-- [ ] **Analytics avanzados** de uso y conversiones
-- [ ] **API propia** para integrar con CRM inmobiliarios
-- [ ] **App móvil nativa** (React Native/Flutter)
-
-### 🔮 Roadmap Futuro
-- [ ] **Integración WhatsApp** Business para consultas
-- [ ] **Marketplace inmobiliario** integrado
-- [ ] **CRM completo** para agentes
-- [ ] **Formación online** con certificaciones
-- [ ] **Comunidad profesional** con networking
-- [ ] **Integraciones** con portales inmobiliarios (Idealista, Fotocasa)
-
-## 🏗️ Arquitectura y Tecnologías
-
-### Frontend Stack
-- **HTML5** - Estructura semántica
-- **CSS3** - Estilos avanzados + Tailwind CSS
-- **Vanilla JavaScript** - Lógica sin frameworks (máximo rendimiento)
-- **LocalStorage** - Persistencia de datos client-side
-- **Fetch API** - Comunicación con OpenAI
-- **Service Workers** - Preparado para PWA
-
-### AI & APIs
-- **OpenAI GPT-4o** - Chat inteligente
-- **OpenAI DALL-E 3** - Generación de imágenes
-- **OpenAI Vision** - Análisis de imágenes
-- **OpenAI TTS** - Síntesis de voz
-- **OpenAI Whisper** - Reconocimiento de voz (preparado)
-
-### Deployment
-- **Static Hosting** - Compatible con Netlify, Vercel, GitHub Pages
-- **CDN Ready** - Recursos optimizados para carga rápida
-- **Progressive Web App** - Preparado para instalación
-- **Cross-browser** - Compatible IE11+, Chrome, Firefox, Safari
-
-## 📞 Soporte y Contacto
-
-### 🏢 Empresa
-- **Desarrollado por**: MontCastell-AI
-- **Grupo**: Más Urba Multiservicios  
-- **Año**: 2025
-- **Website**: [montcastell-ai.com](https://montcastell-ai.com)
-
-### 📧 Contacto Técnico
-- **Email**: info@domus-ia.com
-- **Soporte**: +34 XXX XXX XXX
-- **Horarios**: L-V 9:00-18:00 CET
-
-### 🤝 Colaboración
-¿Eres desarrollador y quieres contribuir? ¿Tienes una empresa inmobiliaria y quieres integrar Domus-IA España? ¡Contacta con nosotros!
+### **Después de subir a GitHub:**
+1. Vercel detectará cambios automáticamente
+2. Hará redeploy en ~1-2 minutos
+3. Prueba en tu URL de Vercel (https://tu-proyecto.vercel.app)
 
 ---
 
-## 📄 Licencia y Derechos
+## 📞 PRÓXIMOS PASOS (FASE 4)
 
-**© 2025 Domus-IA España - MontCastell-AI, Grupo Más Urba Multiservicios**
-
-Todos los derechos reservados. Software propietario desarrollado específicamente para el sector inmobiliario español.
+**Pendiente de implementar:**
+1. 🔲 Botones en UI para subir imágenes (📷)
+2. 🔲 Botones en UI para subir documentos (📄)
+3. 🔲 Vista previa de archivos antes de enviar
+4. 🔲 Contador de uso (ej: "45/300 imágenes este mes")
+5. 🔲 Sistema de seguimiento de uso por usuario
+6. 🔲 Límites por plan (Particular/Profesional/Premium)
 
 ---
 
-**🚀 ¡Domus-IA España está listo para revolucionar el sector inmobiliario español con IA! 🏠**
+## 📚 DOCUMENTACIÓN RELACIONADA
 
-*Sofía te espera para transformar tu experiencia inmobiliaria en España. ¡Comienza gratis hoy mismo!*
+- `FASE_1_MEJORAS_FRONTEND.md` - Efecto de escritura
+- `FIX_COMPLETO_MODO_DEMO.md` - Eliminación mensaje demo
+- `CONFIGURACION_API_KEYS.md` - Setup de Vercel
+- `README_FUNCIONALIDADES_AVANZADAS.md` - Visión general
+
+---
+
+## ✅ CHECKLIST
+
+Antes de cerrar esta fase:
+- [ ] Subir 3 archivos de `backend/` a GitHub (`api/`)
+- [ ] Subir 4 archivos de `frontend/` a GitHub (`js/` y `css/`)
+- [ ] Verificar que Vercel hizo redeploy
+- [ ] Probar búsqueda web en producción
+- [ ] Confirmar que no aparece mensaje "Modo Demo"
+- [ ] Confirmar efecto de escritura funcionando
+
+---
+
+🎉 **¡Cuando subas estos archivos, Sofía tendrá búsqueda web en tiempo real funcionando!**
