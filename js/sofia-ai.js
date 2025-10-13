@@ -88,26 +88,20 @@ DIRECTRICES DE RESPUESTA:
     }
 
     // ===== API CONNECTION METHODS =====
-    setApiKey(apiKey) {
-        this.apiKey = apiKey;
-        localStorage.setItem('domusIAEspana_apiKey', apiKey);
-    }
-
-    getApiKey() {
-        if (!this.apiKey) {
-            this.apiKey = localStorage.getItem('domusIAEspana_apiKey');
-        }
-        return this.apiKey;
+    // NOTA: Las API keys se gestionan en el BACKEND (Vercel)
+    // Los usuarios NO necesitan configurar API keys
+    
+    isAPIConfigured() {
+        // Siempre retorna true porque el backend tiene las claves
+        return true;
     }
 
     async makeAPICall(endpoint, method = 'POST', data = null) {
-        const apiKey = this.getApiKey();
-        if (!apiKey) {
-            throw new Error('API key not configured');
-        }
-
+        // Este método ya no se usa directamente
+        // Todo va a través del backend (/api/chat)
+        console.warn('makeAPICall() deprecated - Use /api/chat endpoint');
+        
         const headers = {
-            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
         };
 
@@ -242,22 +236,38 @@ Enfócate en:
     }
 
     // ===== IMAGE GENERATION =====
-    async generateImage(prompt, size = "1024x1024", quality = "standard") {
+    async generateImage(prompt, size = "1024x1024", quality = "standard", userPlan = 'particular') {
         try {
-            const requestData = {
-                model: "dall-e-3",
-                prompt: `Professional real estate ${prompt}. High quality, realistic, professional photography style.`,
-                size: size,
-                quality: quality,
-                n: 1
-            };
+            console.log('🎨 Solicitando generación de imagen:', prompt);
+            
+            // Llamar al endpoint de backend /api/dalle
+            const response = await fetch('/api/dalle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    size: size,
+                    quality: quality,
+                    style: 'vivid',
+                    userPlan: userPlan
+                })
+            });
 
-            const response = await this.makeAPICall('/images/generations', 'POST', requestData);
-            return response.data[0].url;
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Error al generar imagen');
+            }
+
+            const data = await response.json();
+            console.log('✅ Imagen generada:', data.imageUrl);
+            
+            return data.imageUrl;
 
         } catch (error) {
             console.error('Image Generation Error:', error);
-            throw new Error("No he podido generar la imagen. Verifica tu suscripción y conexión.");
+            throw new Error("No he podido generar la imagen: " + error.message);
         }
     }
 
@@ -474,6 +484,9 @@ Enfócate en:
         return errorMessages[statusCode] || errorMessages.default;
     }
 }
+
+// Export for use in other modules
+window.SofiaAI = SofiaAI;
 
 // Export for use in other modules
 window.SofiaAI = SofiaAI;
