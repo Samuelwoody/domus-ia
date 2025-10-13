@@ -494,13 +494,22 @@ class DomusIA {
                         const imageGenTriggers = [
                             'voy a generar',
                             'generaré',
-                            'crearemos',
+                            'te generaré',
                             'voy a crear',
+                            'crearé',
+                            'te crearé',
                             'te genero',
                             'te creo',
-                            'haré',
+                            'haré una imagen',
+                            'haré un render',
                             'crear una imagen',
-                            'generar una imagen'
+                            'generar una imagen',
+                            'crear un render',
+                            'generar un render',
+                            'visualizar',
+                            'visualizaré',
+                            'diseñaré',
+                            'voy a diseñar'
                         ];
                         
                         const shouldGenerateImage = imageGenTriggers.some(trigger => 
@@ -518,14 +527,14 @@ class DomusIA {
                             setTimeout(async () => {
                                 try {
                                     console.log('🎨 Generando imagen con DALL-E:', imagePrompt);
-                                    const imageResult = await this.sofiaAI.generateImage(imagePrompt);
+                                    const imageUrl = await this.sofiaAI.generateImage(imagePrompt);
                                     
-                                    if (imageResult && imageResult.url) {
+                                    if (imageUrl) {
                                         // Añadir imagen generada al chat
                                         const imageHtml = `<div class="generated-image-container mt-4 p-4 bg-gray-50 rounded-lg">
                                             <p class="text-sm text-gray-600 mb-2">✨ Imagen generada con DALL-E 3:</p>
-                                            <img src="${imageResult.url}" alt="Imagen generada" class="w-full rounded-lg shadow-md" />
-                                            <p class="text-xs text-gray-500 mt-2">${imageResult.revised_prompt || imagePrompt}</p>
+                                            <img src="${imageUrl}" alt="Imagen generada" class="w-full rounded-lg shadow-md" />
+                                            <p class="text-xs text-gray-500 mt-2">Imagen generada por DALL-E 3</p>
                                         </div>`;
                                         
                                         // Añadir al último mensaje de Sofía
