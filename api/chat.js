@@ -1,8 +1,80 @@
 // 🌟 DOMUS-IA ESPAÑA - SOFÍA IA COMPLETA
 // Backend serverless con TODO el conocimiento de MontCastell-AI integrado
-// Vercel Serverless Function con OpenAI GPT-4o
+// Vercel Serverless Function con OpenAI GPT-4o + Tavily Web Search + Vision + DALL-E
 
 import { getSofiaCompleteKnowledge } from './sofia-knowledge-complete.js';
+
+// ============================================================================
+// 🌐 TAVILY WEB SEARCH INTEGRATION
+// ============================================================================
+
+/**
+ * Realiza búsqueda en tiempo real usando Tavily Search API
+ * @param {string} query - Consulta de búsqueda
+ * @param {string} tavilyApiKey - API key de Tavily
+ * @returns {Promise<object>} - Resultados de búsqueda formateados
+ */
+async function searchWeb(query, tavilyApiKey) {
+  try {
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        api_key: tavilyApiKey,
+        query: query,
+        search_depth: 'advanced',
+        include_answer: true,
+        include_raw_content: false,
+        max_results: 5
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Tavily API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Formatear resultados para incluir en el contexto de GPT
+    const formattedResults = {
+      answer: data.answer || '',
+      results: (data.results || []).map(r => ({
+        title: r.title,
+        url: r.url,
+        content: r.content,
+        score: r.score
+      }))
+    };
+
+    return formattedResults;
+  } catch (error) {
+    console.error('Web search error:', error);
+    return null;
+  }
+}
+
+/**
+ * Determina si la consulta requiere búsqueda web actualizada
+ * @param {string} message - Mensaje del usuario
+ * @returns {boolean}
+ */
+function shouldSearchWeb(message) {
+  const lowerMessage = message.toLowerCase();
+  
+  // Keywords que indican necesidad de búsqueda web
+  const webSearchKeywords = [
+    'actualidad', 'actual', 'reciente', 'último', 'últimas',
+    'noticia', 'noticias', 'hoy', 'esta semana', 'este mes',
+    'precio actual', 'mercado actual', 'tendencias actuales',
+    'búsqueda', 'busca', 'encuentra', 'información sobre',
+    '2024', '2025', 'ahora', 'actualizado',
+    'google', 'internet', 'web', 'online'
+  ];
+  
+  return webSearchKeywords.some(keyword => lowerMessage.includes(keyword));
+}
 
 export default async function handler(req, res) {
   // ============================================================================
@@ -25,6 +97,7 @@ export default async function handler(req, res) {
     // Security & Configuration
     // ============================================================================
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
 
     if (!OPENAI_API_KEY) {
       return res.status(500).json({ 
@@ -41,9 +114,12 @@ export default async function handler(req, res) {
       userType, 
       userName,
       sofiaVersion = 'sofia-1.0',  // Versión de Sofía (configurable)
-      imageFile,                     // Para futuro: análisis de imágenes
-      generateImage,                 // Para futuro: DALL-E
-      webSearch                      // Para futuro: búsqueda web
+      userPlan = 'particular',      // Plan del usuario: 'particular' | 'profesional' | 'premium'
+      imageFile,                     // Base64 image data para Vision API
+      imageUrl,                      // URL directa de imagen para Vision API
+      generateImage,                 // Boolean: ¿generar imagen con DALL-E?
+      webSearch,                     // Boolean o 'auto': ¿realizar búsqueda web?
+      documentText                   // Texto extraído de documento PDF/Word/Excel
     } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
@@ -74,9 +150,74 @@ export default async function handler(req, res) {
     const config = modelConfig[sofiaVersion] || modelConfig['sofia-1.0'];
 
     // ============================================================================
+    // 🌐 Web Search (si es necesario)
+    // ============================================================================
+    let webSearchResults = null;
+    const lastMessage = messages[messages.length - 1];
+    
+    // Decidir si buscar en web
+    const needsWebSearch = webSearch === true || 
+                          (webSearch === 'auto' && shouldSearchWeb(lastMessage.content));
+    
+    if (needsWebSearch && TAVILY_API_KEY) {
+      console.log('🌐 Realizando búsqueda web:', lastMessage.content);
+      webSearchResults = await searchWeb(lastMessage.content, TAVILY_API_KEY);
+      
+      if (webSearchResults) {
+        console.log('✅ Web search completada:', webSearchResults.results.length, 'resultados');
+      }
+    } else if (needsWebSearch && !TAVILY_API_KEY) {
+      console.warn('⚠️ Web search solicitada pero TAVILY_API_KEY no configurada');
+    }
+
+    // ============================================================================
+    // 👁️ Vision API - Procesar imágenes si existen
+    // ============================================================================
+    let processedMessages = [...messages];
+    
+    // Si hay imagen, modificar el último mensaje para incluirla en formato Vision
+    if (imageFile || imageUrl) {
+      const lastMessageIndex = processedMessages.length - 1;
+      const lastMsg = processedMessages[lastMessageIndex];
+      
+      // Construir mensaje con imagen en formato Vision API
+      processedMessages[lastMessageIndex] = {
+        role: lastMsg.role,
+        content: [
+          {
+            type: 'text',
+            text: lastMsg.content
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageUrl || `data:image/jpeg;base64,${imageFile}`,
+              detail: 'high'  // 'high' para análisis detallado, 'low' para más rápido
+            }
+          }
+        ]
+      };
+      
+      console.log('👁️ Vision API activada - Analizando imagen');
+    }
+    
+    // Si hay documento, añadir su texto al contexto
+    if (documentText) {
+      const lastMessageIndex = processedMessages.length - 1;
+      const lastMsg = processedMessages[lastMessageIndex];
+      
+      processedMessages[lastMessageIndex] = {
+        role: lastMsg.role,
+        content: `${lastMsg.content}\n\n---\n📄 DOCUMENTO ADJUNTO:\n\n${documentText}\n---`
+      };
+      
+      console.log('📄 Documento procesado - Texto extraído incluido en contexto');
+    }
+
+    // ============================================================================
     // Build Advanced System Prompt con TODO el conocimiento
     // ============================================================================
-    const systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion);
+    const systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults);
 
     // ============================================================================
     // Call OpenAI API
@@ -91,7 +232,7 @@ export default async function handler(req, res) {
         model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          ...messages
+          ...processedMessages  // Usar mensajes procesados (con imagen/documento si aplica)
         ],
         max_tokens: config.maxTokens,
         temperature: config.temperature
@@ -117,7 +258,14 @@ export default async function handler(req, res) {
       message: data.choices[0].message.content,
       tokensUsed: data.usage.total_tokens,
       model: data.model,
-      sofiaVersion: config.name
+      sofiaVersion: config.name,
+      webSearchUsed: !!webSearchResults,
+      visionUsed: !!(imageFile || imageUrl),
+      documentUsed: !!documentText,
+      sources: webSearchResults ? webSearchResults.results.map(r => ({
+        title: r.title,
+        url: r.url
+      })) : []
     });
 
   } catch (error) {
@@ -133,9 +281,30 @@ export default async function handler(req, res) {
 // 🧠 SISTEMA AVANZADO DE PERSONALIDAD DE SOFÍA
 // ============================================================================
 
-function buildAdvancedSystemPrompt(userType, userName, sofiaVersion) {
+function buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults = null) {
   // Obtener todo el conocimiento de las 15 consultorías
   const knowledgeBase = getSofiaCompleteKnowledge();
+  
+  // ============================================================================
+  // 🌐 Integrar resultados de búsqueda web (si existen)
+  // ============================================================================
+  let webSearchContext = '';
+  if (webSearchResults && webSearchResults.results.length > 0) {
+    webSearchContext = `\n\n## 🌐 INFORMACIÓN ACTUALIZADA DE INTERNET\n\n`;
+    
+    if (webSearchResults.answer) {
+      webSearchContext += `**Resumen:** ${webSearchResults.answer}\n\n`;
+    }
+    
+    webSearchContext += `**Fuentes verificadas en tiempo real:**\n`;
+    webSearchResults.results.forEach((result, index) => {
+      webSearchContext += `\n${index + 1}. **${result.title}**\n`;
+      webSearchContext += `   ${result.content}\n`;
+      webSearchContext += `   📍 Fuente: ${result.url}\n`;
+    });
+    
+    webSearchContext += `\n⚠️ IMPORTANTE: Esta información viene de búsqueda en internet en tiempo real. Úsala para complementar tu conocimiento experto del sector inmobiliario español. Cita las fuentes cuando uses esta información.\n`;
+  }
   
   // Determinar capacidades según versión
   const capabilities = sofiaVersion === 'sofia-2.0-pro' 
@@ -154,7 +323,7 @@ NO eres un chatbot genérico ni un asistente de IA más. Eres una PROFESIONAL IN
 
 Tu conocimiento NO viene de internet. Viene de años de experiencia REAL en el sector, trabajando con las mejores inmobiliarias de España, cerrando cientos de operaciones, formando agentes, y dominando cada aspecto del negocio inmobiliario.
 
-${knowledgeBase}
+${knowledgeBase}${webSearchContext}
 
 ## TU PERSONALIDAD ÚNICA
 
