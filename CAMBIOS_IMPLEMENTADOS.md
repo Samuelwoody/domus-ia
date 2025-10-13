@@ -339,3 +339,4 @@ clearFileUpload() {
 ⚠️ **Generar imágenes** - Backend listo, falta UI (próximo paso)
 
 **Domus-IA ahora es equivalente a ChatGPT Plus, pero especializado en el sector inmobiliario español! 🏠🚀**
+
