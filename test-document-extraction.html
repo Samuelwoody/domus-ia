@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Extracción de Texto de Documentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Document Processing Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">🧪 Test de Extracción de Texto</h1>
+            
+            <p class="text-gray-600 mb-6">
+                Esta página te permite verificar que la extracción de texto funciona correctamente 
+                antes de probarla en Domus-IA.
+            </p>
+            
+            <!-- Upload Buttons -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <div>
+                    <button onclick="document.getElementById('pdfInput').click()" 
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                        📄 Subir PDF
+                    </button>
+                    <input type="file" id="pdfInput" accept=".pdf" class="hidden">
+                </div>
+                
+                <div>
+                    <button onclick="document.getElementById('wordInput').click()" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                        📝 Subir Word
+                    </button>
+                    <input type="file" id="wordInput" accept=".doc,.docx" class="hidden">
+                </div>
+                
+                <div>
+                    <button onclick="document.getElementById('excelInput').click()" 
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                        📊 Subir Excel
+                    </button>
+                    <input type="file" id="excelInput" accept=".xls,.xlsx" class="hidden">
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div id="status" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                <p class="text-blue-800 font-semibold">Estado: <span id="statusText">Esperando archivo...</span></p>
+            </div>
+            
+            <!-- Results -->
+            <div id="results" class="hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-3">📊 Resultados:</h2>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Archivo:</p>
+                        <p class="font-semibold" id="fileName">-</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Tamaño:</p>
+                        <p class="font-semibold" id="fileSize">-</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Palabras extraídas:</p>
+                        <p class="font-semibold text-green-600" id="wordCount">-</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Caracteres:</p>
+                        <p class="font-semibold" id="charCount">-</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-2">Texto extraído (primeras 1000 palabras):</p>
+                    <div class="bg-white p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                        <pre id="extractedText" class="text-sm text-gray-700 whitespace-pre-wrap font-mono">-</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // Event Listeners
+        document.getElementById('pdfInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) handlePDF(e.target.files[0]);
+        });
+        
+        document.getElementById('wordInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) handleWord(e.target.files[0]);
+        });
+        
+        document.getElementById('excelInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) handleExcel(e.target.files[0]);
+        });
+        
+        // Show status
+        function showStatus(text, isProcessing = true) {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            statusDiv.classList.remove('hidden');
+            statusText.textContent = text;
+            
+            if (isProcessing) {
+                statusDiv.className = 'mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-pulse';
+            } else {
+                statusDiv.className = 'mb-6 p-4 bg-green-50 border border-green-200 rounded-lg';
+            }
+        }
+        
+        // Show results
+        function showResults(fileName, fileSize, text) {
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            const wordCount = words.length;
+            const charCount = text.length;
+            
+            document.getElementById('fileName').textContent = fileName;
+            document.getElementById('fileSize').textContent = `${(fileSize / 1024).toFixed(1)} KB`;
+            document.getElementById('wordCount').textContent = wordCount.toLocaleString();
+            document.getElementById('charCount').textContent = charCount.toLocaleString();
+            
+            // Show only first 1000 words
+            const preview = words.slice(0, 1000).join(' ');
+            document.getElementById('extractedText').textContent = preview + 
+                (words.length > 1000 ? '\n\n[... texto truncado ...]' : '');
+            
+            document.getElementById('results').classList.remove('hidden');
+            showStatus('✅ Extracción completada correctamente', false);
+        }
+        
+        // Handle PDF
+        async function handlePDF(file) {
+            showStatus('🔍 Extrayendo texto de PDF...');
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const typedArray = new Uint8Array(arrayBuffer);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                
+                let fullText = '';
+                
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += `\n--- Página ${pageNum} ---\n${pageText}\n`;
+                }
+                
+                showResults(file.name, file.size, fullText.trim());
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error extrayendo texto del PDF', false);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Handle Word
+        async function handleWord(file) {
+            showStatus('🔍 Extrayendo texto de Word...');
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                
+                showResults(file.name, file.size, result.value);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error extrayendo texto del Word', false);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Handle Excel
+        async function handleExcel(file) {
+            showStatus('🔍 Extrayendo texto de Excel...');
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                let fullText = '';
+                
+                workbook.SheetNames.forEach((sheetName, index) => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const sheetText = XLSX.utils.sheet_to_txt(worksheet);
+                    fullText += `\n--- Hoja ${index + 1}: ${sheetName} ---\n${sheetText}\n`;
+                });
+                
+                showResults(file.name, file.size, fullText.trim());
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error extrayendo texto del Excel', false);
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
