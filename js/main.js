@@ -820,9 +820,12 @@ class DomusIA {
     async typeMessage(element, content, speed = 60) {
         // 🚀 MODO INSTANTÁNEO: Mostrar todo el mensaje de una vez
         element.innerHTML = content;
+        this.scrollToBottom();
         return Promise.resolve();
-        
-        /* CÓDIGO ORIGINAL DEL EFECTO TYPING (DESACTIVADO)
+    }
+    
+    /* CÓDIGO ORIGINAL DEL EFECTO TYPING (DESACTIVADO)
+    async typeMessageOLD(element, content, speed = 60) {
         // Speed: characters per second (60 = rápido pero legible)
         const delay = 1000 / speed;
         
@@ -857,8 +860,9 @@ class DomusIA {
             };
             
             typeChar();
-        */
+        });
     }
+    */
 
     scrollToBottom() {
         const messagesContainer = document.getElementById('chatMessages');
