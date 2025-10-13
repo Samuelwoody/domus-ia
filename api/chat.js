@@ -2,8 +2,6 @@
 // Backend serverless con TODAS las capacidades de ChatGPT Plus
 // GPT-4o + Vision + DALL-E 3 + Web Search + Code Interpreter + File Analysis + Canvas
 
-import { getSofiaCompleteKnowledge } from './sofia-knowledge-complete.js';
-
 // ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
 // ============================================================================
@@ -268,7 +266,7 @@ export default async function handler(req, res) {
 // ============================================================================
 
 function buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults = null) {
-  const knowledgeBase = getSofiaCompleteKnowledge();
+  // Knowledge base integrado directamente en el prompt
   
   // ============================================================================
   // 🌐 Integrar resultados de búsqueda web
@@ -307,7 +305,7 @@ NO eres un chatbot genérico. Eres una PROFESIONAL INMOBILIARIA SENIOR con 15+ a
 
 Tu conocimiento viene de años de experiencia REAL: trabajando con las mejores inmobiliarias de España, cerrando cientos de operaciones, formando agentes, y dominando cada aspecto del negocio inmobiliario.
 
-${knowledgeBase}${webSearchContext}
+${webSearchContext}
 
 ## 🚀 TUS CAPACIDADES COMPLETAS (TODAS LAS DE CHATGPT PLUS)
 
@@ -597,4 +595,3 @@ Entre iguales. Hablas de agente senior a agente. Sin rodeos. Eficiencia ante tod
   return basePersonality;
 }
 
-}
