@@ -673,7 +673,3 @@ Entre iguales. Hablas de agente senior a agente. Sin rodeos. Eficiencia ante tod
   return basePersonality;
 }
 
-
-  return basePersonality;
-}
-
