@@ -265,11 +265,14 @@ class DomusIA {
             '¿Qué ves en esta imagen?' : 
             'Por favor analiza este documento');
         
-        // Check message limits for free users
+        // Check message limits for free users (TEMPORALMENTE DESACTIVADO)
+        // TODO: Reactivar cuando Stripe esté conectado
+        /*
         if (this.subscriptionPlan === 'free' && this.dailyMessageCount >= this.dailyMessageLimit) {
             this.showSubscriptionPrompt();
             return;
         }
+        */
         
         // Guardar archivo actual para procesamiento
         const fileToProcess = this.currentFile;
@@ -942,56 +945,57 @@ class DomusIA {
         }
     }
 
-    showSubscriptionModal(planType) {
-        const planNames = {
-            'particular': 'Plan Particular - €99/mes',
-            'profesional': 'Plan Profesional - €199/mes'
+    async showSubscriptionModal(planType) {
+        const planInfo = {
+            'particular': {
+                name: 'Plan Particular',
+                price: '€99/mes',
+                features: ['500 mensajes/mes', '10 imágenes DALL-E', '100 análisis Vision', '50 documentos']
+            },
+            'profesional': {
+                name: 'Plan Profesional',
+                price: '€199/mes',
+                features: ['1,000 mensajes/mes', '30 imágenes DALL-E', '300 análisis Vision', '150 documentos']
+            },
+            'premium': {
+                name: 'Plan Premium',
+                price: '€399/mes',
+                features: ['3,000 mensajes/mes', '100 imágenes DALL-E', 'Vision ilimitado', '500 documentos']
+            }
         };
         
-        const apiKeyRequired = planType !== 'free';
+        const plan = planInfo[planType];
         
-        let message = `¡Perfecto! Has seleccionado el ${planNames[planType]}.\n\n`;
+        let message = `¡Perfecto! Has seleccionado el ${plan.name} - ${plan.price}\n\n`;
+        message += `✨ Incluye:\n`;
+        plan.features.forEach(feature => {
+            message += `• ${feature}\n`;
+        });
+        message += `\n💳 ¿Deseas suscribirte ahora?`;
         
-        if (apiKeyRequired) {
-            message += `🔑 Para activar la IA real de Sofía necesitas:\n\n`;
-            message += `1. Una API Key de OpenAI (gratis crear cuenta)\n`;
-            message += `2. Créditos en OpenAI (~$1-3/mes uso normal)\n\n`;
-            message += `📝 Pasos:\n`;
-            message += `• Ve a platform.openai.com\n`;
-            message += `• Crea cuenta y genera API Key\n`;
-            message += `• Configúrala aquí\n\n`;
-            message += `¿Quieres configurar tu API Key ahora?`;
-            
-            if (confirm(message)) {
-                this.configureAPIKey(planType);
+        if (confirm(message)) {
+            // TODO: Integrar con sistema de pagos cuando esté listo
+            if (window.paymentSystem && !window.paymentSystem.isDemo) {
+                try {
+                    const userId = this.userId || 'user_' + Date.now();
+                    const userEmail = this.userEmail || prompt('Introduce tu email:');
+                    
+                    await window.paymentSystem.createCheckoutSession(planType, userId, userEmail);
+                } catch (error) {
+                    alert('Error al procesar el pago: ' + error.message);
+                }
+            } else {
+                // Modo demo - Activar plan temporalmente
+                alert(`🎭 MODO DEMO\n\nEn producción, aquí se abriría el checkout de Stripe.\n\nPor ahora, te activamos el plan temporalmente.`);
+                
+                this.subscriptionPlan = planType;
+                this.isAuthenticated = true;
+                this.userName = prompt('¿Cómo te llamas?') || 'Usuario';
+                this.userType = planType === 'particular' ? 'particular' : 'profesional';
+                this.saveUserData();
+                this.updateUI();
+                this.openChat();
             }
-        } else {
-            message += '🎉 ¡Puedes empezar ahora mismo!\n\n';
-            message += 'Tienes 15 mensajes gratis al día con respuestas simuladas.\n\n';
-            message += '💡 Para IA real con OpenAI, actualiza a plan Premium.';
-            alert(message);
-        }
-    }
-
-    configureAPIKey(planType) {
-        const apiKey = prompt(`🔑 Introduce tu API Key de OpenAI:\n\n📍 Obtén tu key en: platform.openai.com/api-keys\n\n⚠️ Debe empezar con "sk-"\n\nAPI Key:`);
-        
-        if (apiKey && apiKey.trim().startsWith('sk-')) {
-            this.sofiaAI.setApiKey(apiKey.trim());
-            this.subscriptionPlan = planType;
-            this.saveUserData();
-            
-            alert(`✅ ¡API Key configurada!\n\n🎉 Sofía ahora usa OpenAI real:\n• Respuestas inteligentes\n• Análisis de imágenes\n• Generación de contenido\n• Y mucho más\n\n💬 ¡Pruébala ahora!`);
-            
-            this.updateUI();
-            this.openChat();
-            
-            // Add confirmation message in chat
-            setTimeout(() => {
-                this.addMessage('assistant', '🎉 <strong>¡API activada!</strong> Ahora estoy usando OpenAI real. Pregúntame cualquier cosa sobre inmobiliaria y verás la diferencia.');
-            }, 500);
-        } else if (apiKey) {
-            alert('❌ API Key inválida\n\nDebe empezar con "sk-"\n\nEjemplo: sk-proj-abc123...\n\nVerifica tu key en platform.openai.com');
         }
     }
 
@@ -1044,21 +1048,47 @@ class DomusIA {
     }
 
     async handleImageGeneration(message) {
-        if (!this.sofiaAI.isAPIConfigured()) {
-            return "Para generar imágenes necesitas el plan premium con API configurada. ¿Te gustaría actualizarte?";
+        // Verificar límites según el plan
+        const limits = {
+            'free': 0,
+            'particular': 10,
+            'profesional': 30,
+            'premium': 100
+        };
+        
+        const userLimit = limits[this.subscriptionPlan] || 0;
+        
+        if (userLimit === 0) {
+            return "🎨 La generación de imágenes con DALL-E 3 está disponible desde el plan Particular (10 imágenes/mes).\n\n¿Te gustaría actualizar tu plan?";
         }
         
-        const prompt = message.replace(/generar imagen|crear imagen/gi, '').trim();
+        // TODO: Implementar tracking real de uso de DALL-E cuando tengas base de datos
+        // Por ahora, permitir uso
+        
+        const prompt = message.replace(/generar imagen|crear imagen|genera|crea/gi, '').trim();
         if (!prompt) {
-            return "Por favor, describe qué imagen quieres que genere. Ejemplo: 'Generar imagen de un salón moderno y luminoso'";
+            return "Por favor, describe qué imagen quieres que genere.\n\nEjemplo: 'Genera una imagen de un salón moderno con luz natural'";
         }
         
         try {
-            this.addMessage('assistant', "🎨 Generando imagen... Esto puede tardar unos segundos.");
-            const imageUrl = await this.sofiaAI.generateImage(prompt);
-            return `🎨 **Imagen Generada**\n\n![Imagen generada](${imageUrl})\n\n*Imagen creada según tu solicitud: "${prompt}"*`;
+            // Mostrar mensaje de "generando"
+            const loadingMessage = this.addMessage('assistant', "🎨 Generando imagen con DALL-E 3... Esto puede tardar 10-30 segundos.");
+            
+            const imageUrl = await this.sofiaAI.generateImage(prompt, '1024x1024', 'standard', this.subscriptionPlan);
+            
+            // Eliminar mensaje de "generando"
+            if (loadingMessage && loadingMessage.parentNode) {
+                loadingMessage.parentNode.removeChild(loadingMessage);
+            }
+            
+            // Crear mensaje con la imagen
+            const imageResponse = `🎨 **Imagen Generada con DALL-E 3**\n\n![Imagen generada](${imageUrl})\n\n*Imagen creada: "${prompt}"*\n\n💡 Límite mensual: ${userLimit} imágenes (Plan ${this.subscriptionPlan})`;
+            
+            return imageResponse;
+            
         } catch (error) {
-            return "No he podido generar la imagen. Verifica tu suscripción y API key.";
+            console.error('Error generando imagen:', error);
+            return "❌ No he podido generar la imagen. " + error.message + "\n\nIntenta con una descripción diferente o contacta con soporte si el problema persiste.";
         }
     }
 
