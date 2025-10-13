@@ -403,9 +403,16 @@ class DomusIA {
 
         for (const endpoint of endpoints) {
             try {
+                // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
+                const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
+                const messagesWithHistory = [
+                    ...recentHistory,
+                    { role: 'user', content: message }
+                ];
+                
                 // Preparar body con archivo si existe
                 const requestBody = {
-                    messages: [{ role: 'user', content: message }],
+                    messages: messagesWithHistory, // Historial completo en lugar de solo mensaje actual
                     userType: this.userType,
                     userName: this.userName,
                     userPlan: this.subscriptionPlan || 'particular',
@@ -480,6 +487,64 @@ class DomusIA {
                             data.sources.forEach((source, i) => {
                                 finalMessage += `${i + 1}. [${source.title}](${source.url})\n`;
                             });
+                        }
+                        
+                        // 🎨 DETECCIÓN AUTOMÁTICA DE GENERACIÓN DE IMÁGENES
+                        // Si Sofía dice que va a generar una imagen, hacerlo automáticamente
+                        const imageGenTriggers = [
+                            'voy a generar',
+                            'generaré',
+                            'crearemos',
+                            'voy a crear',
+                            'te genero',
+                            'te creo',
+                            'haré',
+                            'crear una imagen',
+                            'generar una imagen'
+                        ];
+                        
+                        const shouldGenerateImage = imageGenTriggers.some(trigger => 
+                            finalMessage.toLowerCase().includes(trigger)
+                        );
+                        
+                        if (shouldGenerateImage) {
+                            console.log('🎨 Sofía quiere generar imagen - Activando DALL-E automáticamente...');
+                            
+                            // Extraer descripción de la imagen del mensaje
+                            // Buscar entre comillas o después de "imagen de/con/que"
+                            let imagePrompt = message; // Usar mensaje original del usuario como base
+                            
+                            // Llamar a DALL-E automáticamente
+                            setTimeout(async () => {
+                                try {
+                                    console.log('🎨 Generando imagen con DALL-E:', imagePrompt);
+                                    const imageResult = await this.sofiaAI.generateImage(imagePrompt);
+                                    
+                                    if (imageResult && imageResult.url) {
+                                        // Añadir imagen generada al chat
+                                        const imageHtml = `<div class="generated-image-container mt-4 p-4 bg-gray-50 rounded-lg">
+                                            <p class="text-sm text-gray-600 mb-2">✨ Imagen generada con DALL-E 3:</p>
+                                            <img src="${imageResult.url}" alt="Imagen generada" class="w-full rounded-lg shadow-md" />
+                                            <p class="text-xs text-gray-500 mt-2">${imageResult.revised_prompt || imagePrompt}</p>
+                                        </div>`;
+                                        
+                                        // Añadir al último mensaje de Sofía
+                                        const lastAssistantMessage = document.querySelector('.message.assistant:last-child .message-content');
+                                        if (lastAssistantMessage) {
+                            lastAssistantMessage.innerHTML += imageHtml;
+                                            this.scrollToBottom();
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('❌ Error generando imagen automáticamente:', error);
+                                    // Añadir mensaje de error al chat
+                                    const errorMsg = `<p class="text-red-600 mt-2">⚠️ Lo siento, hubo un problema al generar la imagen. ¿Puedes intentarlo de nuevo?</p>`;
+                                    const lastAssistantMessage = document.querySelector('.message.assistant:last-child .message-content');
+                                    if (lastAssistantMessage) {
+                                        lastAssistantMessage.innerHTML += errorMsg;
+                                    }
+                                }
+                            }, 1000); // Esperar 1 segundo después de mostrar el mensaje
                         }
                         
                         return finalMessage;
@@ -753,6 +818,11 @@ class DomusIA {
     }
     
     async typeMessage(element, content, speed = 60) {
+        // 🚀 MODO INSTANTÁNEO: Mostrar todo el mensaje de una vez
+        element.innerHTML = content;
+        return Promise.resolve();
+        
+        /* CÓDIGO ORIGINAL DEL EFECTO TYPING (DESACTIVADO)
         // Speed: characters per second (60 = rápido pero legible)
         const delay = 1000 / speed;
         
@@ -787,7 +857,7 @@ class DomusIA {
             };
             
             typeChar();
-        });
+        */
     }
 
     scrollToBottom() {
