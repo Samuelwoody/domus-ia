@@ -13,14 +13,12 @@ const CONFIG = {
         
         ENDPOINTS: {
             CHAT: '/api/chat',
+            CAPABILITIES: '/api/capabilities',
+            DALLE: '/api/dalle',
             LOGIN: '/api/auth/login',
             REGISTER: '/api/auth/register',
             SUBSCRIPTION_STATUS: '/api/subscription/status',
-            SUBSCRIPTION_CREATE: '/api/subscription/create',
-            IMAGE_GENERATE: '/api/image/generate',
-            IMAGE_ANALYZE: '/api/image/analyze',
-            SPEECH_GENERATE: '/api/speech/generate',
-            DOCUMENT_ANALYZE: '/api/document/analyze'
+            SUBSCRIPTION_CREATE: '/api/subscription/create'
         },
         
         TIMEOUT: 30000 // 30 segundos
@@ -38,51 +36,86 @@ const CONFIG = {
             USE_BACKEND: true,  // ✅ Backend activo en Vercel
             USE_MOCK_RESPONSES: false,  // ✅ No usar respuestas simuladas
             ENABLE_PAYMENT: false,  // Habilitar cuando integres Stripe
-            ENABLE_ADVANCED_FEATURES: false  // Imágenes, TTS, documentos, etc.
+            ENABLE_ADVANCED_FEATURES: true,  // ✅ Imágenes, Vision, búsqueda web, documentos
+            WEB_SEARCH: true,  // ✅ Búsqueda web con Tavily
+            VISION_API: true,  // ✅ Análisis de imágenes
+            DALLE_API: true,  // ✅ Generación de imágenes
+            DOCUMENT_UPLOAD: true  // ✅ Subida de documentos
         }
     },
     
     // Subscription Plans
+    // ============================================================================
+    // 💰 PLANES DE SUSCRIPCIÓN CON LÍMITES AVANZADOS
+    // ============================================================================
     PLANS: {
-        FREE: {
-            id: 'free',
-            name: 'Gratuito',
-            price: 0,
-            dailyLimit: 15,
-            features: {
-                basicChat: true,
-                advancedFeatures: false,
-                imageGeneration: false,
-                documentAnalysis: false,
-                marketReports: false
-            }
-        },
         PARTICULAR: {
-            id: 'particular_99',
-            name: 'Propietarios Espabilados',
+            id: 'particular',
+            name: 'PARTICULAR - Propietarios Espabilados',
             price: 99,
-            dailyLimit: Infinity,
+            period: 'mes',
+            limits: {
+                messages: 500,            // Mensajes de chat por mes
+                dalleImages: 10,          // Generaciones DALL-E por mes
+                visionAnalysis: 100,      // Análisis de imágenes por mes
+                documentUploads: 50,      // Documentos PDF/Word/Excel por mes
+                documentPages: 20,        // Máximo páginas por documento
+                webSearches: 999999       // Búsquedas web (ilimitadas)
+            },
             features: {
                 basicChat: true,
-                advancedFeatures: true,
+                webSearch: true,
+                visionAPI: true,
                 imageGeneration: true,
                 documentAnalysis: true,
-                marketReports: true
+                prioritySupport: false
             }
         },
         PROFESIONAL: {
-            id: 'profesional_199',
-            name: 'Agentes Saturados',
+            id: 'profesional',
+            name: 'PROFESIONAL - Agentes Saturados',
             price: 199,
-            dailyLimit: Infinity,
+            period: 'mes',
+            limits: {
+                messages: 1000,           // Mensajes de chat por mes
+                dalleImages: 30,          // Generaciones DALL-E por mes
+                visionAnalysis: 300,      // Análisis de imágenes por mes
+                documentUploads: 150,     // Documentos PDF/Word/Excel por mes
+                documentPages: 20,        // Máximo páginas por documento
+                webSearches: 999999       // Búsquedas web (ilimitadas)
+            },
             features: {
                 basicChat: true,
-                advancedFeatures: true,
+                webSearch: true,
+                visionAPI: true,
                 imageGeneration: true,
                 documentAnalysis: true,
-                marketReports: true,
                 prioritySupport: true,
-                apiAccess: true
+                apiAccess: false
+            }
+        },
+        PREMIUM: {
+            id: 'premium',
+            name: 'PREMIUM - Escalado Total',
+            price: 399,
+            period: 'mes',
+            limits: {
+                messages: 3000,           // Mensajes de chat por mes
+                dalleImages: 100,         // Generaciones DALL-E por mes
+                visionAnalysis: 999999,   // Análisis de imágenes (ilimitadas)
+                documentUploads: 500,     // Documentos PDF/Word/Excel por mes
+                documentPages: 50,        // Máximo páginas por documento
+                webSearches: 999999       // Búsquedas web (ilimitadas)
+            },
+            features: {
+                basicChat: true,
+                webSearch: true,
+                visionAPI: true,
+                imageGeneration: true,
+                documentAnalysis: true,
+                prioritySupport: true,
+                apiAccess: true,
+                whiteLabel: true
             }
         }
     },
@@ -147,4 +180,5 @@ if (!CONFIG.IS_PRODUCTION) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = CONFIG;
 }
+
 
