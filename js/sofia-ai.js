@@ -487,6 +487,3 @@ Enfócate en:
 
 // Export for use in other modules
 window.SofiaAI = SofiaAI;
-
-// Export for use in other modules
-window.SofiaAI = SofiaAI;
