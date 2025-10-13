@@ -554,8 +554,8 @@ class DomusIA {
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 30) {
-        // Speed: characters per second (30 = double natural human typing speed when reading)
+    async typeMessage(element, content, speed = 15) {
+        // Speed: characters per second (15 = natural human typing speed when reading)
         const delay = 1000 / speed;
         
         // Remove HTML tags for character-by-character typing
