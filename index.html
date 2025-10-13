@@ -702,11 +702,10 @@
     </footer>
 
     <!-- Document Processing Libraries - Load first -->
-    <!-- PDF/Document libraries - Load only if needed -->
-    <!-- Temporarily disabled to avoid loading errors -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js" crossorigin="anonymous"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script> -->
+    <!-- PDF/Document libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <!-- Application Scripts - Load in order (NO defer to ensure proper loading sequence) -->
     <script src="js/config.js"></script>
@@ -715,8 +714,5 @@
     <script src="js/sofia-ai.js"></script>
     <script src="js/main.js"></script>
 </body>
-</html>
-
-
 </html>
 
