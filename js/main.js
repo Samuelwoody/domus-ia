@@ -593,6 +593,13 @@ class DomusIA {
     // Helper: Extraer texto de PDF
     async extractTextFromPDF(file) {
         return new Promise((resolve, reject) => {
+            // Check if PDF.js is loaded
+            if (typeof pdfjsLib === 'undefined') {
+                console.warn('⚠️ PDF.js no disponible - Enviando documento sin extraer texto');
+                resolve('[Documento PDF - Extracción de texto no disponible en este momento]');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = async function() {
                 try {
@@ -626,6 +633,13 @@ class DomusIA {
     // Helper: Extraer texto de Word (.docx)
     async extractTextFromWord(file) {
         return new Promise((resolve, reject) => {
+            // Check if Mammoth is loaded
+            if (typeof mammoth === 'undefined') {
+                console.warn('⚠️ Mammoth no disponible - Enviando documento sin extraer texto');
+                resolve('[Documento Word - Extracción de texto no disponible en este momento]');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = async function() {
                 try {
@@ -645,6 +659,13 @@ class DomusIA {
     // Helper: Extraer texto de Excel (.xlsx, .xls)
     async extractTextFromExcel(file) {
         return new Promise((resolve, reject) => {
+            // Check if XLSX is loaded
+            if (typeof XLSX === 'undefined') {
+                console.warn('⚠️ XLSX no disponible - Enviando documento sin extraer texto');
+                resolve('[Documento Excel - Extracción de texto no disponible en este momento]');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function() {
                 try {
@@ -1695,5 +1716,4 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
-*/
 */
