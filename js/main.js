@@ -326,6 +326,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         // Detectar si el mensaje pide generar una imagen
         const isImageRequest = this.detectImageRequest(finalMessage);
+        console.log('🔍 Mensaje:', finalMessage);
+        console.log('🎨 ¿Es petición de imagen?', isImageRequest);
         
         // Show typing indicator (con mensaje especial si es generación de imagen)
         this.showTypingIndicator(isImageRequest);
@@ -358,7 +360,9 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             'crea una imagen', 'genera una imagen', 'genera una foto', 'crea una foto',
             'muestra cómo se vería', 'muestra como se veria', 'diseña un', 'disena un',
             'quiero ver', 'haz una imagen', 'genera un render', 'crea un render',
-            'muéstrame', 'muestrame', 'visualiza', 'crea un diseño', 'crea un diseno'
+            'muéstrame', 'muestrame', 'visualiza', 'crea un diseño', 'crea un diseno',
+            'crea un', 'genera un', 'haz un', 'dibuja', 'diseña', 'disena',
+            'imagen de', 'foto de', 'render de', 'visualización de', 'visualizacion de'
         ];
         
         return imageKeywords.some(keyword => lowerMessage.includes(keyword));
@@ -1108,9 +1112,14 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         typingDiv.id = 'typingIndicator';
         typingDiv.className = 'flex justify-start mb-4';
         
+        // Debug: verificar si detectó generación de imagen
+        if (isGeneratingImage) {
+            console.log('✨ Mostrando indicador: "Produciendo imagen..."');
+        }
+        
         // Mensaje especial si está generando imagen
         const statusText = isGeneratingImage 
-            ? '<span class="text-domus-gold font-medium animate-pulse">✨ Produciendo imagen...</span>'
+            ? '<div class="mt-1 font-bold" style="color: #D4AF37; font-size: 15px; letter-spacing: 0.3px;">✨ Produciendo imagen...</div>'
             : '';
         
         typingDiv.innerHTML = `
