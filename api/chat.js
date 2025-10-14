@@ -312,6 +312,7 @@ export default async function handler(req, res) {
           const revisedPrompt = dalleData.data[0].revised_prompt;
           
           console.log('✅ Imagen generada:', imageUrl);
+          console.log('👁️ Enviando imagen a GPT-4o Vision para análisis...');
 
           // ============================================================================
           // 🔄 SEND TOOL RESULT BACK TO GPT-4o FOR FINAL RESPONSE
@@ -344,13 +345,13 @@ export default async function handler(req, res) {
                   content: [
                     {
                       type: 'text',
-                      text: 'He generado la imagen. Ahora puedes verla para comentar sobre ella:'
+                      text: '[SISTEMA] La imagen ha sido generada exitosamente. Aquí está para que la analices visualmente y comentes sobre ella de forma natural con el cliente. Describe lo que ves: colores, elementos arquitectónicos, estilo, composición, iluminación. Sé específica y profesional en tu análisis visual.'
                     },
                     {
                       type: 'image_url',
                       image_url: {
                         url: imageUrl,
-                        detail: 'auto'
+                        detail: 'high'
                       }
                     }
                   ]
@@ -516,6 +517,47 @@ Llevas las riendas de cada interacción, no esperas órdenes. Tu función es GUI
 Estás usando ${capabilities}.
 
 ${webSearchContext}
+
+## 🎨 CAPACIDADES DE GENERACIÓN Y VISIÓN DE IMÁGENES
+
+Tienes acceso a DALL-E 3 para crear imágenes profesionales inmobiliarias de alta calidad.
+
+**✅ IMPORTANTE - CAPACIDAD DE VISIÓN DESPUÉS DE GENERAR:**
+
+Cuando generas una imagen con DALL-E, el sistema AUTOMÁTICAMENTE te la muestra para que puedas verla y analizarla.
+
+**LO QUE PUEDES HACER:**
+- ✅ Ver y analizar visualmente cualquier imagen que acabas de generar
+- ✅ Comentar sobre colores, estilo, composición, elementos presentes
+- ✅ Responder preguntas como: "¿Qué te parece?", "¿Tiene ventanas?", "¿Qué colores predominan?"
+- ✅ Sugerir mejoras basándote en lo que VES en la imagen
+- ✅ Describir detalles específicos de la imagen generada
+
+**❌ NUNCA DIGAS:**
+- "No puedo ver imágenes" (después de generarlas SÍ puedes)
+- "No tengo capacidad visual" (la tienes cuando generas con DALL-E)
+- "No puedo analizar la imagen" (sí puedes, te la muestran automáticamente)
+
+**COMPORTAMIENTO CORRECTO:**
+Después de generar una imagen, analízala visualmente y comenta sobre ella de forma natural, como si estuvieras viéndola junto al cliente. Sé específica sobre lo que ves.
+
+### 🎨 EDICIÓN Y VARIACIONES DE IMÁGENES
+
+Cuando un usuario quiera **EDITAR** una imagen que generaste:
+1. Analiza visualmente la imagen actual (ya la tienes en el contexto)
+2. Pregunta qué cambios específicos quiere hacer
+3. Genera un nuevo prompt mejorado que incorpore:
+   - Los elementos que deben mantenerse de la imagen original
+   - Los cambios solicitados por el usuario
+   - El mismo estilo y composición general
+4. Genera una nueva imagen con ese prompt mejorado
+5. Explica que has creado una versión mejorada basada en la original
+
+Cuando un usuario quiera una **VARIACIÓN**:
+1. Analiza la imagen actual
+2. Crea un prompt similar pero con variaciones creativas
+3. Mantén el concepto general pero introduce cambios artísticos interesantes
+4. Genera la nueva variación
 
 ## PERFILES QUE ASESORAS
 
