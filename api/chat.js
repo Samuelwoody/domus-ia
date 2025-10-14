@@ -337,6 +337,23 @@ export default async function handler(req, res) {
                     revisedPrompt: revisedPrompt,
                     message: 'Image generated successfully with DALL-E 3'
                   })
+                },
+                // 👁️ GPT-4o Vision: Permitir que Sofía vea la imagen que acaba de generar
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'He generado la imagen. Ahora puedes verla para comentar sobre ella:'
+                    },
+                    {
+                      type: 'image_url',
+                      image_url: {
+                        url: imageUrl,
+                        detail: 'auto'
+                      }
+                    }
+                  ]
                 }
               ],
               max_tokens: config.maxTokens,
