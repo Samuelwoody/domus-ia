@@ -5,87 +5,14 @@
 // ============================================================================
 // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
 // ============================================================================
+// TEMPORALMENTE DESACTIVADO - Causaba errores 500
+// TODO: Implementar después de confirmar que DALL-E funciona básicamente
 
+/*
 async function uploadToImgBB(imageUrl, apiKey) {
-  try {
-    console.log('📤 Subiendo imagen a ImgBB para URL permanente...');
-    
-    // Descargar imagen de OpenAI (URL temporal)
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error('Failed to download image from OpenAI');
-    }
-    
-    const imageBuffer = await imageResponse.arrayBuffer();
-    
-    // Convertir ArrayBuffer a base64 (optimizado y compatible)
-    const bytes = new Uint8Array(imageBuffer);
-    
-    // Método optimizado: procesar en chunks para evitar stack overflow
-    const CHUNK_SIZE = 0x8000; // 32KB chunks
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-      const chunk = Array.from(bytes.subarray(i, Math.min(i + CHUNK_SIZE, bytes.length)));
-      binary += String.fromCharCode(...chunk);
-    }
-    const base64Image = btoa(binary);
-    
-    // Subir a ImgBB
-    const formData = new URLSearchParams();
-    formData.append('key', apiKey);
-    formData.append('image', base64Image);
-    formData.append('name', `domus-ia-${Date.now()}`);
-    
-    // Timeout de 8 segundos para ImgBB (antes del timeout de Vercel)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    
-    const imgbbResponse = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData,
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeoutId));
-    
-    if (!imgbbResponse.ok) {
-      const errorText = await imgbbResponse.text();
-      console.error('❌ ImgBB Error:', errorText);
-      throw new Error('ImgBB upload failed');
-    }
-    
-    const imgbbData = await imgbbResponse.json();
-    
-    if (!imgbbData.success) {
-      throw new Error(imgbbData.error?.message || 'ImgBB upload failed');
-    }
-    
-    console.log('✅ Imagen subida a ImgBB exitosamente');
-    console.log('🔗 URL permanente:', imgbbData.data.url);
-    
-    return {
-      url: imgbbData.data.url,           // URL permanente (HTTPS)
-      display_url: imgbbData.data.display_url,
-      delete_url: imgbbData.data.delete_url,  // Por si quieres borrar después
-      size: imgbbData.data.size
-    };
-    
-  } catch (error) {
-    console.error('❌ Error subiendo a ImgBB:', error.message || error);
-    
-    // Si es error de timeout
-    if (error.name === 'AbortError') {
-      console.error('⏱️ Timeout al subir a ImgBB (>8s)');
-    }
-    
-    // Si falla ImgBB, devolvemos la URL original de OpenAI (temporal pero funciona)
-    return {
-      url: imageUrl,
-      display_url: imageUrl,
-      delete_url: null,
-      size: 0,
-      fallback: true
-    };
-  }
+  // Código comentado temporalmente
 }
+*/
 
 // ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
@@ -396,26 +323,14 @@ export default async function handler(req, res) {
           const temporaryImageUrl = dalleData.data[0].url;
           const revisedPrompt = dalleData.data[0].revised_prompt;
           
-          console.log('✅ Imagen generada (URL temporal):', temporaryImageUrl);
+          console.log('✅ Imagen generada:', temporaryImageUrl);
           
           // ============================================================================
-          // 🖼️ UPLOAD TO IMGBB FOR PERMANENT URL
+          // 🖼️ UPLOAD TO IMGBB FOR PERMANENT URL - TEMPORALMENTE DESACTIVADO
           // ============================================================================
-          const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
-          let permanentImageData = null;
-          let finalImageUrl = temporaryImageUrl; // Fallback to temporary URL
-          
-          if (IMGBB_API_KEY) {
-            permanentImageData = await uploadToImgBB(temporaryImageUrl, IMGBB_API_KEY);
-            if (permanentImageData && !permanentImageData.fallback) {
-              finalImageUrl = permanentImageData.url;
-              console.log('✅ URL permanente obtenida de ImgBB');
-            } else {
-              console.log('⚠️ ImgBB falló, usando URL temporal de OpenAI');
-            }
-          } else {
-            console.log('⚠️ IMGBB_API_KEY no configurada, usando URL temporal');
-          }
+          // TODO: Reactivar ImgBB después de confirmar que DALL-E funciona
+          const finalImageUrl = temporaryImageUrl; // Usar URL temporal directamente
+          console.log('⚠️ Usando URL temporal de OpenAI (válida por ~1 hora)');
           
           console.log('👁️ Enviando imagen a GPT-4o Vision para análisis...');
 
@@ -479,16 +394,14 @@ export default async function handler(req, res) {
             success: true,
             message: finalMessage,
             imageUrl: finalImageUrl,
-            temporaryUrl: temporaryImageUrl,
-            isPermanent: !!IMGBB_API_KEY && !permanentImageData?.fallback,
-            deleteUrl: permanentImageData?.delete_url || null,
+            isPermanent: false, // URLs temporales de OpenAI
             revisedPrompt: revisedPrompt,
             dalleUsed: true,
             tokensUsed: data.usage.total_tokens + secondData.usage.total_tokens,
             model: data.model,
             sofiaVersion: config.name,
             webSearchUsed: !!webSearchResults,
-            visionUsed: !!(imageFile || finalImageUrl),
+            visionUsed: true, // Sofía puede ver la imagen que generó
             documentUsed: !!documentText,
             sources: webSearchResults ? webSearchResults.results.map(r => ({
               title: r.title,
