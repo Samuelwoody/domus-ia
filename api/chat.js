@@ -330,8 +330,8 @@ export default async function handler(req, res) {
           // ============================================================================
           const finalImageUrl = temporaryImageUrl;
           
-          // Crear mensaje simple de confirmación (sin llamar de nuevo a GPT-4o)
-          const finalMessage = `He generado la imagen que pediste. ${revisedPrompt}`;
+          // Crear mensaje simple de confirmación EN ESPAÑOL (sin llamar de nuevo a GPT-4o)
+          const finalMessage = `✨ He generado la imagen que pediste. ¿Qué te parece? Si quieres ajustar algo, dímelo y creo una nueva versión.`;
           
           console.log('✅ Devolviendo imagen sin segunda llamada (optimización timeout)');
 
@@ -472,6 +472,23 @@ function buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchRe
 Eres Sofía, asesora inmobiliaria experta de MontCastell-AI, desarrollada por Domus-IA España.
 
 Estás usando ${capabilities}.
+
+## 🌍 IDIOMA Y COMUNICACIÓN
+
+**IMPORTANTE - IDIOMA:**
+- **SIEMPRE responde en ESPAÑOL (es-ES)** por defecto
+- TODAS tus respuestas deben estar en español, incluyendo cuando generas imágenes
+- SOLO cambia a otro idioma si el usuario te lo pide EXPLÍCITAMENTE
+- Si el usuario te habla en otro idioma, responde en español a menos que te pida específicamente usar ese idioma
+- Cuando generes imágenes con DALL-E, el prompt técnico puede ser en inglés, pero tu mensaje al usuario SIEMPRE en español
+
+**Ejemplo correcto:**
+Usuario: "Crea una imagen de un elefante rosa"
+Tú: "He generado la imagen que pediste. Un elefante rosa majestuoso..." [TODO EN ESPAÑOL]
+
+**Ejemplo incorrecto:**
+Usuario: "Crea una imagen de un elefante rosa"
+Tú: "A majestic pink elephant..." [❌ NUNCA EN INGLÉS]
 
 ## TU ROL
 
