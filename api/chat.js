@@ -3,6 +3,69 @@
 // GPT-4o + Vision + DALL-E 3 + Web Search + Code Interpreter + File Analysis + Canvas
 
 // ============================================================================
+// 🖼️ IMGBB IMAGE HOSTING INTEGRATION
+// ============================================================================
+
+async function uploadToImgBB(imageUrl, apiKey) {
+  try {
+    console.log('📤 Subiendo imagen a ImgBB para URL permanente...');
+    
+    // Descargar imagen de OpenAI (URL temporal)
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error('Failed to download image from OpenAI');
+    }
+    
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    
+    // Subir a ImgBB
+    const formData = new URLSearchParams();
+    formData.append('key', apiKey);
+    formData.append('image', base64Image);
+    formData.append('name', `domus-ia-${Date.now()}`);
+    
+    const imgbbResponse = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!imgbbResponse.ok) {
+      const errorText = await imgbbResponse.text();
+      console.error('❌ ImgBB Error:', errorText);
+      throw new Error('ImgBB upload failed');
+    }
+    
+    const imgbbData = await imgbbResponse.json();
+    
+    if (!imgbbData.success) {
+      throw new Error(imgbbData.error?.message || 'ImgBB upload failed');
+    }
+    
+    console.log('✅ Imagen subida a ImgBB exitosamente');
+    console.log('🔗 URL permanente:', imgbbData.data.url);
+    
+    return {
+      url: imgbbData.data.url,           // URL permanente (HTTPS)
+      display_url: imgbbData.data.display_url,
+      delete_url: imgbbData.data.delete_url,  // Por si quieres borrar después
+      size: imgbbData.data.size
+    };
+    
+  } catch (error) {
+    console.error('❌ Error subiendo a ImgBB:', error);
+    // Si falla ImgBB, devolvemos la URL original de OpenAI (temporal pero funciona)
+    return {
+      url: imageUrl,
+      display_url: imageUrl,
+      delete_url: null,
+      size: 0,
+      fallback: true
+    };
+  }
+}
+
+// ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
 // ============================================================================
 
@@ -308,10 +371,30 @@ export default async function handler(req, res) {
           }
 
           const dalleData = await dalleResponse.json();
-          const imageUrl = dalleData.data[0].url;
+          const temporaryImageUrl = dalleData.data[0].url;
           const revisedPrompt = dalleData.data[0].revised_prompt;
           
-          console.log('✅ Imagen generada:', imageUrl);
+          console.log('✅ Imagen generada (URL temporal):', temporaryImageUrl);
+          
+          // ============================================================================
+          // 🖼️ UPLOAD TO IMGBB FOR PERMANENT URL
+          // ============================================================================
+          const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
+          let permanentImageData = null;
+          let finalImageUrl = temporaryImageUrl; // Fallback to temporary URL
+          
+          if (IMGBB_API_KEY) {
+            permanentImageData = await uploadToImgBB(temporaryImageUrl, IMGBB_API_KEY);
+            if (permanentImageData && !permanentImageData.fallback) {
+              finalImageUrl = permanentImageData.url;
+              console.log('✅ URL permanente obtenida de ImgBB');
+            } else {
+              console.log('⚠️ ImgBB falló, usando URL temporal de OpenAI');
+            }
+          } else {
+            console.log('⚠️ IMGBB_API_KEY no configurada, usando URL temporal');
+          }
+          
           console.log('👁️ Enviando imagen a GPT-4o Vision para análisis...');
 
           // ============================================================================
@@ -334,7 +417,7 @@ export default async function handler(req, res) {
                   tool_call_id: toolCall.id,
                   content: JSON.stringify({
                     success: true,
-                    imageUrl: imageUrl,
+                    imageUrl: finalImageUrl,
                     revisedPrompt: revisedPrompt,
                     message: 'Image generated successfully with DALL-E 3'
                   })
@@ -350,7 +433,7 @@ export default async function handler(req, res) {
                     {
                       type: 'image_url',
                       image_url: {
-                        url: imageUrl,
+                        url: finalImageUrl,
                         detail: 'high'
                       }
                     }
@@ -373,14 +456,17 @@ export default async function handler(req, res) {
           return res.status(200).json({
             success: true,
             message: finalMessage,
-            imageUrl: imageUrl,
+            imageUrl: finalImageUrl,
+            temporaryUrl: temporaryImageUrl,
+            isPermanent: !!IMGBB_API_KEY && !permanentImageData?.fallback,
+            deleteUrl: permanentImageData?.delete_url || null,
             revisedPrompt: revisedPrompt,
             dalleUsed: true,
             tokensUsed: data.usage.total_tokens + secondData.usage.total_tokens,
             model: data.model,
             sofiaVersion: config.name,
             webSearchUsed: !!webSearchResults,
-            visionUsed: !!(imageFile || imageUrl),
+            visionUsed: !!(imageFile || finalImageUrl),
             documentUsed: !!documentText,
             sources: webSearchResults ? webSearchResults.results.map(r => ({
               title: r.title,
