@@ -489,8 +489,37 @@ class DomusIA {
                             });
                         }
                         
-                        // 🎨 DETECCIÓN AUTOMÁTICA DE GENERACIÓN DE IMÁGENES
-                        // Si Sofía dice que va a generar una imagen, hacerlo automáticamente
+                        // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
+                        // Si el backend ya generó la imagen con DALL-E (Function Calling), mostrarla
+                        if (data.imageUrl && data.dalleUsed) {
+                            console.log('✅ Backend usó Function Calling - Imagen ya generada:', data.imageUrl);
+                            
+                            // Esperar a que el mensaje de Sofia esté renderizado
+                            setTimeout(() => {
+                                const messagesContainer = document.getElementById('chatMessages');
+                                const allMessages = messagesContainer.querySelectorAll('.chat-message.assistant');
+                                const lastSofiaMessage = allMessages[allMessages.length - 1];
+                                
+                                if (lastSofiaMessage) {
+                                    const contentDiv = lastSofiaMessage.querySelector('.message-content');
+                                    if (contentDiv) {
+                                        // Insertar imagen generada
+                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 1px solid rgb(192 132 252);">
+                                            <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206); margin-bottom: 12px;">✨ Imagen generada con DALL-E 3</p>
+                                            <img src="${data.imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; transition: opacity 0.5s;" onload="this.style.opacity='1'" />
+                                            <p style="font-size: 11px; color: rgb(107 114 128); margin-top: 8px; text-align: center;">Generado por DALL-E 3 • OpenAI</p>
+                                        </div>`;
+                                        
+                                        contentDiv.insertAdjacentHTML('beforeend', imageHtml);
+                                        this.scrollToBottom();
+                                        console.log('✅ Imagen insertada en el chat vía Function Calling');
+                                    }
+                                }
+                            }, 500);
+                        }
+                        
+                        // 🎨 FALLBACK: Detección manual (por si Function Calling falla)
+                        // Si Sofía dice que va a generar una imagen pero no vino imageUrl, usar método anterior
                         const imageGenTriggers = [
                             'voy a generar',
                             'generaré',
@@ -516,7 +545,8 @@ class DomusIA {
                             finalMessage.toLowerCase().includes(trigger)
                         );
                         
-                        if (shouldGenerateImage) {
+                        // Solo usar fallback si NO vino imageUrl del backend
+                        if (shouldGenerateImage && !data.imageUrl) {
                             console.log('🎨 Sofía quiere generar imagen - Activando DALL-E automáticamente...');
                             
                             // Extraer descripción de la imagen del mensaje
