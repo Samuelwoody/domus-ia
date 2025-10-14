@@ -17,7 +17,18 @@ async function uploadToImgBB(imageUrl, apiKey) {
     }
     
     const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    
+    // Convertir ArrayBuffer a base64 (optimizado y compatible)
+    const bytes = new Uint8Array(imageBuffer);
+    
+    // Método optimizado: procesar en chunks para evitar stack overflow
+    const CHUNK_SIZE = 0x8000; // 32KB chunks
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const chunk = Array.from(bytes.subarray(i, Math.min(i + CHUNK_SIZE, bytes.length)));
+      binary += String.fromCharCode(...chunk);
+    }
+    const base64Image = btoa(binary);
     
     // Subir a ImgBB
     const formData = new URLSearchParams();
@@ -25,10 +36,15 @@ async function uploadToImgBB(imageUrl, apiKey) {
     formData.append('image', base64Image);
     formData.append('name', `domus-ia-${Date.now()}`);
     
+    // Timeout de 8 segundos para ImgBB (antes del timeout de Vercel)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
     const imgbbResponse = await fetch('https://api.imgbb.com/1/upload', {
       method: 'POST',
-      body: formData
-    });
+      body: formData,
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
     
     if (!imgbbResponse.ok) {
       const errorText = await imgbbResponse.text();
@@ -53,7 +69,13 @@ async function uploadToImgBB(imageUrl, apiKey) {
     };
     
   } catch (error) {
-    console.error('❌ Error subiendo a ImgBB:', error);
+    console.error('❌ Error subiendo a ImgBB:', error.message || error);
+    
+    // Si es error de timeout
+    if (error.name === 'AbortError') {
+      console.error('⏱️ Timeout al subir a ImgBB (>8s)');
+    }
+    
     // Si falla ImgBB, devolvemos la URL original de OpenAI (temporal pero funciona)
     return {
       url: imageUrl,
