@@ -637,10 +637,55 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                                     }
                                     
                                     if (imageUrl) {
-                                        // Insertar imagen generada MINIMALISTA
-                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px;">
-                                            <img src="${imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); opacity: 0; transition: opacity 0.5s ease-in-out;" onload="this.style.opacity='1'" />
-                                            <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; font-weight: 400;">Generado con DALL-E 3</p>
+                                        // Insertar imagen generada con botones de acción
+                                        const isPermanent = data.isPermanent !== false; // Por defecto true si no se especifica
+                                        const permanentBadge = isPermanent ? '<span style="font-size: 9px; color: #10b981; font-weight: 600;">✓ Enlace permanente</span>' : '<span style="font-size: 9px; color: #f59e0b; font-weight: 600;">⚠ Enlace temporal (1h)</span>';
+                                        
+                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px; position: relative;">
+                                            <img src="${imageUrl}" alt="Imagen generada por DALL-E 3" 
+                                                 style="width: 100%; border-radius: 8px; 
+                                                 box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+                                                 opacity: 0; transition: opacity 0.5s ease-in-out;" 
+                                                 onload="this.style.opacity='1'" />
+                                            
+                                            <!-- Botones de acción -->
+                                            <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap;">
+                                                <button onclick="window.downloadDalleImage('${imageUrl}')" 
+                                                        style="padding: 8px 16px; background: linear-gradient(135deg, #d4af37 0%, #aa8929 100%); 
+                                                        color: white; border: none; border-radius: 6px; cursor: pointer; 
+                                                        font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px;
+                                                        transition: transform 0.2s; box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);" 
+                                                        onmouseover="this.style.transform='scale(1.05)'" 
+                                                        onmouseout="this.style.transform='scale(1)'">
+                                                    <i class="fas fa-download"></i> Descargar
+                                                </button>
+                                                
+                                                <button onclick="window.editDalleImage('${imageUrl}')" 
+                                                        style="padding: 8px 16px; background: rgba(212, 175, 55, 0.1); 
+                                                        color: #d4af37; border: 1px solid #d4af37; border-radius: 6px; cursor: pointer; 
+                                                        font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px;
+                                                        transition: all 0.2s;" 
+                                                        onmouseover="this.style.background='rgba(212, 175, 55, 0.2)'" 
+                                                        onmouseout="this.style.background='rgba(212, 175, 55, 0.1)'">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </button>
+                                                
+                                                <button onclick="window.createVariation('${imageUrl}')" 
+                                                        style="padding: 8px 16px; background: rgba(212, 175, 55, 0.1); 
+                                                        color: #d4af37; border: 1px solid #d4af37; border-radius: 6px; cursor: pointer; 
+                                                        font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px;
+                                                        transition: all 0.2s;" 
+                                                        onmouseover="this.style.background='rgba(212, 175, 55, 0.2)'" 
+                                                        onmouseout="this.style.background='rgba(212, 175, 55, 0.1)'">
+                                                    <i class="fas fa-magic"></i> Variación
+                                                </button>
+                                            </div>
+                                            
+                                            <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; font-weight: 400; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                                <span>Generado con DALL-E 3</span>
+                                                <span style="color: #6b7280;">•</span>
+                                                ${permanentBadge}
+                                            </p>
                                         </div>`;
                                         
                                         // Volver a buscar el contentDiv por si acaso
@@ -1842,6 +1887,72 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== GLOBAL UTILITIES =====
 window.openChat = () => window.domusIA.openChat();
 window.closeChat = () => window.domusIA.closeChat();
+
+// ===== DALL-E IMAGE ACTIONS =====
+/**
+ * Descargar imagen DALL-E
+ */
+window.downloadDalleImage = function(imageUrl) {
+    console.log('📥 Descargando imagen:', imageUrl);
+    
+    // Crear un enlace temporal para descargar
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `domus-ia-${Date.now()}.png`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('✅ Descarga iniciada');
+};
+
+/**
+ * Editar imagen DALL-E (pide a Sofía que la edite)
+ */
+window.editDalleImage = function(imageUrl) {
+    console.log('✏️ Solicitar edición de imagen:', imageUrl);
+    
+    // Enfocar el input del chat
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.value = 'Quiero editar esta imagen: ';
+        chatInput.focus();
+        
+        // Scroll al input en mobile
+        if (window.domusIA && window.domusIA.isMobile()) {
+            chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    console.log('💡 Usuario debe especificar qué cambios quiere hacer');
+};
+
+/**
+ * Crear variación de imagen DALL-E
+ */
+window.createVariation = function(imageUrl) {
+    console.log('🎨 Solicitar variación de imagen:', imageUrl);
+    
+    // Enviar mensaje automático a Sofía
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput && window.domusIA) {
+        chatInput.value = 'Crea una variación creativa de la última imagen que generaste, manteniendo el estilo general pero con cambios artísticos interesantes.';
+        
+        // Simular envío automático
+        const sendButton = document.querySelector('button[onclick*="sendMessage"]');
+        if (sendButton) {
+            setTimeout(() => {
+                sendButton.click();
+            }, 300);
+        }
+    }
+    
+    console.log('✅ Solicitando variación a Sofía');
+};
 
 // ===== SERVICE WORKER REGISTRATION =====
 // TEMPORALMENTE DESACTIVADO para debugging backend
