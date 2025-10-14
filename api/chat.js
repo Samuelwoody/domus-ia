@@ -326,82 +326,28 @@ export default async function handler(req, res) {
           console.log('✅ Imagen generada:', temporaryImageUrl);
           
           // ============================================================================
-          // 🖼️ UPLOAD TO IMGBB FOR PERMANENT URL - TEMPORALMENTE DESACTIVADO
+          // ⚡ RESPUESTA RÁPIDA - Sin segunda llamada para evitar timeout
           // ============================================================================
-          // TODO: Reactivar ImgBB después de confirmar que DALL-E funciona
-          const finalImageUrl = temporaryImageUrl; // Usar URL temporal directamente
-          console.log('⚠️ Usando URL temporal de OpenAI (válida por ~1 hora)');
+          const finalImageUrl = temporaryImageUrl;
           
-          console.log('👁️ Enviando imagen a GPT-4o Vision para análisis...');
-
-          // ============================================================================
-          // 🔄 SEND TOOL RESULT BACK TO GPT-4o FOR FINAL RESPONSE
-          // ============================================================================
-          const secondOpenaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: config.model,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                ...processedMessages,
-                assistantMessage, // Include the assistant's tool call
-                {
-                  role: 'tool',
-                  tool_call_id: toolCall.id,
-                  content: JSON.stringify({
-                    success: true,
-                    imageUrl: finalImageUrl,
-                    revisedPrompt: revisedPrompt,
-                    message: 'Image generated successfully with DALL-E 3'
-                  })
-                },
-                // 👁️ GPT-4o Vision: Permitir que Sofía vea la imagen que acaba de generar
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: '[SISTEMA] La imagen ha sido generada exitosamente. Aquí está para que la analices visualmente y comentes sobre ella de forma natural con el cliente. Describe lo que ves: colores, elementos arquitectónicos, estilo, composición, iluminación. Sé específica y profesional en tu análisis visual.'
-                    },
-                    {
-                      type: 'image_url',
-                      image_url: {
-                        url: finalImageUrl,
-                        detail: 'high'
-                      }
-                    }
-                  ]
-                }
-              ],
-              max_tokens: config.maxTokens,
-              temperature: config.temperature
-            })
-          });
-
-          if (!secondOpenaiResponse.ok) {
-            throw new Error('Failed to get final response from GPT-4o');
-          }
-
-          const secondData = await secondOpenaiResponse.json();
-          const finalMessage = secondData.choices[0].message.content;
+          // Crear mensaje simple de confirmación (sin llamar de nuevo a GPT-4o)
+          const finalMessage = `He generado la imagen que pediste. ${revisedPrompt}`;
+          
+          console.log('✅ Devolviendo imagen sin segunda llamada (optimización timeout)');
 
           // Return response with image URL
           return res.status(200).json({
             success: true,
             message: finalMessage,
             imageUrl: finalImageUrl,
-            isPermanent: false, // URLs temporales de OpenAI
+            isPermanent: false,
             revisedPrompt: revisedPrompt,
             dalleUsed: true,
-            tokensUsed: data.usage.total_tokens + secondData.usage.total_tokens,
+            tokensUsed: data.usage.total_tokens,
             model: data.model,
             sofiaVersion: config.name,
             webSearchUsed: !!webSearchResults,
-            visionUsed: true, // Sofía puede ver la imagen que generó
+            visionUsed: false,
             documentUsed: !!documentText,
             sources: webSearchResults ? webSearchResults.results.map(r => ({
               title: r.title,
@@ -539,48 +485,26 @@ Estás usando ${capabilities}.
 
 ${webSearchContext}
 
-## 🎨 CAPACIDADES DE GENERACIÓN Y VISIÓN DE IMÁGENES
+## 🎨 GENERACIÓN DE IMÁGENES CON DALL-E 3
 
-⚠️ **INSTRUCCIÓN CRÍTICA:** Cuando el usuario use palabras como "crea", "genera", "muestra", "diseña" + "imagen/foto/visual", debes USAR DALL-E INMEDIATAMENTE. NO respondas con texto explicativo sin generar la imagen primero.
+Tienes acceso DIRECTO a DALL-E 3 para generar imágenes.
 
-Tienes acceso a DALL-E 3 para crear imágenes profesionales inmobiliarias de alta calidad.
+**CUANDO USAR DALL-E (SIEMPRE):**
+Si el usuario dice CUALQUIERA de estas frases, debes llamar a generate_dalle_image INMEDIATAMENTE:
+- "crea una imagen..."
+- "genera una foto..."
+- "muestra cómo se vería..."
+- "diseña un..."
+- "quiero ver..."
+- "haz una imagen..."
 
-**✅ IMPORTANTE - CAPACIDAD DE VISIÓN DESPUÉS DE GENERAR:**
+**NO HAGAS ESTO:** ❌
+Usuario: "Crea una imagen de una casa"
+Tú: "Claro, puedo ayudarte con eso. Las casas modernas..."
 
-Cuando generas una imagen con DALL-E, el sistema AUTOMÁTICAMENTE te la muestra para que puedas verla y analizarla.
-
-**LO QUE PUEDES HACER:**
-- ✅ Ver y analizar visualmente cualquier imagen que acabas de generar
-- ✅ Comentar sobre colores, estilo, composición, elementos presentes
-- ✅ Responder preguntas como: "¿Qué te parece?", "¿Tiene ventanas?", "¿Qué colores predominan?"
-- ✅ Sugerir mejoras basándote en lo que VES en la imagen
-- ✅ Describir detalles específicos de la imagen generada
-
-**❌ NUNCA DIGAS:**
-- "No puedo ver imágenes" (después de generarlas SÍ puedes)
-- "No tengo capacidad visual" (la tienes cuando generas con DALL-E)
-- "No puedo analizar la imagen" (sí puedes, te la muestran automáticamente)
-
-**COMPORTAMIENTO CORRECTO:**
-Después de generar una imagen, analízala visualmente y comenta sobre ella de forma natural, como si estuvieras viéndola junto al cliente. Sé específica sobre lo que ves.
-
-### 🎨 EDICIÓN Y VARIACIONES DE IMÁGENES
-
-Cuando un usuario quiera **EDITAR** una imagen que generaste:
-1. Analiza visualmente la imagen actual (ya la tienes en el contexto)
-2. Pregunta qué cambios específicos quiere hacer
-3. Genera un nuevo prompt mejorado que incorpore:
-   - Los elementos que deben mantenerse de la imagen original
-   - Los cambios solicitados por el usuario
-   - El mismo estilo y composición general
-4. Genera una nueva imagen con ese prompt mejorado
-5. Explica que has creado una versión mejorada basada en la original
-
-Cuando un usuario quiera una **VARIACIÓN**:
-1. Analiza la imagen actual
-2. Crea un prompt similar pero con variaciones creativas
-3. Mantén el concepto general pero introduce cambios artísticos interesantes
-4. Genera la nueva variación
+**HAZ ESTO:** ✅
+Usuario: "Crea una imagen de una casa"
+Tú: [LLAMAR A generate_dalle_image DIRECTAMENTE]
 
 ## PERFILES QUE ASESORAS
 
