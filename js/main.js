@@ -431,8 +431,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
 
         for (const endpoint of endpoints) {
             try {
-                // 🧠 HISTORIAL COMPLETO: Enviar últimos 40 mensajes para contexto
-                const recentHistory = this.conversationHistory.slice(-40); // Últimos 40 mensajes (~25-30 intercambios)
+                // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
+                const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
                 const messagesWithHistory = [
                     ...recentHistory,
                     { role: 'user', content: message }
@@ -1890,46 +1890,15 @@ window.closeChat = () => window.domusIA.closeChat();
 
 // ===== DALL-E IMAGE ACTIONS =====
 /**
- * Descargar imagen DALL-E (compatible con URLs de OpenAI que tienen CORS)
+ * Descargar imagen DALL-E
  */
-window.downloadDalleImage = async function(imageUrl) {
+window.downloadDalleImage = function(imageUrl) {
     console.log('📥 Descargando imagen:', imageUrl);
     
-    try {
-        // Fetch la imagen para evitar problemas de CORS
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-            throw new Error('Failed to fetch image');
-        }
-        
-        // Convertir a blob
-        const blob = await response.blob();
-        
-        // Crear URL temporal del blob
-        const blobUrl = URL.createObjectURL(blob);
-        
-        // Crear enlace de descarga
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `domus-ia-${Date.now()}.png`;
-        
-        // Trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Limpiar el blob URL después de un momento
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-        
-        console.log('✅ Imagen descargada exitosamente');
-        
-    } catch (error) {
-        console.error('❌ Error descargando imagen:', error);
-        
-        // Fallback: intentar abrir en nueva pestaña
-        console.log('⚠️ Intentando abrir imagen en nueva pestaña...');
-        window.open(imageUrl, '_blank');
-    }
+    // Abrir en nueva pestaña (el usuario puede hacer clic derecho y guardar)
+    window.open(imageUrl, '_blank');
+    
+    console.log('✅ Imagen abierta en nueva pestaña');
 };
 
 /**
