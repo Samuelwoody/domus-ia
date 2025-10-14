@@ -238,17 +238,40 @@ class DomusIA {
     }
 
     getWelcomeMessage() {
+        // Mensaje base con explicación de capacidades
+        const voiceCapabilities = `
+
+💡 **Dos formas de interactuar conmigo:**
+
+🔊 **Arriba a la derecha** verás un botón blanco. Si lo activas, podrás **escuchar mis mensajes** en vez de leerlos. Perfecto si prefieres audio mientras haces otras cosas.
+
+🎤 **Abajo junto al campo de texto** hay un botón de micrófono. **Úsalo para hablar en vez de escribir:**
+- Haz click en el micrófono y empieza a hablar
+- Cuando hagas una pausa de más de 1.5 segundos, lo que dijiste se escribirá automáticamente
+- Para continuar tu mensaje: respira, vuelve a hacer click en el micrófono y sigue hablando
+- Cuando termines todo tu mensaje, dale a enviar
+
+¡Así es mucho más cómodo! 😊`;
+
         if (!this.isAuthenticated) {
-            return "¡Hola! Soy Sofía, tu SuperAgente Inmobiliario General. Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietario particular o agente profesional?";
+            return `¡Hola! Soy Sofía, tu SuperAgente Inmobiliario General.${voiceCapabilities}
+
+Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietario particular o agente profesional?`;
         }
         
         if (this.userType === 'particular') {
-            return `¡Hola ${this.userName}! Como propietario particular, puedo ayudarte con estudios de mercado, preparación de tu inmueble, documentación, publicaciones de calidad y todo el proceso de venta. ¿En qué puedo asistirte hoy?`;
+            return `¡Hola ${this.userName}! Como propietario particular, puedo ayudarte con estudios de mercado, preparación de tu inmueble, documentación, publicaciones de calidad y todo el proceso de venta.${voiceCapabilities}
+
+¿En qué puedo asistirte hoy?`;
         } else if (this.userType === 'profesional') {
-            return `¡Hola ${this.userName}! Como agente profesional, puedo ayudarte con formación avanzada, construcción de marca, captación premium, estrategias de negociación y todas las herramientas para hacer crecer tu negocio. ¿Qué necesitas?`;
+            return `¡Hola ${this.userName}! Como agente profesional, puedo ayudarte con formación avanzada, construcción de marca, captación premium, estrategias de negociación y todas las herramientas para hacer crecer tu negocio.${voiceCapabilities}
+
+¿Qué necesitas?`;
         }
         
-        return "¡Hola! Soy Sofía, tu SuperAgente Inmobiliario. ¿En qué puedo ayudarte hoy?";
+        return `¡Hola! Soy Sofía, tu SuperAgente Inmobiliario.${voiceCapabilities}
+
+¿En qué puedo ayudarte hoy?`;
     }
 
     async handleChatSubmit(e) {
@@ -503,11 +526,10 @@ class DomusIA {
                                 if (lastSofiaMessage) {
                                     const contentDiv = lastSofiaMessage.querySelector('.message-content');
                                     if (contentDiv) {
-                                        // Insertar imagen generada
-                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 1px solid rgb(192 132 252);">
-                                            <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206); margin-bottom: 12px;">✨ Imagen generada con DALL-E 3</p>
-                                            <img src="${data.imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; transition: opacity 0.5s;" onload="this.style.opacity='1'" />
-                                            <p style="font-size: 11px; color: rgb(107 114 128); margin-top: 8px; text-align: center;">Generado por DALL-E 3 • OpenAI</p>
+                                        // Insertar imagen generada MINIMALISTA
+                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px;">
+                                            <img src="${data.imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); opacity: 0; transition: opacity 0.5s ease-in-out;" onload="this.style.opacity='1'" />
+                                            <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; font-weight: 400;">Generado con DALL-E 3</p>
                                         </div>`;
                                         
                                         contentDiv.insertAdjacentHTML('beforeend', imageHtml);
@@ -575,18 +597,18 @@ class DomusIA {
                                     // Crear un ID único para este proceso de generación
                                     const generationId = 'dalle-' + Date.now();
                                     
-                                    // Insertar indicador de carga
-                                    const loadingHtml = `<div id="${generationId}" class="dalle-loading-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 2px dashed rgb(192 132 252);">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <div style="animation: spin 1s linear infinite;">
-                                                <svg style="width: 24px; height: 24px; color: rgb(147 51 234);" fill="none" viewBox="0 0 24 24">
-                                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    // Insertar indicador de carga MINIMALISTA con colores de la paleta
+                                    const loadingHtml = `<div id="${generationId}" class="dalle-loading-container" style="margin-top: 16px; padding: 20px; background: rgba(212, 175, 55, 0.03); border-radius: 12px; border: 1px dashed rgba(212, 175, 55, 0.3); backdrop-filter: blur(10px);">
+                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                                            <div style="animation: spin 1.5s linear infinite;">
+                                                <svg style="width: 32px; height: 32px; color: #d4af37;" fill="none" viewBox="0 0 24 24">
+                                                    <circle style="opacity: 0.2;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                                    <path style="opacity: 0.8;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
                                             </div>
-                                            <div>
-                                                <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206);">🎨 Generando imagen con DALL-E 3...</p>
-                                                <p style="font-size: 12px; color: rgb(147 51 234);">Esto puede tardar 10-15 segundos</p>
+                                            <div style="text-align: center;">
+                                                <p style="font-size: 13px; font-weight: 500; color: #2c0a0e; margin-bottom: 4px;">Creando imagen...</p>
+                                                <p style="font-size: 11px; color: #6b7280;">Esto puede tardar 10-15 segundos</p>
                                             </div>
                                         </div>
                                     </div>`;
@@ -610,11 +632,10 @@ class DomusIA {
                                     }
                                     
                                     if (imageUrl) {
-                                        // Insertar imagen generada
-                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(to right, rgb(243 232 255), rgb(239 246 255)); border-radius: 8px; border: 1px solid rgb(192 132 252);">
-                                            <p style="font-size: 14px; font-weight: 600; color: rgb(126 34 206); margin-bottom: 12px;">✨ Imagen generada con DALL-E 3</p>
-                                            <img src="${imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transition: box-shadow 0.3s;" onload="this.style.opacity=1" style="opacity: 0; transition: opacity 0.5s;" />
-                                            <p style="font-size: 11px; color: rgb(107 114 128); margin-top: 8px; text-align: center;">Generado por DALL-E 3 • OpenAI</p>
+                                        // Insertar imagen generada MINIMALISTA
+                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px;">
+                                            <img src="${imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); opacity: 0; transition: opacity 0.5s ease-in-out;" onload="this.style.opacity='1'" />
+                                            <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; font-weight: 400;">Generado con DALL-E 3</p>
                                         </div>`;
                                         
                                         // Volver a buscar el contentDiv por si acaso
@@ -917,6 +938,11 @@ class DomusIA {
         } else {
             // Smooth scroll to bottom with mobile consideration
             this.scrollToBottom();
+        }
+        
+        // 🔊 NUEVO: Leer mensaje de Sofía con voz si está activado
+        if (sender === 'assistant' && typeof voiceReader !== 'undefined' && voiceReader) {
+            voiceReader.readSofiaMessage(content);
         }
     }
     
