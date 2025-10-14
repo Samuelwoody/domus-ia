@@ -202,7 +202,42 @@ export default async function handler(req, res) {
     const systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults);
 
     // ============================================================================
-    // Call OpenAI API con todas las capacidades
+    // 🛠️ DEFINE TOOLS/FUNCTIONS AVAILABLE (Function Calling)
+    // ============================================================================
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "generate_dalle_image",
+          description: "Generate a professional real estate image using DALL-E 3. Use this when the user requests to create, generate, visualize, or design an image. Always use this tool for image generation requests.",
+          parameters: {
+            type: "object",
+            properties: {
+              prompt: {
+                type: "string",
+                description: "Detailed description of the image to generate. Be specific about style, composition, lighting, and real estate context. Example: 'Modern minimalist living room with white sofa, wooden floor, large windows with natural light, indoor plants, Scandinavian style, photorealistic'"
+              },
+              size: {
+                type: "string",
+                enum: ["1024x1024", "1024x1792", "1792x1024"],
+                description: "Image size. Use 1024x1024 for standard, 1024x1792 for vertical (portraits), 1792x1024 for horizontal (landscapes)",
+                default: "1024x1024"
+              },
+              quality: {
+                type: "string",
+                enum: ["standard", "hd"],
+                description: "Image quality. Use 'hd' for highest quality professional images, 'standard' for faster generation",
+                default: "standard"
+              }
+            },
+            required: ["prompt"]
+          }
+        }
+      }
+    ];
+
+    // ============================================================================
+    // Call OpenAI API con todas las capacidades + Function Calling
     // ============================================================================
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -218,8 +253,8 @@ export default async function handler(req, res) {
         ],
         max_tokens: config.maxTokens,
         temperature: config.temperature,
-        // Habilitar todas las capacidades avanzadas
-        response_format: { type: "text" }, // Puede cambiar a "json_object" si se necesita
+        tools: tools,
+        tool_choice: "auto", // GPT-4o decides automatically when to use tools
       })
     });
 
@@ -233,13 +268,167 @@ export default async function handler(req, res) {
     }
 
     const data = await openaiResponse.json();
+    const assistantMessage = data.choices[0].message;
 
     // ============================================================================
-    // Response
+    // 🎨 CHECK IF GPT-4o WANTS TO USE DALL-E (Function Calling)
+    // ============================================================================
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      console.log('🎨 GPT-4o solicitó usar herramienta:', assistantMessage.tool_calls[0].function.name);
+      
+      const toolCall = assistantMessage.tool_calls[0];
+      
+      if (toolCall.function.name === 'generate_dalle_image') {
+        try {
+          // Parse arguments from GPT-4o
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('🎨 Argumentos para DALL-E:', functionArgs);
+          
+          // Call DALL-E 3 API
+          const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'dall-e-3',
+              prompt: functionArgs.prompt,
+              n: 1,
+              size: functionArgs.size || '1024x1024',
+              quality: functionArgs.quality || 'standard',
+              style: 'vivid'
+            })
+          });
+
+          if (!dalleResponse.ok) {
+            const dalleError = await dalleResponse.json();
+            console.error('❌ DALL-E Error:', dalleError);
+            throw new Error(dalleError.error?.message || 'DALL-E generation failed');
+          }
+
+          const dalleData = await dalleResponse.json();
+          const imageUrl = dalleData.data[0].url;
+          const revisedPrompt = dalleData.data[0].revised_prompt;
+          
+          console.log('✅ Imagen generada:', imageUrl);
+
+          // ============================================================================
+          // 🔄 SEND TOOL RESULT BACK TO GPT-4o FOR FINAL RESPONSE
+          // ============================================================================
+          const secondOpenaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: config.model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...processedMessages,
+                assistantMessage, // Include the assistant's tool call
+                {
+                  role: 'tool',
+                  tool_call_id: toolCall.id,
+                  content: JSON.stringify({
+                    success: true,
+                    imageUrl: imageUrl,
+                    revisedPrompt: revisedPrompt,
+                    message: 'Image generated successfully with DALL-E 3'
+                  })
+                }
+              ],
+              max_tokens: config.maxTokens,
+              temperature: config.temperature
+            })
+          });
+
+          if (!secondOpenaiResponse.ok) {
+            throw new Error('Failed to get final response from GPT-4o');
+          }
+
+          const secondData = await secondOpenaiResponse.json();
+          const finalMessage = secondData.choices[0].message.content;
+
+          // Return response with image URL
+          return res.status(200).json({
+            success: true,
+            message: finalMessage,
+            imageUrl: imageUrl,
+            revisedPrompt: revisedPrompt,
+            dalleUsed: true,
+            tokensUsed: data.usage.total_tokens + secondData.usage.total_tokens,
+            model: data.model,
+            sofiaVersion: config.name,
+            webSearchUsed: !!webSearchResults,
+            visionUsed: !!(imageFile || imageUrl),
+            documentUsed: !!documentText,
+            sources: webSearchResults ? webSearchResults.results.map(r => ({
+              title: r.title,
+              url: r.url
+            })) : []
+          });
+
+        } catch (dalleError) {
+          console.error('❌ Error en proceso DALL-E:', dalleError);
+          
+          // If DALL-E fails, ask GPT-4o to generate a response explaining the error
+          const errorResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: config.model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...processedMessages,
+                assistantMessage,
+                {
+                  role: 'tool',
+                  tool_call_id: toolCall.id,
+                  content: JSON.stringify({
+                    success: false,
+                    error: dalleError.message,
+                    message: 'Failed to generate image with DALL-E 3'
+                  })
+                }
+              ],
+              max_tokens: config.maxTokens,
+              temperature: config.temperature
+            })
+          });
+
+          const errorData = await errorResponse.json();
+          
+          return res.status(200).json({
+            success: true,
+            message: errorData.choices[0].message.content,
+            dalleUsed: false,
+            dalleError: dalleError.message,
+            tokensUsed: data.usage.total_tokens + errorData.usage.total_tokens,
+            model: data.model,
+            sofiaVersion: config.name,
+            webSearchUsed: !!webSearchResults,
+            visionUsed: !!(imageFile || imageUrl),
+            documentUsed: !!documentText,
+            sources: webSearchResults ? webSearchResults.results.map(r => ({
+              title: r.title,
+              url: r.url
+            })) : []
+          });
+        }
+      }
+    }
+
+    // ============================================================================
+    // Response (No tool calls - normal text response)
     // ============================================================================
     return res.status(200).json({
       success: true,
-      message: data.choices[0].message.content,
+      message: assistantMessage.content,
       tokensUsed: data.usage.total_tokens,
       model: data.model,
       sofiaVersion: config.name,
@@ -358,28 +547,32 @@ ${webSearchContext}
 - Actualiza tu conocimiento experto con datos frescos
 
 ### 4️⃣ 🎨 GENERACIÓN DE IMÁGENES (DALL-E 3)
-✅ **SÍ PUEDES generar imágenes** profesionales con DALL-E 3
+✅ **TIENES ACCESO DIRECTO A DALL-E 3** como herramienta integrada
+✅ Cuando el usuario pida generar una imagen, USA LA HERRAMIENTA generate_dalle_image
+✅ NO necesitas decir frases especiales, simplemente usa la herramienta
+✅ El sistema detectará automáticamente cuando quieras generar una imagen
+
+**Capacidades de generación:**
 ✅ Renders de propiedades: visualizaciones de reformas, distribuciones
 ✅ Home staging virtual: amueblado de espacios vacíos
 ✅ Material de marketing: carteles, flyers, posts para redes sociales
 ✅ Infografías: procesos de venta, comparativas de zonas
 ✅ Visualizaciones: antes/después de reformas
 
-**Cuando te pidan generar imágenes:**
-⚠️ **IMPORTANTE: Usa SIEMPRE frases como "voy a generar", "te generaré", "crearé" para activar DALL-E automáticamente**
+**Cómo usar la herramienta:**
+1. Cuando el usuario pida una imagen, usa generate_dalle_image automáticamente
+2. Proporciona un prompt DETALLADO y profesional en inglés
+3. Incluye: estilo fotorrealista, iluminación natural, perspectiva profesional
+4. Especifica: contexto inmobiliario, colores, texturas, ambiente
+5. Optimiza para uso comercial
 
-RESPONDE ASÍ:
-✅ "Perfecto, voy a generar una imagen profesional de [descripción detallada]..."
-✅ "Te generaré un render fotorrealista de [detalles específicos]..."
-✅ "Crearé una visualización que muestre [elementos clave]..."
+**Ejemplo de buen prompt:**
+"Modern minimalist living room with white L-shaped sofa, light oak wooden flooring, floor-to-ceiling windows with natural daylight, indoor plants, Scandinavian design, neutral color palette, professional real estate photography style, wide angle shot, photorealistic"
 
-NO digas solo "puedo generar" - DI "voy a generar" o "te generaré"
-
-- Crea descripciones detalladas y profesionales
-- Especifica: estilo fotorrealista, iluminación natural, perspectiva profesional
-- Incluye contexto inmobiliario español
-- Menciona colores, texturas, ambiente
-- Optimiza para uso comercial
+**IMPORTANTE:**
+- Siempre responde de forma natural explicando qué vas a crear
+- Después la imagen aparecerá automáticamente en el chat
+- Describe brevemente la imagen generada cuando aparezca
 
 ### 5️⃣ 💻 ANÁLISIS Y GENERACIÓN DE CÓDIGO
 ✅ **SÍ PUEDES programar** y crear herramientas personalizadas
@@ -477,6 +670,10 @@ NO digas solo "puedo generar" - DI "voy a generar" o "te generaré"
 ❌ "No puedo leer documentos"
 ❌ "No tengo acceso a información actualizada"
 ❌ "No puedo generar imágenes"
+❌ "Aunque no puedo crear imágenes directamente..."
+❌ "No tengo la capacidad de generar imágenes..."
+
+⚠️ **MUY IMPORTANTE:** Tienes la herramienta generate_dalle_image disponible. Úsala directamente cuando sea necesario. NO menciones limitaciones.
 ❌ "No puedo hacer cálculos complejos"
 ❌ "No puedo crear código"
 ❌ "Eso está fuera de mis capacidades"
@@ -681,4 +878,3 @@ Entre iguales. Hablas de agente senior a agente. Sin rodeos. Eficiencia ante tod
 
   return basePersonality;
 }
-
