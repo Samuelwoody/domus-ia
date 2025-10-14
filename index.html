@@ -547,9 +547,16 @@
                                 </p>
                             </div>
                         </div>
-                        <button id="closeChatBtn" class="text-white/80 hover:text-white text-xl">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <div class="flex items-center space-x-3">
+                            <!-- Botón de Voz Mejorado con Texto -->
+                            <button id="toggleVoiceBtn" class="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all group" title="Activar/Desactivar lectura de voz">
+                                <i class="fas fa-volume-mute text-white text-base"></i>
+                                <span class="text-white text-xs font-medium hidden md:inline animate-pulse">Activa lectura automática</span>
+                            </button>
+                            <button id="closeChatBtn" class="text-white/80 hover:text-white text-xl">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -685,7 +692,7 @@
                         </li>
                         <li class="flex items-center space-x-2">
                             <i class="fas fa-phone"></i>
-                            <span>+34 XXX XXX XXX</span>
+                            <a href="tel:+34610949539" class="hover:text-domus-gold transition-colors">+34 610 94 95 39</a>
                         </li>
                         <li class="flex items-center space-x-2">
                             <i class="fas fa-map-marker-alt"></i>
@@ -712,7 +719,7 @@
     <script src="js/payments.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sofia-ai.js"></script>
+    <script src="js/voice-reader.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
-
