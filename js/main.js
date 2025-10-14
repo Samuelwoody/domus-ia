@@ -324,8 +324,11 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         this.saveUserData();
         this.updateMessageCounter();
         
-        // Show typing indicator
-        this.showTypingIndicator();
+        // Detectar si el mensaje pide generar una imagen
+        const isImageRequest = this.detectImageRequest(finalMessage);
+        
+        // Show typing indicator (con mensaje especial si es generación de imagen)
+        this.showTypingIndicator(isImageRequest);
         
         try {
             // Process message with file if exists
@@ -347,6 +350,18 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             this.addMessage('assistant', 'Disculpa, he tenido un problema técnico. ¿Podrías repetir tu mensaje?', false);
             console.error('Chat error:', error);
         }
+    }
+
+    detectImageRequest(message) {
+        const lowerMessage = message.toLowerCase();
+        const imageKeywords = [
+            'crea una imagen', 'genera una imagen', 'genera una foto', 'crea una foto',
+            'muestra cómo se vería', 'muestra como se veria', 'diseña un', 'disena un',
+            'quiero ver', 'haz una imagen', 'genera un render', 'crea un render',
+            'muéstrame', 'muestrame', 'visualiza', 'crea un diseño', 'crea un diseno'
+        ];
+        
+        return imageKeywords.some(keyword => lowerMessage.includes(keyword));
     }
 
     async processMessage(message, file = null, fileType = null, documentText = null) {
@@ -1087,11 +1102,17 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         }
     }
 
-    showTypingIndicator() {
+    showTypingIndicator(isGeneratingImage = false) {
         const messagesContainer = document.getElementById('chatMessages');
         const typingDiv = document.createElement('div');
         typingDiv.id = 'typingIndicator';
         typingDiv.className = 'flex justify-start mb-4';
+        
+        // Mensaje especial si está generando imagen
+        const statusText = isGeneratingImage 
+            ? '<span class="text-domus-gold font-medium animate-pulse">✨ Produciendo imagen...</span>'
+            : '';
+        
         typingDiv.innerHTML = `
             <div class="flex space-x-3">
                 <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-md">
@@ -1101,6 +1122,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
                     </div>
+                    ${statusText}
                 </div>
             </div>
         `;
