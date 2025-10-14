@@ -204,6 +204,11 @@ class DomusIA {
         // Setup mobile keyboard handling
         this.setupMobileKeyboardHandling();
         
+        // Bind voice button if it wasn't bound during initial load
+        if (typeof bindVoiceButtonIfNeeded === 'function') {
+            bindVoiceButtonIfNeeded();
+        }
+        
         // Focus on input (delayed for mobile)
         setTimeout(() => {
             const chatInput = document.getElementById('chatInput');
