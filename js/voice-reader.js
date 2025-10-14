@@ -169,26 +169,94 @@ class VoiceReader {
         temp.innerHTML = html;
         
         // Remover elementos que no queremos leer
-        const unwantedElements = temp.querySelectorAll('img, .dalle-loading-container, .generated-image-container');
+        const unwantedElements = temp.querySelectorAll('img, .dalle-loading-container, .generated-image-container, a, code, pre');
         unwantedElements.forEach(el => el.remove());
         
         // Obtener texto limpio
         let text = temp.textContent || temp.innerText || '';
         
-        // Limpiar espacios múltiples y saltos de línea
-        text = text.replace(/\s+/g, ' ').trim();
+        // ============================================================================
+        // 🧹 LIMPIEZA AVANZADA - Solo palabras conversacionales
+        // ============================================================================
         
-        // Reemplazar símbolos comunes por palabras
+        // 1. Eliminar URLs completas (http://, https://, www.)
+        text = text.replace(/https?:\/\/[^\s]+/g, '');
+        text = text.replace(/www\.[^\s]+/g, '');
+        
+        // 2. Eliminar emojis y emoticonos (todos los caracteres Unicode de emojis)
+        text = text.replace(/[\u{1F300}-\u{1F9FF}]/gu, ''); // Emojis generales
+        text = text.replace(/[\u{2600}-\u{26FF}]/gu, '');   // Símbolos varios
+        text = text.replace(/[\u{2700}-\u{27BF}]/gu, '');   // Dingbats
+        text = text.replace(/[\u{1F000}-\u{1F02F}]/gu, ''); // Mahjong
+        text = text.replace(/[\u{1F0A0}-\u{1F0FF}]/gu, ''); // Cartas
+        text = text.replace(/[\u{1F100}-\u{1F64F}]/gu, ''); // Símbolos varios
+        text = text.replace(/[\u{1F680}-\u{1F6FF}]/gu, ''); // Transporte
+        text = text.replace(/[\u{1F900}-\u{1F9FF}]/gu, ''); // Símbolos suplementarios
+        text = text.replace(/[\u{2B50}]/gu, '');             // Estrella
+        text = text.replace(/[\u{2705}]/gu, '');             // Check mark
+        text = text.replace(/[\u{274C}]/gu, '');             // Cruz roja
+        text = text.replace(/[\u{2764}]/gu, '');             // Corazón
+        text = text.replace(/[\u{1F1E0}-\u{1F1FF}]/gu, ''); // Banderas
+        
+        // 3. Eliminar símbolos de markdown (**, __, ##, etc.)
+        text = text.replace(/\*\*/g, '');      // Negrita
+        text = text.replace(/\_\_/g, '');      // Subrayado
+        text = text.replace(/\#\#+/g, '');     // Títulos
+        text = text.replace(/\`\`\`/g, '');    // Bloques código
+        text = text.replace(/\`/g, '');        // Inline code
+        text = text.replace(/\~/g, '');        // Tachado
+        
+        // 4. Eliminar guiones de viñetas y listas
+        text = text.replace(/^[\-\•\◦\▪\▫]\s+/gm, '');  // Inicio de línea
+        text = text.replace(/\s[\-\•\◦\▪\▫]\s+/g, ' '); // Medio de línea
+        
+        // 5. Eliminar símbolos especiales no conversacionales
+        text = text.replace(/[\[\]\{\}\(\)]/g, ' ');    // Paréntesis y corchetes
+        text = text.replace(/[►▼▲◄]/g, '');             // Flechas especiales
+        text = text.replace(/[™®©]/g, '');              // Marcas registradas
+        text = text.replace(/[…]/g, '');                 // Puntos suspensivos especiales
+        text = text.replace(/[\|]/g, ' ');               // Barras verticales
+        text = text.replace(/[\/\\]/g, ' ');             // Barras
+        text = text.replace(/[\<\>]/g, ' ');             // Mayor/menor que
+        text = text.replace(/[\&]/g, ' y ');             // Ampersand
+        text = text.replace(/[\@\#]/g, '');              // Arroba y hash
+        
+        // 6. Reemplazar símbolos comunes por palabras
         text = text.replace(/€/g, ' euros ');
         text = text.replace(/%/g, ' por ciento ');
         text = text.replace(/\$/g, ' dólares ');
         text = text.replace(/\+/g, ' más ');
-        text = text.replace(/-/g, ' menos ');
-        text = text.replace(/\*/g, ' ');
         text = text.replace(/=/g, ' igual ');
         
-        // Limpiar nuevamente espacios múltiples
-        text = text.replace(/\s+/g, ' ').trim();
+        // 7. Eliminar guiones múltiples (---, ===, etc.)
+        text = text.replace(/[\-]{2,}/g, ' ');
+        text = text.replace(/[=]{2,}/g, ' ');
+        text = text.replace(/[_]{2,}/g, ' ');
+        
+        // 8. Eliminar asteriscos solos o múltiples
+        text = text.replace(/[\*]+/g, ' ');
+        
+        // 9. Limpiar saltos de línea múltiples
+        text = text.replace(/\n+/g, '. ');
+        
+        // 10. Limpiar espacios múltiples
+        text = text.replace(/\s+/g, ' ');
+        
+        // 11. Limpiar puntos múltiples seguidos
+        text = text.replace(/\.{2,}/g, '.');
+        
+        // 12. Eliminar espacios antes de puntuación
+        text = text.replace(/\s+([,\.;:\?!])/g, '$1');
+        
+        // 13. Añadir espacio después de puntuación si no existe
+        text = text.replace(/([,\.;:\?!])([A-Za-zÁÉÍÓÚáéíóúÑñ])/g, '$1 $2');
+        
+        // 14. Trim final
+        text = text.trim();
+        
+        // 15. Si el texto termina sin puntuación, no hacer nada (es natural)
+        // Si termina con múltiples signos, dejar solo uno
+        text = text.replace(/([,\.;:\?!])+$/, '$1');
         
         return text;
     }
