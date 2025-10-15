@@ -540,28 +540,11 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         // Si el backend ya generó la imagen con DALL-E (Function Calling), mostrarla
                         if (data.imageUrl && data.dalleUsed) {
                             console.log('✅ Backend usó Function Calling - Imagen ya generada:', data.imageUrl);
+                            console.log('🖼️ URL de la imagen:', data.imageUrl);
                             
-                            // Esperar a que el mensaje de Sofia esté renderizado
-                            setTimeout(() => {
-                                const messagesContainer = document.getElementById('chatMessages');
-                                const allMessages = messagesContainer.querySelectorAll('.chat-message.assistant');
-                                const lastSofiaMessage = allMessages[allMessages.length - 1];
-                                
-                                if (lastSofiaMessage) {
-                                    const contentDiv = lastSofiaMessage.querySelector('.message-content');
-                                    if (contentDiv) {
-                                        // Insertar imagen generada MINIMALISTA
-                                        const imageHtml = `<div class="generated-image-container" style="margin-top: 16px;">
-                                            <img src="${data.imageUrl}" alt="Imagen generada por DALL-E 3" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); opacity: 0; transition: opacity 0.5s ease-in-out;" onload="this.style.opacity='1'" />
-                                            <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; font-weight: 400;">Generado con DALL-E 3</p>
-                                        </div>`;
-                                        
-                                        contentDiv.insertAdjacentHTML('beforeend', imageHtml);
-                                        this.scrollToBottom();
-                                        console.log('✅ Imagen insertada en el chat vía Function Calling');
-                                    }
-                                }
-                            }, 500);
+                            // Guardar referencia a imageUrl para usarla después del efecto typing
+                            this.pendingImageUrl = data.imageUrl;
+                            this.pendingImageData = data;
                         }
                         
                         // 🎨 FALLBACK: Detección manual (por si Function Calling falla)
@@ -1016,8 +999,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
     
     formatMessageContent(content) {
-        // Convertir markdown-style bold PRIMERO
-        let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Convertir markdown-style bold PRIMERO con gradiente dorado→rojo
+        let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong class="gradient-text">$1</strong>');
         
         // Separar por párrafos (doble salto de línea o punto seguido de salto)
         // Esto crea párrafos más naturales
@@ -1079,6 +1062,15 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     element.innerHTML = content;
                     this.scrollToBottom();
                     element.removeEventListener('click', skipHandler);
+                    
+                    // 🖼️ INSERTAR IMAGEN DALL-E SI HAY UNA PENDIENTE
+                    if (this.pendingImageUrl) {
+                        console.log('🖼️ Insertando imagen DALL-E después del efecto typing...');
+                        setTimeout(() => {
+                            this.insertPendingImage(element);
+                        }, 100);
+                    }
+                    
                     resolve();
                     return;
                 }
@@ -1100,6 +1092,43 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             // Iniciar escritura
             typeChar();
         });
+    }
+    
+    insertPendingImage(contentElement) {
+        if (!this.pendingImageUrl) return;
+        
+        console.log('🖼️ Insertando imagen:', this.pendingImageUrl);
+        
+        // Crear HTML de la imagen con botón de descarga
+        const imageHtml = `
+            <div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(184, 134, 11, 0.02)); border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                <img src="${this.pendingImageUrl}" 
+                     alt="Imagen generada por DALL-E 3" 
+                     style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: block;" 
+                     onload="console.log('✅ Imagen cargada correctamente'); this.style.opacity='1';"
+                     onerror="console.error('❌ Error al cargar imagen:', this.src);" />
+                
+                <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+                    <button onclick="window.downloadDalleImage('${this.pendingImageUrl}')" 
+                            style="padding: 8px 16px; background: linear-gradient(135deg, #d4af37 0%, #aa8929 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: transform 0.2s;" 
+                            onmouseover="this.style.transform='scale(1.05)'" 
+                            onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-download"></i> Descargar
+                    </button>
+                </div>
+                
+                <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center;">Generado con DALL-E 3</p>
+            </div>
+        `;
+        
+        contentElement.insertAdjacentHTML('beforeend', imageHtml);
+        this.scrollToBottom();
+        
+        console.log('✅ Imagen insertada en el DOM');
+        
+        // Limpiar pendiente
+        this.pendingImageUrl = null;
+        this.pendingImageData = null;
     }
 
     scrollToBottom() {
