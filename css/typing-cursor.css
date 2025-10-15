@@ -1,6 +1,16 @@
 /* ⌨️ EFECTO ESCRITURA TIPO CHATGPT - CURSOR PARPADEANTE */
 /* Autor: MontCastell-AI */
-/* Versión: 1.0.0 */
+/* Versión: 1.1.0 */
+
+/* 🎨 GRADIENTE DORADO→ROJO EN NEGRITAS */
+.gradient-text {
+    background: linear-gradient(90deg, #d4af37 0%, #ff4444 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    display: inline;
+}
 
 /* Cursor parpadeante al final del texto mientras se escribe */
 .message-content.typing::after {
