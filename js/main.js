@@ -1043,19 +1043,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 60) {
-        // 🚀 MODO INSTANTÁNEO: Mostrar todo el mensaje de una vez
-        element.innerHTML = content;
-        this.scrollToBottom();
-        return Promise.resolve();
-    }
-    
-    /* CÓDIGO ORIGINAL DEL EFECTO TYPING (DESACTIVADO)
-    async typeMessageOLD(element, content, speed = 60) {
-        // Speed: characters per second (60 = rápido pero legible)
+    async typeMessage(element, content, speed = 50) {
+        // 🎯 EFECTO ESCRITURA TIPO CHATGPT
+        // Speed: caracteres por segundo (50 = similar a ChatGPT)
+        
         const delay = 1000 / speed;
         
-        // Remove HTML tags for character-by-character typing
+        // Añadir clase 'typing' para mostrar cursor parpadeante
+        element.classList.add('typing');
+        
+        // Extraer texto plano sin HTML para escribir carácter por carácter
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
         const textContent = tempDiv.textContent || tempDiv.innerText;
@@ -1063,32 +1060,47 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         let currentText = '';
         let currentIndex = 0;
         
+        // Flag para permitir skip con click
+        let skipTyping = false;
+        
+        // Función para skip
+        const skipHandler = () => {
+            skipTyping = true;
+        };
+        
+        // Añadir evento de click para skip
+        element.addEventListener('click', skipHandler, { once: true });
+        
         return new Promise((resolve) => {
             const typeChar = () => {
-                if (currentIndex < textContent.length) {
-                    currentText += textContent[currentIndex];
-                    
-                    // Re-apply formatting to visible text
-                    element.innerHTML = this.formatMessageContent(currentText);
-                    
-                    currentIndex++;
-                    
-                    // Auto-scroll during typing
-                    this.scrollToBottom();
-                    
-                    setTimeout(typeChar, delay);
-                } else {
-                    // Ensure final formatted content is displayed
+                // Si usuario hace click, mostrar todo inmediatamente
+                if (skipTyping || currentIndex >= textContent.length) {
+                    element.classList.remove('typing'); // Quitar cursor
                     element.innerHTML = content;
                     this.scrollToBottom();
+                    element.removeEventListener('click', skipHandler);
                     resolve();
+                    return;
                 }
+                
+                // Añadir siguiente carácter
+                currentText += textContent[currentIndex];
+                currentIndex++;
+                
+                // Re-aplicar formato al texto visible
+                element.innerHTML = this.formatMessageContent(currentText);
+                
+                // Auto-scroll durante escritura
+                this.scrollToBottom();
+                
+                // Continuar con siguiente carácter
+                setTimeout(typeChar, delay);
             };
             
+            // Iniciar escritura
             typeChar();
         });
     }
-    */
 
     scrollToBottom() {
         const messagesContainer = document.getElementById('chatMessages');
