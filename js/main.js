@@ -22,8 +22,11 @@ class DomusIA {
         // Initialize Sofia AI
         this.sofiaAI = new SofiaAI();
         
-        // 🏠 CRM: Property Detector
-        this.propertyDetector = new PropertyDetector();
+        // 🏠 CRM: Property Detector (inicializar solo si la clase existe)
+        this.propertyDetector = null;
+        if (typeof PropertyDetector !== 'undefined') {
+            this.propertyDetector = new PropertyDetector();
+        }
         
         this.init();
     }
@@ -1980,6 +1983,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
      * Detectar propiedades en conversación (usuario + Sofía)
      */
     detectPropertyInConversation(userMessage, sofiaResponse) {
+        // Verificar que PropertyDetector esté disponible
+        if (!this.propertyDetector) {
+            console.warn('⚠️ PropertyDetector no disponible');
+            return;
+        }
+        
         // Combinar ambos mensajes para mejor detección
         const fullConversation = `${userMessage} ${sofiaResponse}`;
         
