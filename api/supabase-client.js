@@ -1,9 +1,9 @@
 // api/supabase-client.js
 // Cliente de Supabase para gestión de CRM y memoria persistente
-// Versión: 1.0.0
+// Versión: 1.1.0 - FIXED: Import desde npm en lugar de CDN
 // ESTE ARCHIVO ES COMPLETAMENTE NUEVO - NO AFECTA AL CÓDIGO EXISTENTE
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 // Inicializar cliente Supabase
 let supabase = null;
