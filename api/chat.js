@@ -2,6 +2,11 @@
 // Backend serverless con TODAS las capacidades de ChatGPT Plus
 // GPT-4o + Vision + DALL-E 3 + Web Search + Code Interpreter + File Analysis + Canvas
 
+// ============================================
+// 💾 MEMORIA PERSISTENTE CON SUPABASE
+// ============================================
+import supabaseClient from './supabase-client.js';
+
 // ============================================================================
 // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
 // ============================================================================
@@ -110,6 +115,7 @@ export default async function handler(req, res) {
       messages, 
       userType, 
       userName,
+      userEmail,  // ← NUEVO: Email para memoria persistente
       sofiaVersion = 'sofia-1.0',
       userPlan = 'particular',
       imageFile,
@@ -209,9 +215,26 @@ export default async function handler(req, res) {
     }
 
     // ============================================================================
-    // Build Advanced System Prompt con TODO el conocimiento
+    // Build Advanced System Prompt con TODO el conocimiento + MEMORIA
     // ============================================================================
-    const systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults);
+    let systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults);
+    
+    // 💾 AÑADIR MEMORIA PERSISTENTE (si está disponible)
+    if (userEmail && supabaseClient) {
+      try {
+        const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
+        if (user) {
+          const userContext = await supabaseClient.getUserContext(user.id);
+          if (userContext) {
+            systemPrompt = await addMemoryToSystemPrompt(systemPrompt, userContext);
+            console.log('✅ Memoria persistente añadida al prompt');
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ Error cargando memoria:', error);
+        // Continuar sin memoria si falla
+      }
+    }
 
     // ============================================================================
     // 🛠️ DEFINE TOOLS/FUNCTIONS AVAILABLE (Function Calling)
@@ -408,6 +431,19 @@ export default async function handler(req, res) {
       }
     }
 
+    // ============================================================================
+    // 💾 Guardar conversación en base de datos (no bloqueante)
+    // ============================================================================
+    if (userEmail) {
+      saveConversationAsync(
+        userEmail,
+        userName,
+        userType,
+        lastMessage.content,
+        assistantMessage.content
+      ).catch(err => console.error('Error guardando:', err));
+    }
+    
     // ============================================================================
     // Response (No tool calls - normal text response)
     // ============================================================================
@@ -900,4 +936,110 @@ De profesor experto a estudiante. Conversacional, no académico. Usas anécdotas
   }
 
   return basePersonality;
+}
+
+// ============================================
+// 💾 FUNCIONES DE MEMORIA PERSISTENTE
+// ============================================
+
+/**
+ * Añadir memoria persistente al system prompt
+ */
+async function addMemoryToSystemPrompt(basePrompt, userContext) {
+  if (!userContext) return basePrompt;
+  
+  const memorySections = [];
+  
+  // CONVERSACIONES RECIENTES
+  if (userContext.conversations && userContext.conversations.length > 0) {
+    const recentConvs = userContext.conversations.slice(-15);
+    const convSummary = recentConvs.map(conv => {
+      const date = new Date(conv.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+      const preview = conv.message.substring(0, 120);
+      return `[${date}] ${conv.sender === 'user' ? '👤' : '🤖'}: ${preview}${conv.message.length > 120 ? '...' : ''}`;
+    }).join('\n');
+    
+    memorySections.push(`## 💬 CONVERSACIONES RECIENTES (${recentConvs.length})
+
+${convSummary}
+
+**Usa esto para:** Recordar temas anteriores, no repetir info, hacer seguimiento.`);
+  }
+  
+  // PROPIEDADES
+  if (userContext.properties && userContext.properties.length > 0) {
+    const propsList = userContext.properties.map(p => 
+      `- 📍 ${p.address}${p.city ? ` (${p.city})` : ''} - ${p.price ? p.price + '€' : 'Sin precio'} - ${p.status}`
+    ).join('\n');
+    
+    memorySections.push(`## 🏠 PROPIEDADES REGISTRADAS (${userContext.properties.length})
+
+${propsList}
+
+**Cuando mencione una dirección,** pregunta si quiere archivar info en su carpeta.`);
+  }
+  
+  // TAREAS PENDIENTES
+  if (userContext.tasks && userContext.tasks.length > 0) {
+    const now = new Date();
+    const overdue = userContext.tasks.filter(t => t.due_date && new Date(t.due_date) < now);
+    const upcoming = userContext.tasks.filter(t => t.due_date && new Date(t.due_date) >= now);
+    
+    let tasksInfo = '';
+    if (overdue.length > 0) {
+      tasksInfo += `⚠️ **VENCIDAS:** ${overdue.map(t => t.title).join(', ')}\n`;
+    }
+    if (upcoming.length > 0) {
+      tasksInfo += `📅 **PRÓXIMAS:** ${upcoming.map(t => t.title).join(', ')}`;
+    }
+    
+    memorySections.push(`## ✅ TAREAS (${userContext.tasks.length})
+
+${tasksInfo}
+
+**SÉ PROACTIVA:** Menciona tareas vencidas al inicio.`);
+  }
+  
+  // CONTACTOS
+  if (userContext.contacts && userContext.contacts.length > 0) {
+    const contactsList = userContext.contacts.slice(0, 5).map(c => 
+      `- ${c.name} (${c.contact_type})`
+    ).join('\n');
+    
+    memorySections.push(`## 👥 CONTACTOS (${userContext.contacts.length})
+
+${contactsList}${userContext.contacts.length > 5 ? '\n- ...' : ''}`);
+  }
+  
+  if (memorySections.length === 0) return basePrompt;
+  
+  // Combinar prompt base + memoria
+  return `${basePrompt}
+
+# ═════════════════════════════════════════════
+# 💾 MEMORIA PERSISTENTE DEL USUARIO
+# ═════════════════════════════════════════════
+
+${memorySections.join('\n\n')}
+
+# ═════════════════════════════════════════════
+`;
+}
+
+/**
+ * Guardar conversación en base de datos (asíncrono)
+ */
+async function saveConversationAsync(userEmail, userName, userType, userMessage, sofiaMessage) {
+  if (!userEmail || !supabaseClient) return;
+  
+  try {
+    const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
+    if (user) {
+      await supabaseClient.saveMessage(user.id, userMessage, 'user');
+      await supabaseClient.saveMessage(user.id, sofiaMessage, 'sofia');
+      console.log('✅ Conversación guardada');
+    }
+  } catch (error) {
+    console.error('⚠️ Error guardando conversación:', error);
+  }
 }
