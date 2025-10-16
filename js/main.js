@@ -7,6 +7,7 @@ class DomusIA {
         this.isAuthenticated = false;
         this.userType = null; // 'particular', 'profesional', or null
         this.userName = null;
+        this.userEmail = null; // ← NUEVO: Para memoria persistente CRM
         this.subscriptionPlan = 'free'; // 'free', 'particular', 'profesional'
         this.dailyMessageCount = 0;
         this.dailyMessageLimit = 15;
@@ -20,6 +21,9 @@ class DomusIA {
         
         // Initialize Sofia AI
         this.sofiaAI = new SofiaAI();
+        
+        // 🏠 CRM: Property Detector
+        this.propertyDetector = new PropertyDetector();
         
         this.init();
     }
@@ -40,6 +44,7 @@ class DomusIA {
             this.isAuthenticated = data.isAuthenticated || false;
             this.userType = data.userType || null;
             this.userName = data.userName || null;
+            this.userEmail = data.userEmail || null; // ← NUEVO
             this.subscriptionPlan = data.subscriptionPlan || 'free';
             this.dailyMessageCount = data.dailyMessageCount || 0;
             this.apiKey = data.apiKey || null;
@@ -59,6 +64,7 @@ class DomusIA {
             isAuthenticated: this.isAuthenticated,
             userType: this.userType,
             userName: this.userName,
+            userEmail: this.userEmail, // ← NUEVO
             subscriptionPlan: this.subscriptionPlan,
             dailyMessageCount: this.dailyMessageCount,
             apiKey: this.apiKey,
@@ -340,6 +346,9 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             // Add message with typing effect
             this.addMessage('assistant', response, true);
             
+            // 🏠 CRM: Detectar si hay propiedad en la conversación
+            this.detectPropertyInConversation(finalMessage, response);
+            
             // Save conversation
             this.conversationHistory.push(
                 { role: 'user', content: finalMessage, timestamp: new Date().toISOString() },
@@ -429,6 +438,18 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             this.userType = userInfo.type;
         }
         
+        // ← NUEVO: Pedir email para CRM (opcional, no bloqueante)
+        if (!this.userEmail && this.userName) {
+            setTimeout(() => {
+                const email = prompt(`${this.userName}, para poder guardar tu historial y propiedades, ¿cuál es tu email? (opcional, puedes cancelar)`);
+                if (email && email.includes('@')) {
+                    this.userEmail = email;
+                    this.saveUserData();
+                    console.log('✅ Email guardado para memoria CRM');
+                }
+            }, 2000); // Esperar 2s para no ser intrusivo
+        }
+        
         this.saveUserData();
         this.updateAuthButtons();
         
@@ -462,6 +483,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     messages: messagesWithHistory, // Historial completo en lugar de solo mensaje actual
                     userType: this.userType,
                     userName: this.userName,
+                    userEmail: this.userEmail, // ← NUEVO: Para memoria persistente CRM
                     userPlan: this.subscriptionPlan || 'particular',
                     webSearch: 'auto'  // Búsqueda automática cuando sea necesario
                 };
@@ -1947,6 +1969,190 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                 alert(`¡Bienvenido/a ${name}! Ya puedes hablar con Sofía como ${userType}.`);
                 this.openChat();
             }
+        }
+    }
+
+    // ============================================
+    // 🏠 CRM: PROPERTY DETECTION & MANAGEMENT
+    // ============================================
+    
+    /**
+     * Detectar propiedades en conversación (usuario + Sofía)
+     */
+    detectPropertyInConversation(userMessage, sofiaResponse) {
+        // Combinar ambos mensajes para mejor detección
+        const fullConversation = `${userMessage} ${sofiaResponse}`;
+        
+        // Detectar propiedad
+        const propertyData = this.propertyDetector.extractPropertyData(fullConversation);
+        
+        if (propertyData && propertyData.confidence >= 40) {
+            console.log('🏠 Propiedad detectada:', propertyData);
+            
+            // Mostrar modal de confirmación (con delay para no interrumpir lectura)
+            setTimeout(() => {
+                this.showPropertyConfirmationModal(propertyData, userMessage);
+            }, 1500);
+        }
+    }
+    
+    /**
+     * Mostrar modal de confirmación de propiedad
+     */
+    showPropertyConfirmationModal(propertyData, originalMessage) {
+        // Verificar que el usuario tenga email (necesario para CRM)
+        if (!this.userEmail) {
+            console.log('⚠️ Usuario sin email, no se puede guardar en CRM');
+            return;
+        }
+        
+        // Crear modal si no existe
+        let modal = document.getElementById('propertyModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'propertyModal';
+            modal.className = 'property-modal hidden';
+            document.body.appendChild(modal);
+        }
+        
+        // Generar contenido del modal
+        const summary = this.propertyDetector.generateSummary(propertyData);
+        const display = this.propertyDetector.formatForDisplay(propertyData);
+        
+        modal.innerHTML = `
+            <div class="property-modal-overlay" onclick="window.domusIA.closePropertyModal()"></div>
+            <div class="property-modal-content">
+                <div class="property-modal-header">
+                    <h3>🏠 Propiedad detectada</h3>
+                    <button onclick="window.domusIA.closePropertyModal()" class="property-modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="property-modal-body">
+                    <div class="property-summary">
+                        <p class="text-lg font-semibold text-gray-800 mb-3">${summary}</p>
+                        <p class="text-sm text-gray-600 mb-4">${display}</p>
+                    </div>
+                    
+                    <div class="property-confidence">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Confianza de detección</span>
+                            <span>${propertyData.confidence}%</span>
+                        </div>
+                        <div class="property-confidence-bar">
+                            <div class="property-confidence-fill" style="width: ${propertyData.confidence}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="property-details">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">📋 Detalles extraídos:</h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            ${propertyData.property_type ? `<li><strong>Tipo:</strong> ${propertyData.property_type}</li>` : ''}
+                            ${propertyData.address ? `<li><strong>Dirección:</strong> ${propertyData.address}</li>` : ''}
+                            ${propertyData.city ? `<li><strong>Ciudad:</strong> ${propertyData.city}</li>` : ''}
+                            ${propertyData.price ? `<li><strong>Precio:</strong> ${this.propertyDetector.formatPrice(propertyData.price)}</li>` : ''}
+                            ${propertyData.surface_m2 ? `<li><strong>Superficie:</strong> ${propertyData.surface_m2}m²</li>` : ''}
+                            ${propertyData.rooms ? `<li><strong>Habitaciones:</strong> ${propertyData.rooms}</li>` : ''}
+                            ${propertyData.bathrooms ? `<li><strong>Baños:</strong> ${propertyData.bathrooms}</li>` : ''}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="property-modal-footer">
+                    <button onclick="window.domusIA.closePropertyModal()" class="property-btn-cancel">
+                        ❌ No guardar
+                    </button>
+                    <button onclick="window.domusIA.savePropertyToCRM()" class="property-btn-save">
+                        ✅ Guardar en CRM
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Guardar datos temporalmente para cuando el usuario confirme
+        this.tempPropertyData = {
+            ...propertyData,
+            userName: this.userName,
+            userType: this.userType,
+            raw_text: originalMessage
+        };
+        
+        // Mostrar modal con animación
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+    }
+    
+    /**
+     * Cerrar modal de propiedad
+     */
+    closePropertyModal() {
+        const modal = document.getElementById('propertyModal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+        this.tempPropertyData = null;
+    }
+    
+    /**
+     * Guardar propiedad en CRM (llamada API)
+     */
+    async savePropertyToCRM() {
+        if (!this.tempPropertyData || !this.userEmail) {
+            console.error('❌ No hay datos de propiedad o email');
+            return;
+        }
+        
+        // Cerrar modal
+        this.closePropertyModal();
+        
+        // Mostrar mensaje de guardando
+        this.addMessage('assistant', '💾 Guardando propiedad en tu CRM...', false);
+        
+        try {
+            const response = await fetch('/api/properties', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userEmail: this.userEmail,
+                    propertyData: this.tempPropertyData
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Éxito
+                const summary = this.propertyDetector.generateSummary(this.tempPropertyData);
+                this.addMessage('assistant', 
+                    `✅ ¡Propiedad guardada exitosamente en tu CRM!\n\n` +
+                    `📍 ${summary}\n` +
+                    `🆔 ID: ${data.property.id.substring(0, 8)}...\n\n` +
+                    `Puedes verla en tu panel CRM cuando lo implementemos en la Fase 5.`, 
+                    false
+                );
+                
+                console.log('✅ Propiedad guardada:', data.property);
+            } else {
+                throw new Error(data.error || 'Error desconocido');
+            }
+        } catch (error) {
+            console.error('❌ Error guardando propiedad:', error);
+            this.addMessage('assistant', 
+                `⚠️ No pude guardar la propiedad en el CRM. ` +
+                `Esto puede ser porque la base de datos aún no está configurada. ` +
+                `Error: ${error.message}`, 
+                false
+            );
+        } finally {
+            this.tempPropertyData = null;
         }
     }
 }
