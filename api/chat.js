@@ -5,9 +5,7 @@
 // ============================================
 // 💾 MEMORIA PERSISTENTE CON SUPABASE
 // ============================================
-// TEMPORALMENTE DESACTIVADO - El import rompe el endpoint
-// TODO: Arreglar el import de ES modules en Vercel
-// import supabaseClient from './supabase-client.js';
+import supabaseClient from './supabase-client.js';
 
 // ============================================================================
 // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
@@ -221,8 +219,7 @@ export default async function handler(req, res) {
     // ============================================================================
     let systemPrompt = buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchResults);
     
-    // 💾 AÑADIR MEMORIA PERSISTENTE (TEMPORALMENTE DESACTIVADO)
-    /*
+    // 💾 AÑADIR MEMORIA PERSISTENTE (si está disponible)
     if (userEmail && supabaseClient) {
       try {
         const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
@@ -238,7 +235,6 @@ export default async function handler(req, res) {
         // Continuar sin memoria si falla
       }
     }
-    */
 
     // ============================================================================
     // 🛠️ DEFINE TOOLS/FUNCTIONS AVAILABLE (Function Calling)
@@ -436,9 +432,8 @@ export default async function handler(req, res) {
     }
 
     // ============================================================================
-    // 💾 Guardar conversación en base de datos (TEMPORALMENTE DESACTIVADO)
+    // 💾 Guardar conversación en base de datos (no bloqueante)
     // ============================================================================
-    /*
     if (userEmail) {
       saveConversationAsync(
         userEmail,
@@ -448,7 +443,6 @@ export default async function handler(req, res) {
         assistantMessage.content
       ).catch(err => console.error('Error guardando:', err));
     }
-    */
     
     // ============================================================================
     // Response (No tool calls - normal text response)
@@ -951,10 +945,6 @@ De profesor experto a estudiante. Conversacional, no académico. Usas anécdotas
 /**
  * Añadir memoria persistente al system prompt
  */
-/**
- * TEMPORALMENTE DESACTIVADO
- */
-/*
 async function addMemoryToSystemPrompt(basePrompt, userContext) {
   if (!userContext) return basePrompt;
   
@@ -1035,13 +1025,10 @@ ${memorySections.join('\n\n')}
 # ═════════════════════════════════════════════
 `;
 }
-*/
 
 /**
  * Guardar conversación en base de datos (asíncrono)
- * TEMPORALMENTE DESACTIVADO
  */
-/*
 async function saveConversationAsync(userEmail, userName, userType, userMessage, sofiaMessage) {
   if (!userEmail || !supabaseClient) return;
   
@@ -1056,4 +1043,3 @@ async function saveConversationAsync(userEmail, userName, userType, userMessage,
     console.error('⚠️ Error guardando conversación:', error);
   }
 }
-*/
