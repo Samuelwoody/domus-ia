@@ -745,5 +745,22 @@
     <script src="js/cookie-consent.js"></script>
     <script src="js/crm-property-detector.js"></script>
     <script src="js/main.js"></script>
+    
+    <!-- Inicialización después de cargar todos los scripts -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            // Inicializar sistema de cookies
+            if (typeof CookieConsent !== 'undefined') {
+                const cookieManager = new CookieConsent();
+                cookieManager.init();
+            }
+            
+            // Inicializar Voice Reader
+            if (typeof VoiceReader !== 'undefined') {
+                window.voiceReader = new VoiceReader();
+            }
+        });
+    </script>
 </body>
 </html>
+
