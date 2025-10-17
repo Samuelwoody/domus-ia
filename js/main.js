@@ -2171,6 +2171,11 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         this.addMessage('assistant', '💾 Guardando propiedad en tu CRM...', false);
         
         try {
+            console.log('📤 Enviando datos al backend:', {
+                userEmail: this.userEmail,
+                propertyData: this.tempPropertyData
+            });
+            
             const response = await fetch('/api/properties', {
                 method: 'POST',
                 headers: {
@@ -2183,6 +2188,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             });
             
             const data = await response.json();
+            
+            console.log('📥 Respuesta del backend:', {
+                status: response.status,
+                ok: response.ok,
+                data: data
+            });
             
             if (response.ok && data.success) {
                 // Éxito
