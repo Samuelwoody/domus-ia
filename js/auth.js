@@ -231,11 +231,22 @@ window.handleRegister = async function(event) {
     
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
+    
+    if (!submitBtn) {
+        console.error('❌ Submit button not found');
+        return;
+    }
+    
     const originalText = submitBtn.textContent;
     
     try {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
+        
+        // Validar que authSystem esté disponible
+        if (!window.authSystem) {
+            throw new Error('Sistema de autenticación no disponible. Recarga la página.');
+        }
         
         const userData = {
             name: form.name.value,
@@ -245,15 +256,23 @@ window.handleRegister = async function(event) {
             businessDocument: form.businessDocument?.value || null
         };
         
+        console.log('📝 Iniciando registro con datos:', {
+            ...userData,
+            password: '***' // No loguear la contraseña
+        });
+        
         const result = await window.authSystem.register(userData);
+        
+        console.log('✅ Registro completado:', result);
         
         alert(result.message);
         window.closeAuthModals();
         
         // Recargar página para actualizar UI
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 500);
         
     } catch (error) {
+        console.error('❌ Error en handleRegister:', error);
         alert('Error: ' + error.message);
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
@@ -265,24 +284,40 @@ window.handleLogin = async function(event) {
     
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
+    
+    if (!submitBtn) {
+        console.error('❌ Submit button not found');
+        return;
+    }
+    
     const originalText = submitBtn.textContent;
     
     try {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Iniciando sesión...';
         
+        // Validar que authSystem esté disponible
+        if (!window.authSystem) {
+            throw new Error('Sistema de autenticación no disponible. Recarga la página.');
+        }
+        
         const email = form.email.value;
         const password = form.password.value;
         
+        console.log('🔐 Iniciando login para:', email);
+        
         const result = await window.authSystem.login(email, password);
+        
+        console.log('✅ Login completado:', result);
         
         alert(result.message);
         window.closeAuthModals();
         
         // Recargar página para actualizar UI
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 500);
         
     } catch (error) {
+        console.error('❌ Error en handleLogin:', error);
         alert('Error: ' + error.message);
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
