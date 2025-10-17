@@ -1,5 +1,9 @@
 // api/login.js
-// Login de usuarios - Sin API keys
+// Login de usuarios - Integrado con Supabase
+// Versión: 2.0.0 - Compatible con auth.js y main.js
+
+import supabaseClient from './supabase-client.js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -26,95 +30,76 @@ export default async function handler(req, res) {
       });
     }
 
-    // TODO: Implementar con base de datos real
-    /*
-    const bcrypt = require('bcrypt');
-    const jwt = require('jsonwebtoken');
-
-    // 1. Buscar usuario por email
-    const user = await db.users.findUnique({
-      where: { email: email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ 
-        success: false,
-        error: 'Email o contraseña incorrectos' 
-      });
-    }
-
-    // 2. Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false,
-        error: 'Email o contraseña incorrectos' 
-      });
-    }
-
-    // 3. Generar token JWT
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        userType: user.userType 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
-    // 4. Actualizar último login
-    await db.users.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() }
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Login exitoso',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        userType: user.userType,
-        subscriptionPlan: user.subscriptionPlan,
-        subscriptionStatus: user.subscriptionStatus,
-        stripeCustomerId: user.stripeCustomerId,
-        usage: {
-          messages: user.monthlyMessageCount,
-          dalle: user.monthlyDalleCount,
-          vision: user.monthlyVisionCount,
-          documents: user.monthlyDocumentCount
-        }
-      },
-      token: token
-    });
-    */
-
-    // MODO DEMO - Login simulado
-    console.log('✅ Login simulado:', { email });
+    // Hash de contraseña para comparar
+    const hashedPassword = crypto
+      .createHash('sha256')
+      .update(password)
+      .digest('hex');
     
-    const userId = 'user_' + Date.now();
+    let user = null;
+    let isDemo = false;
     
-    return res.status(200).json({
-      success: true,
-      demo: true,
-      message: 'Login exitoso (modo demo)',
-      user: {
-        id: userId,
-        name: 'Usuario Demo',
+    if (supabaseClient) {
+      // Modo producción con Supabase
+      console.log('🔐 Intentando login con Supabase:', email);
+      
+      // Obtener usuario de Supabase
+      user = await supabaseClient.getOrCreateUser(email);
+      
+      if (!user) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Email o contraseña incorrectos' 
+        });
+      }
+      
+      // TODO: Verificar password con hash guardado en BD
+      // Por ahora aceptamos cualquier password en modo Supabase
+      // Requiere columna password_hash en tabla users
+      
+      console.log('✅ Login exitoso en Supabase:', user.id);
+      
+    } else {
+      // Modo DEMO (sin Supabase configurado)
+      isDemo = true;
+      user = {
+        id: 'demo-' + Date.now(),
         email: email,
-        userType: 'particular',
-        subscriptionPlan: 'free',
-        usage: {
-          messages: 0,
-          dalle: 0,
-          vision: 0,
-          documents: 0
-        }
-      },
-      token: 'demo_token_' + userId
+        name: email.split('@')[0],
+        user_type: 'particular'
+      };
+      console.log('🎭 Login en modo DEMO');
+    }
+    
+    // Generar token de sesión (simple - en producción usar JWT)
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // Respuesta
+    const responseUser = {
+      id: user.id,
+      name: user.name || email.split('@')[0],
+      email: user.email || email,
+      userType: user.user_type || 'particular',
+      subscriptionPlan: user.subscription_plan || 'free',
+      subscriptionStatus: user.subscription_status || 'active',
+      usage: {
+        messages: 0,
+        dalle: 0,
+        vision: 0,
+        documents: 0
+      }
+    };
+    
+    console.log('✅ Login exitoso:', responseUser.email);
+    
+    return res.status(200).json({
+      success: true,
+      user: responseUser,
+      token: token,
+      demo: isDemo,
+      message: isDemo 
+        ? 'Login exitoso (modo demo)' 
+        : 'Sesión iniciada'
     });
 
   } catch (error) {
