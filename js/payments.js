@@ -21,7 +21,7 @@ class PaymentSystem {
                     vision: 100,
                     documents: 50
                 },
-                stripePriceId: process.env.STRIPE_PRICE_PARTICULAR || 'price_particular_xxx'
+                stripePriceId: 'price_particular_xxx' // TODO: Configurar en producción
             },
             profesional: {
                 id: 'profesional',
@@ -35,7 +35,7 @@ class PaymentSystem {
                     vision: 300,
                     documents: 150
                 },
-                stripePriceId: process.env.STRIPE_PRICE_PROFESIONAL || 'price_profesional_xxx'
+                stripePriceId: 'price_profesional_xxx' // TODO: Configurar en producción
             },
             premium: {
                 id: 'premium',
@@ -49,7 +49,7 @@ class PaymentSystem {
                     vision: 'unlimited',
                     documents: 500
                 },
-                stripePriceId: process.env.STRIPE_PRICE_PREMIUM || 'price_premium_xxx'
+                stripePriceId: 'price_premium_xxx' // TODO: Configurar en producción
             }
         };
     }
