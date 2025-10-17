@@ -73,10 +73,16 @@ export default async function handler(req, res) {
       // Modo producción con Supabase
       console.log('📝 Creando usuario en Supabase:', email);
       
+      // Si es profesional, limpiar y pasar el CIF
+      const cleanCif = (userType === 'profesional' && businessDocument) 
+        ? businessDocument.toUpperCase().trim() 
+        : null;
+      
       user = await supabaseClient.getOrCreateUser(
         email, 
         name, 
-        userType
+        userType,
+        cleanCif
       );
       
       if (!user) {
