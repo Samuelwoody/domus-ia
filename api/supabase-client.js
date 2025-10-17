@@ -31,7 +31,7 @@ function getSupabaseClient() {
 /**
  * Obtener o crear usuario por email
  */
-export async function getOrCreateUser(email, name = null, userType = 'particular') {
+export async function getOrCreateUser(email, name = null, userType = 'particular', cifNif = null) {
   const client = getSupabaseClient();
   if (!client) return null;
   
@@ -50,13 +50,20 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
     
     // Si no existe, crearlo
     if (!user) {
+      const insertData = {
+        email,
+        name: name || email.split('@')[0],
+        user_type: userType
+      };
+      
+      // Si es profesional y tiene CIF, agregarlo
+      if (userType === 'profesional' && cifNif) {
+        insertData.cif_nif = cifNif;
+      }
+      
       const { data: newUser, error: createError } = await client
         .from('users')
-        .insert({
-          email,
-          name: name || email.split('@')[0],
-          user_type: userType
-        })
+        .insert(insertData)
         .select()
         .single();
       
