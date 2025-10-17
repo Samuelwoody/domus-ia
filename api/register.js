@@ -86,10 +86,38 @@ export default async function handler(req, res) {
         });
       }
       
-      // TODO: Guardar hashedPassword y businessDocument en BD
-      // Requiere columnas: password_hash, cif_nif en tabla users
+      // Actualizar password_hash y cif_nif en la base de datos
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+      
+      const updateData = {
+        password_hash: hashedPassword,
+        last_login: new Date().toISOString()
+      };
+      
+      // Solo agregar cif_nif si es profesional
+      if (userType === 'profesional' && businessDocument) {
+        updateData.cif_nif = businessDocument.toUpperCase().trim();
+      }
+      
+      const { error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('Error actualizando usuario:', updateError);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Error al guardar credenciales' 
+        });
+      }
       
       console.log('✅ Usuario creado en Supabase:', user.id);
+      console.log('✅ Credenciales guardadas correctamente');
       
     } else {
       // Modo DEMO (sin Supabase configurado)
