@@ -86,12 +86,20 @@ export default async function handler(req, res) {
         });
       }
       
-      // Actualizar password_hash y cif_nif en la base de datos
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_KEY
-      );
+      // Actualizar password_hash y cif_nif usando el cliente directo
+      console.log('📝 Actualizando credenciales para usuario:', user.id);
+      
+      // Construir URL de actualización
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('❌ Supabase no configurado');
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Configuración de base de datos incompleta' 
+        });
+      }
       
       const updateData = {
         password_hash: hashedPassword,
@@ -103,16 +111,24 @@ export default async function handler(req, res) {
         updateData.cif_nif = businessDocument.toUpperCase().trim();
       }
       
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', user.id);
+      // Hacer update directo con fetch
+      const updateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(updateData)
+      });
       
-      if (updateError) {
-        console.error('Error actualizando usuario:', updateError);
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error('Error actualizando usuario:', errorText);
         return res.status(500).json({ 
           success: false, 
-          error: 'Error al guardar credenciales' 
+          error: 'Error al guardar credenciales en base de datos' 
         });
       }
       
