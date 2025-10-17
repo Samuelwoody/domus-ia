@@ -43,28 +43,53 @@ export default async function handler(req, res) {
       // Modo producción con Supabase
       console.log('🔐 Intentando login con Supabase:', email);
       
-      // Obtener usuario de Supabase con password_hash
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_KEY
-      );
+      // Obtener usuario de Supabase usando fetch directo
+      console.log('🔐 Buscando usuario en Supabase:', email);
       
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
       
-      if (error || !user) {
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('❌ Supabase no configurado');
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Configuración de base de datos incompleta' 
+        });
+      }
+      
+      // Buscar usuario por email
+      const getUserResponse = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!getUserResponse.ok) {
+        console.error('Error buscando usuario en BD');
         return res.status(401).json({ 
           success: false, 
           error: 'Email o contraseña incorrectos' 
         });
       }
       
+      const users = await getUserResponse.json();
+      
+      if (!users || users.length === 0) {
+        console.log('❌ Usuario no encontrado:', email);
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Email o contraseña incorrectos' 
+        });
+      }
+      
+      user = users[0];
+      
       // Verificar password con hash guardado en BD
       if (user.password_hash && user.password_hash !== hashedPassword) {
+        console.log('❌ Password incorrecta para:', email);
         return res.status(401).json({ 
           success: false, 
           error: 'Email o contraseña incorrectos' 
@@ -72,10 +97,16 @@ export default async function handler(req, res) {
       }
       
       // Actualizar last_login
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', user.id);
+      await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ last_login: new Date().toISOString() })
+      });
       
       console.log('✅ Login exitoso en Supabase:', user.id);
       
