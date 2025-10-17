@@ -43,19 +43,39 @@ export default async function handler(req, res) {
       // Modo producción con Supabase
       console.log('🔐 Intentando login con Supabase:', email);
       
-      // Obtener usuario de Supabase
-      user = await supabaseClient.getOrCreateUser(email);
+      // Obtener usuario de Supabase con password_hash
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY
+      );
       
-      if (!user) {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      
+      if (error || !user) {
         return res.status(401).json({ 
           success: false, 
           error: 'Email o contraseña incorrectos' 
         });
       }
       
-      // TODO: Verificar password con hash guardado en BD
-      // Por ahora aceptamos cualquier password en modo Supabase
-      // Requiere columna password_hash en tabla users
+      // Verificar password con hash guardado en BD
+      if (user.password_hash && user.password_hash !== hashedPassword) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Email o contraseña incorrectos' 
+        });
+      }
+      
+      // Actualizar last_login
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', user.id);
       
       console.log('✅ Login exitoso en Supabase:', user.id);
       
