@@ -2164,6 +2164,9 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             return;
         }
         
+        // IMPORTANTE: Guardar referencia a los datos ANTES de cerrar el modal
+        const propertyDataToSave = { ...this.tempPropertyData };
+        
         // Cerrar modal
         this.closePropertyModal();
         
@@ -2173,7 +2176,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         try {
             console.log('📤 Enviando datos al backend:', {
                 userEmail: this.userEmail,
-                propertyData: this.tempPropertyData
+                propertyData: propertyDataToSave
             });
             
             const response = await fetch('/api/properties', {
@@ -2183,7 +2186,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                 },
                 body: JSON.stringify({
                     userEmail: this.userEmail,
-                    propertyData: this.tempPropertyData
+                    propertyData: propertyDataToSave
                 })
             });
             
@@ -2197,7 +2200,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             
             if (response.ok && data.success) {
                 // Éxito
-                const summary = this.propertyDetector.generateSummary(this.tempPropertyData);
+                const summary = this.propertyDetector.generateSummary(propertyDataToSave);
                 this.addMessage('assistant', 
                     `✅ ¡Propiedad guardada exitosamente en tu CRM!\n\n` +
                     `📍 ${summary}\n` +
@@ -2219,7 +2222,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                 false
             );
         } finally {
-            this.tempPropertyData = null;
+            // Ya se limpió en closePropertyModal
         }
     }
 }
