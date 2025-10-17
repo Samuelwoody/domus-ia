@@ -1,5 +1,9 @@
 // api/register.js
-// Registro de nuevos usuarios - Sin API keys
+// Registro de nuevos usuarios - Integrado con Supabase
+// Versión: 2.0.0 - Compatible con auth.js y main.js
+
+import supabaseClient from './supabase-client.js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -41,82 +45,94 @@ export default async function handler(req, res) {
         error: 'Los profesionales deben proporcionar CIF/NIF' 
       });
     }
-
-    // TODO: Implementar con base de datos real
-    /*
-    // 1. Verificar que el email no existe
-    const existingUser = await db.users.findUnique({
-      where: { email: email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'El email ya está registrado' 
-      });
+    
+    // Validar formato CIF/NIF español
+    if (userType === 'profesional' && businessDocument) {
+      const cifNifRegex = /^[A-Z]?[0-9]{8}[A-Z]?$/i;
+      const cleanDoc = businessDocument.toUpperCase().trim();
+      
+      if (!cifNifRegex.test(cleanDoc)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Formato de CIF/NIF inválido. Use: B12345678 (CIF) o 12345678A (NIF)' 
+        });
+      }
     }
 
-    // 2. Hashear contraseña
-    const bcrypt = require('bcrypt');
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 3. Crear usuario
-    const user = await db.users.create({
-      data: {
-        name: name,
-        email: email,
-        password: hashedPassword,
-        userType: userType,
-        businessDocument: businessDocument || null,
-        subscriptionPlan: 'free',
-        subscriptionStatus: 'trial',
-        monthlyMessageCount: 0,
-        monthlyDalleCount: 0,
-        monthlyVisionCount: 0,
-        monthlyDocumentCount: 0,
-        createdAt: new Date()
+    // Hash de contraseña (simple - en producción usar bcrypt)
+    const hashedPassword = crypto
+      .createHash('sha256')
+      .update(password)
+      .digest('hex');
+    
+    // Crear usuario en Supabase o modo demo
+    let user = null;
+    let isDemo = false;
+    
+    if (supabaseClient) {
+      // Modo producción con Supabase
+      console.log('📝 Creando usuario en Supabase:', email);
+      
+      user = await supabaseClient.getOrCreateUser(
+        email, 
+        name, 
+        userType
+      );
+      
+      if (!user) {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Error al crear usuario en base de datos' 
+        });
       }
-    });
-
-    // 4. Generar token JWT
-    const jwt = require('jsonwebtoken');
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, userType: user.userType },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: 'Usuario registrado exitosamente',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        userType: user.userType,
-        subscriptionPlan: user.subscriptionPlan
-      },
-      token: token
-    });
-    */
-
-    // MODO DEMO - Crear usuario simulado
-    console.log('✅ Registro simulado:', { name, email, userType, businessDocument });
-    
-    const userId = 'user_' + Date.now();
-    
-    return res.status(201).json({
-      success: true,
-      demo: true,
-      message: 'Usuario registrado (modo demo)',
-      user: {
-        id: userId,
-        name: name,
+      
+      // TODO: Guardar hashedPassword y businessDocument en BD
+      // Requiere columnas: password_hash, cif_nif en tabla users
+      
+      console.log('✅ Usuario creado en Supabase:', user.id);
+      
+    } else {
+      // Modo DEMO (sin Supabase configurado)
+      isDemo = true;
+      user = {
+        id: 'demo-' + Date.now(),
         email: email,
-        userType: userType,
-        subscriptionPlan: 'free'
-      },
-      token: 'demo_token_' + userId
+        name: name,
+        user_type: userType
+      };
+      console.log('🎭 Usuario creado en modo DEMO');
+    }
+    
+    // Generar token de sesión (simple - en producción usar JWT)
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // Respuesta
+    const responseUser = {
+      id: user.id,
+      name: user.name || name,
+      email: user.email || email,
+      userType: user.user_type || userType,
+      businessDocument: userType === 'profesional' ? businessDocument : null,
+      subscriptionPlan: user.subscription_plan || 'free',
+      subscriptionStatus: user.subscription_status || 'active',
+      usage: {
+        messages: 0,
+        dalle: 0,
+        vision: 0,
+        documents: 0
+      }
+    };
+    
+    console.log('✅ Registro exitoso:', responseUser.email);
+    
+    return res.status(201).json({
+      success: true,
+      user: responseUser,
+      token: token,
+      demo: isDemo,
+      message: isDemo 
+        ? 'Cuenta creada en modo demo (sin base de datos)' 
+        : 'Cuenta creada exitosamente'
     });
 
   } catch (error) {
