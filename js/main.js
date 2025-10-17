@@ -41,23 +41,63 @@ class DomusIA {
 
     // ===== USER DATA MANAGEMENT =====
     loadUserData() {
+        // PRIORIDAD 1: Leer desde sesión de auth.js (nuevo sistema)
+        const authSession = localStorage.getItem('domusIA_session');
+        if (authSession) {
+            try {
+                const session = JSON.parse(authSession);
+                if (session.user && session.token) {
+                    this.isAuthenticated = true;
+                    this.userName = session.user.name;
+                    this.userEmail = session.user.email;
+                    this.userType = session.user.userType;
+                    this.subscriptionPlan = session.user.subscriptionPlan || 'free';
+                    console.log('✅ Usuario cargado desde auth session:', this.userName);
+                    
+                    // Migrar dailyMessageCount del sistema legacy si existe
+                    const legacyData = localStorage.getItem('domusIAEspana_userData');
+                    if (legacyData) {
+                        const legacy = JSON.parse(legacyData);
+                        this.dailyMessageCount = legacy.dailyMessageCount || 0;
+                        this.apiKey = legacy.apiKey || null;
+                        
+                        // Reset daily count if it's a new day
+                        const lastUsageDate = legacy.lastUsageDate;
+                        const today = new Date().toDateString();
+                        if (lastUsageDate !== today) {
+                            this.dailyMessageCount = 0;
+                        }
+                    }
+                    return;
+                }
+            } catch (error) {
+                console.error('Error leyendo auth session:', error);
+            }
+        }
+        
+        // FALLBACK: Leer de userData legacy (sistema antiguo)
         const userData = localStorage.getItem('domusIAEspana_userData');
         if (userData) {
-            const data = JSON.parse(userData);
-            this.isAuthenticated = data.isAuthenticated || false;
-            this.userType = data.userType || null;
-            this.userName = data.userName || null;
-            this.userEmail = data.userEmail || null; // ← NUEVO
-            this.subscriptionPlan = data.subscriptionPlan || 'free';
-            this.dailyMessageCount = data.dailyMessageCount || 0;
-            this.apiKey = data.apiKey || null;
-            
-            // Reset daily count if it's a new day
-            const lastUsageDate = data.lastUsageDate;
-            const today = new Date().toDateString();
-            if (lastUsageDate !== today) {
-                this.dailyMessageCount = 0;
-                this.saveUserData();
+            try {
+                const data = JSON.parse(userData);
+                this.isAuthenticated = data.isAuthenticated || false;
+                this.userType = data.userType || null;
+                this.userName = data.userName || null;
+                this.userEmail = data.userEmail || null;
+                this.subscriptionPlan = data.subscriptionPlan || 'free';
+                this.dailyMessageCount = data.dailyMessageCount || 0;
+                this.apiKey = data.apiKey || null;
+                
+                // Reset daily count if it's a new day
+                const lastUsageDate = data.lastUsageDate;
+                const today = new Date().toDateString();
+                if (lastUsageDate !== today) {
+                    this.dailyMessageCount = 0;
+                    this.saveUserData();
+                }
+                console.log('📦 Usuario cargado desde userData legacy:', this.userName);
+            } catch (error) {
+                console.error('Error cargando userData legacy:', error);
             }
         }
     }
@@ -91,8 +131,9 @@ class DomusIA {
     bindEvents() {
         // Navigation
         document.getElementById('startChatBtn').addEventListener('click', () => this.openChat());
-        document.getElementById('loginBtn').addEventListener('click', () => this.showAuthModal('login'));
-        document.getElementById('registerBtn').addEventListener('click', () => this.showAuthModal('register'));
+        // Login/Register ahora usan funciones globales de auth.js (onclick en HTML)
+        // document.getElementById('loginBtn').addEventListener('click', () => this.showAuthModal('login'));
+        // document.getElementById('registerBtn').addEventListener('click', () => this.showAuthModal('register'));
         
         // Mobile menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -118,12 +159,13 @@ class DomusIA {
             });
         }
         
-        if (mobileLoginBtn) {
-            mobileLoginBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showAuthModal('login');
-            });
-        }
+        // Mobile login ahora usa función global de auth.js (onclick en HTML)
+        // if (mobileLoginBtn) {
+        //     mobileLoginBtn.addEventListener('click', (e) => {
+        //         e.preventDefault();
+        //         this.showAuthModal('login');
+        //     });
+        // }
         
         // Chat functionality
         document.getElementById('closeChatBtn').addEventListener('click', () => this.closeChat());
@@ -332,6 +374,11 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         this.dailyMessageCount++;
         this.saveUserData();
         this.updateMessageCounter();
+        
+        // 📧 EMAIL CAPTURE: Incrementar contador de mensajes
+        if (window.emailCapture) {
+            window.emailCapture.incrementMessageCount();
+        }
         
         // Detectar si el mensaje pide generar una imagen
         const isImageRequest = this.detectImageRequest(finalMessage);
