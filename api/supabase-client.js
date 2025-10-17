@@ -44,6 +44,7 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
       .single();
     
     if (error && error.code !== 'PGRST116') {
+      console.error('❌ Error buscando usuario en Supabase:', error.message, error.details, error.hint);
       throw error;
     }
     
@@ -59,7 +60,10 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
         .select()
         .single();
       
-      if (createError) throw createError;
+      if (createError) {
+        console.error('❌ Error creando usuario en Supabase:', createError.message, createError.details, createError.hint);
+        throw createError;
+      }
       
       console.log('✅ Usuario creado:', newUser.id);
       return newUser;
@@ -73,7 +77,13 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
     
     return user;
   } catch (error) {
-    console.error('Error en getOrCreateUser:', error);
+    console.error('❌ Error COMPLETO en getOrCreateUser:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      stack: error.stack
+    });
     return null;
   }
 }
