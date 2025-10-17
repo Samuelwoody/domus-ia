@@ -31,9 +31,28 @@ export default async function handler(req, res) {
                 });
             }
             
-            if (!propertyData || !propertyData.address) {
+            if (!propertyData) {
                 return res.status(400).json({
-                    error: 'Datos de propiedad incompletos (mínimo: dirección)'
+                    error: 'Datos de propiedad requeridos'
+                });
+            }
+            
+            // Construir dirección si no existe pero hay city u otros datos
+            let address = propertyData.address || propertyData.location || '';
+            
+            if (!address && propertyData.city) {
+                // Si no hay dirección pero hay ciudad, usar descripción o raw_text
+                address = propertyData.city;
+            }
+            
+            if (!address && propertyData.raw_text) {
+                // Último recurso: usar el texto original
+                address = propertyData.raw_text.substring(0, 200);
+            }
+            
+            if (!address) {
+                return res.status(400).json({
+                    error: 'No se pudo determinar la dirección de la propiedad'
                 });
             }
             
@@ -52,17 +71,19 @@ export default async function handler(req, res) {
             
             // Preparar datos de propiedad
             const propertyToCreate = {
-                address: propertyData.address,
+                address: address,
                 city: propertyData.city || null,
-                property_type: propertyData.property_type || 'piso',
+                property_type: propertyData.property_type || propertyData.type || 'piso',
                 price: propertyData.price || null,
-                surface_m2: propertyData.surface_m2 || null,
-                rooms: propertyData.rooms || null,
+                surface_m2: propertyData.surface_m2 || propertyData.surface || null,
+                rooms: propertyData.rooms || propertyData.bedrooms || null,
                 bathrooms: propertyData.bathrooms || null,
                 description: propertyData.description || propertyData.raw_text || null,
                 status: 'disponible',
                 images: propertyData.images || []
             };
+            
+            console.log('📋 Datos de propiedad a crear:', propertyToCreate);
             
             // Crear propiedad en base de datos
             const createdProperty = await supabaseClient.createProperty(
