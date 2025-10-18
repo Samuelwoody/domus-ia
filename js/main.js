@@ -227,15 +227,87 @@ class DomusIA {
     }
 
     updateAuthButtons() {
+        console.log('🔄 updateAuthButtons() called:', {
+            isAuthenticated: this.isAuthenticated,
+            userName: this.userName,
+            userEmail: this.userEmail
+        });
+        
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
         
+        if (!loginBtn || !registerBtn) {
+            console.error('❌ Botones no encontrados en el DOM');
+            return;
+        }
+        
         if (this.isAuthenticated && this.userName) {
-            loginBtn.textContent = `Hola, ${this.userName}`;
-            registerBtn.textContent = 'Mi Cuenta';
+            console.log('✅ Usuario autenticado, actualizando botones...');
+            
+            // Crear dropdown de usuario si no existe
+            if (!document.getElementById('userDropdown')) {
+                // Ocultar botones originales
+                loginBtn.style.display = 'none';
+                registerBtn.style.display = 'none';
+                
+                // Crear contenedor de usuario
+                const userContainer = document.createElement('div');
+                userContainer.id = 'userDropdown';
+                userContainer.className = 'flex items-center space-x-2';
+                userContainer.innerHTML = `
+                    <span class="text-domus-navy text-sm">Hola, ${this.userName}</span>
+                    <button onclick="window.handleLogout()" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                `;
+                
+                registerBtn.parentElement.insertBefore(userContainer, registerBtn);
+            } else {
+                // Actualizar nombre si cambió
+                const userContainer = document.getElementById('userDropdown');
+                const nameSpan = userContainer.querySelector('span');
+                if (nameSpan) {
+                    nameSpan.textContent = `Hola, ${this.userName}`;
+                }
+            }
+            
+            // Añadir botón al CRM si no existe
+            if (!document.getElementById('crmBtn')) {
+                console.log('➕ Creando botón Mi CRM...');
+                const crmBtn = document.createElement('a');
+                crmBtn.id = 'crmBtn';
+                crmBtn.href = 'crm.html';
+                crmBtn.className = 'bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:opacity-90 transition-all text-sm md:text-base inline-flex items-center gap-2';
+                crmBtn.innerHTML = '<i class="fas fa-th-large"></i><span class="hidden md:inline">Mi CRM</span>';
+                
+                // Insertar antes del botón de registro
+                registerBtn.parentElement.insertBefore(crmBtn, registerBtn);
+                console.log('✅ Botón Mi CRM creado correctamente');
+            } else {
+                console.log('ℹ️ Botón Mi CRM ya existe');
+            }
         } else {
+            console.log('❌ Usuario NO autenticado, mostrando botones por defecto');
+            
+            // Mostrar botones originales
+            loginBtn.style.display = '';
             loginBtn.textContent = 'Acceder';
+            registerBtn.style.display = '';
             registerBtn.textContent = 'Comenzar Gratis';
+            
+            // Remover dropdown de usuario si existe
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) {
+                userDropdown.remove();
+                console.log('🗑️ Dropdown de usuario eliminado');
+            }
+            
+            // Remover botón CRM si existe
+            const crmBtn = document.getElementById('crmBtn');
+            if (crmBtn) {
+                crmBtn.remove();
+                console.log('🗑️ Botón Mi CRM eliminado');
+            }
         }
     }
 
