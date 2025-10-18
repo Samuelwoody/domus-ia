@@ -37,6 +37,17 @@ class DomusIA {
         this.updateUI();
         this.startCountdown();
         this.loadConversationHistory();
+        this.checkHashForChat(); // Verificar si viene desde CRM
+    }
+    
+    // Verificar si el hash es #chat para abrir el modal automáticamente
+    checkHashForChat() {
+        if (window.location.hash === '#chat') {
+            console.log('🔗 Hash #chat detectado, abriendo chat...');
+            setTimeout(() => {
+                this.openChat();
+            }, 500); // Esperar a que el DOM esté listo
+        }
     }
 
     // ===== USER DATA MANAGEMENT =====
