@@ -8,10 +8,12 @@
 
 ## 🎉 FASE 1 & FASE 5 COMPLETADAS - Sistema CRM Funcional v1.3
 
-### ✅ ESTADO ACTUAL (17 Octubre 2025) - VERSIÓN 1.3.0
+### ✅ ESTADO ACTUAL (18 Octubre 2025) - VERSIÓN 1.3.1
 
 **Backend 100% Funcional:**
 - ✅ Sistema de autenticación completo (registro/login)
+- ✅ **Botón "Mi CRM" visible** después de login ← FIXED 18/10
+- ✅ **Botón "Cerrar Sesión"** funcional en header ← NUEVO 18/10
 - ✅ Validación de CIF/NIF para profesionales
 - ✅ Email capture automático al mensaje 3
 - ✅ Detección inteligente de propiedades en chat
@@ -51,6 +53,7 @@
 - 📝 [`🎨_MEJORAS_UX_CRM.md`](🎨_MEJORAS_UX_CRM.md) - Mejoras UX v1.1
 - 📝 [`🌟_MEJORAS_ADICIONALES_V1.2.md`](🌟_MEJORAS_ADICIONALES_V1.2.md) - Shortcuts y animaciones v1.2
 - 📝 [`🚀_MEJORAS_V1.3_CRM.md`](🚀_MEJORAS_V1.3_CRM.md) - Exportación y ordenamiento v1.3
+- 📝 [`🔧_FIX_AUTH_CRM_BUTTON.md`](🔧_FIX_AUTH_CRM_BUTTON.md) - **Fix botón Mi CRM + Cerrar Sesión** ← NUEVO
 - 📝 [`🚀_CHECKLIST_DEPLOYMENT.md`](🚀_CHECKLIST_DEPLOYMENT.md) - Checklist de deploy
 
 **Próxima Fase:** 
@@ -58,13 +61,14 @@
 - 🎨 **Sistema de Tags/Etiquetas** (Opcional)
 - 📱 **Vista Compacta/Lista** (Opcional)
 
-**Sesión Actual:** [`📊_RESUMEN_SESION_17_OCT.md`](📊_RESUMEN_SESION_17_OCT.md) - Problemas resueltos y CRM implementado
+**Última Sesión:** [`🔧_FIX_AUTH_CRM_BUTTON.md`](🔧_FIX_AUTH_CRM_BUTTON.md) - Fix autenticación y botones (18 Oct)
+**Sesión Anterior:** [`📊_RESUMEN_SESION_17_OCT.md`](📊_RESUMEN_SESION_17_OCT.md) - CRM implementado (17 Oct)
 
 ---
 
 ## ✨ Estado Actual del Proyecto
 
-### 📅 Última Actualización: 17 Octubre 2025
+### 📅 Última Actualización: 18 Octubre 2025
 
 ### ✅ **FASE 1 - 100% COMPLETADA** - Sistema de Autenticación & API Backend
 
