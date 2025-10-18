@@ -158,9 +158,23 @@ class AuthSystem {
 
     // Cerrar sesión
     logout() {
-        console.log('👋 Cerrando sesión:', this.currentUser.name);
+        const userName = this.currentUser?.name || 'Usuario';
+        console.log('👋 Cerrando sesión:', userName);
+        
+        // Limpiar sesión de auth.js
         this.clearSession();
-        window.location.reload(); // Recargar página
+        
+        // Limpiar también sistema legacy de main.js
+        localStorage.removeItem('domusIAEspana_userData');
+        localStorage.removeItem('domusIAEspana_conversation');
+        
+        // Limpiar cualquier otra sesión
+        sessionStorage.clear();
+        
+        console.log('✅ Sesión limpiada completamente');
+        
+        // Recargar página
+        window.location.reload();
     }
 
     // Obtener usuario actual
