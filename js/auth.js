@@ -268,6 +268,12 @@ window.handleRegister = async function(event) {
         alert(result.message);
         window.closeAuthModals();
         
+        // Forzar actualización UI inmediata
+        if (window.domusIA) {
+            window.domusIA.loadUserData();
+            window.domusIA.updateUI();
+        }
+        
         // Recargar página para actualizar UI
         setTimeout(() => window.location.reload(), 500);
         
@@ -312,6 +318,12 @@ window.handleLogin = async function(event) {
         
         alert(result.message);
         window.closeAuthModals();
+        
+        // Forzar actualización UI inmediata
+        if (window.domusIA) {
+            window.domusIA.loadUserData();
+            window.domusIA.updateUI();
+        }
         
         // Recargar página para actualizar UI
         setTimeout(() => window.location.reload(), 500);
