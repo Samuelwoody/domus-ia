@@ -9,7 +9,7 @@
   },
   "headers": [
     {
-      "source": "/css/(.*).css",
+      "source": "/css/(.*)",
       "headers": [
         {
           "key": "Content-Type",
@@ -18,7 +18,7 @@
       ]
     },
     {
-      "source": "/js/(.*).js",
+      "source": "/js/(.*)",
       "headers": [
         {
           "key": "Content-Type",
