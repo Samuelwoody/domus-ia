@@ -5,114 +5,387 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM - Domus-IA España</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/crm-styles.css">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'domus-gold': '#d4af37',
-                        'domus-accent': '#8b1a1a'
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/crm-dashboard.css">
+    <link rel="stylesheet" href="css/toast-notifications.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
 </head>
 <body class="bg-gray-50">
     
-    <nav class="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-r from-domus-gold to-domus-accent rounded-xl flex items-center justify-center">
-                    <i class="fas fa-home text-white"></i>
-                </div>
-                <h1 class="text-xl font-bold">Domus-IA CRM</h1>
+    <!-- Header -->
+    <header class="crm-header">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="text-2xl font-bold text-gold-600">
+                    🏠 Domus-IA
+                </a>
+                <span class="text-sm text-gray-500">Panel CRM</span>
             </div>
             
-            <button onclick="openSofiaChat()" class="bg-gradient-to-r from-domus-gold to-domus-accent text-white px-4 py-2 rounded-lg">
-                <i class="fas fa-comment-dots mr-2"></i>
-                <span class="hidden sm:inline">Hablar con Sofía</span>
-            </button>
+            <div class="flex items-center space-x-4">
+                <div class="user-info">
+                    <i class="fas fa-user-circle text-2xl text-gray-600"></i>
+                    <span id="userName" class="ml-2 text-sm text-gray-700">Usuario</span>
+                </div>
+                <button onclick="logout()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
         </div>
-    </nav>
+    </header>
     
-    <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Main Container -->
+    <div class="crm-container">
         
-        <div class="mb-6 border-b">
-            <nav class="flex space-x-8">
-                <button onclick="switchTab('dashboard')" data-tab="dashboard" class="tab-btn active py-4 border-b-2">
-                    <i class="fas fa-chart-line mr-2"></i>Dashboard
-                </button>
-                <button onclick="switchTab('properties')" data-tab="properties" class="tab-btn py-4 border-b-2">
-                    <i class="fas fa-building mr-2"></i>Propiedades
-                </button>
-                <button onclick="switchTab('contacts')" data-tab="contacts" class="tab-btn py-4 border-b-2">
-                    <i class="fas fa-users mr-2"></i>Contactos
-                </button>
-                <button onclick="switchTab('tasks')" data-tab="tasks" class="tab-btn py-4 border-b-2">
-                    <i class="fas fa-tasks mr-2"></i>Tareas
-                </button>
+        <!-- Sidebar -->
+        <aside class="crm-sidebar">
+            <nav class="crm-nav">
+                <a href="#dashboard" class="crm-nav-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#properties" class="crm-nav-item" data-section="properties">
+                    <i class="fas fa-building"></i>
+                    <span>Propiedades</span>
+                </a>
+                <a href="index.html" class="crm-nav-item">
+                    <i class="fas fa-comments"></i>
+                    <span>Chat con Sofía</span>
+                </a>
             </nav>
-        </div>
+        </aside>
         
-        <div id="tabContent">
+        <!-- Main Content -->
+        <main class="crm-main">
             
-            <div id="dashboard-tab" class="tab-content active">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="text-3xl font-bold" id="stat-properties">0</h3>
-                        <p class="text-sm text-gray-600">Propiedades</p>
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="crm-section active">
+                <div class="crm-header-section">
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        <i class="fas fa-chart-line text-gold-600"></i>
+                        Dashboard
+                    </h1>
+                    <p class="text-gray-600 mt-2">Visión general de tus propiedades</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue-100 text-blue-600">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Total Propiedades</p>
+                            <p class="stat-value" id="statTotal">0</p>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="text-3xl font-bold" id="stat-contacts">0</h3>
-                        <p class="text-sm text-gray-600">Contactos</p>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green-100 text-green-600">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Disponibles</p>
+                            <p class="stat-value" id="statAvailable">0</p>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="text-3xl font-bold" id="stat-tasks">0</h3>
-                        <p class="text-sm text-gray-600">Tareas</p>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow-100 text-yellow-600">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Ciudades</p>
+                            <p class="stat-value" id="statCities">0</p>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="text-3xl font-bold" id="stat-value">0€</h3>
-                        <p class="text-sm text-gray-600">Valor</p>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple-100 text-purple-600">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Valor Total</p>
+                            <p class="stat-value" id="statValue">0€</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div id="properties-tab" class="tab-content hidden">
-                <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="col-span-full text-center py-16">
-                        <p class="text-gray-400 mb-4">No hay propiedades</p>
-                        <button onclick="openSofiaChat()" class="bg-gradient-to-r from-domus-gold to-domus-accent text-white px-6 py-3 rounded-lg">
-                            Hablar con Sofía
+                
+                <!-- Quick Actions -->
+                <div class="mt-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Acciones Rápidas</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="window.location.href='index.html'" class="quick-action-btn">
+                            <i class="fas fa-comments text-2xl mb-2"></i>
+                            <span class="font-semibold">Hablar con Sofía</span>
+                            <span class="text-sm text-gray-500">Detecta propiedades automáticamente</span>
+                        </button>
+                        <button onclick="showNewPropertyModal()" class="quick-action-btn">
+                            <i class="fas fa-plus-circle text-2xl mb-2"></i>
+                            <span class="font-semibold">Añadir Manualmente</span>
+                            <span class="text-sm text-gray-500">Crear propiedad desde formulario</span>
                         </button>
                     </div>
                 </div>
-            </div>
+            </section>
             
-            <div id="contacts-tab" class="tab-content hidden">
-                <div id="contactsList">
-                    <div class="text-center py-16">
-                        <p class="text-gray-400">No hay contactos</p>
+            <!-- Properties Section -->
+            <section id="propertiesSection" class="crm-section">
+                <div class="crm-header-section">
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        <i class="fas fa-building text-gold-600"></i>
+                        Mis Propiedades
+                    </h1>
+                    <button onclick="showNewPropertyModal()" class="btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Propiedad
+                    </button>
+                </div>
+                
+                <!-- Filters & Sort Bar -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <input type="text" id="searchInput" placeholder="Buscar por dirección, ciudad..." class="filter-input">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    
+                    <select id="sortBy" class="filter-select">
+                        <option value="">Ordenar por...</option>
+                        <option value="created_desc">Más recientes</option>
+                        <option value="created_asc">Más antiguos</option>
+                        <option value="price_desc">Precio (mayor)</option>
+                        <option value="price_asc">Precio (menor)</option>
+                        <option value="surface_desc">Superficie (mayor)</option>
+                        <option value="surface_asc">Superficie (menor)</option>
+                        <option value="city_asc">Ciudad (A-Z)</option>
+                    </select>
+                    
+                    <select id="filterCity" class="filter-select">
+                        <option value="">Todas las ciudades</option>
+                    </select>
+                    
+                    <select id="filterType" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="piso">Piso</option>
+                        <option value="casa">Casa</option>
+                        <option value="chalet">Chalet</option>
+                        <option value="apartamento">Apartamento</option>
+                        <option value="local">Local</option>
+                        <option value="terreno">Terreno</option>
+                    </select>
+                    
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="reservado">Reservado</option>
+                        <option value="vendido">Vendido</option>
+                    </select>
+                    
+                    <!-- Export Dropdown -->
+                    <div class="export-dropdown-container">
+                        <button id="exportDropdownBtn" class="btn-export">
+                            <i class="fas fa-download"></i>
+                            <span>Exportar</span>
+                            <i class="fas fa-chevron-down text-xs ml-1"></i>
+                        </button>
+                        <div id="exportDropdown" class="export-dropdown hidden">
+                            <button onclick="crmDashboard.exportCurrentView('csv')" class="export-option">
+                                <i class="fas fa-file-csv text-green-600"></i>
+                                <div>
+                                    <div class="font-semibold">Exportar a CSV</div>
+                                    <div class="text-xs text-gray-500">Compatible con Excel/Sheets</div>
+                                </div>
+                            </button>
+                            <button onclick="crmDashboard.exportCurrentView('excel')" class="export-option">
+                                <i class="fas fa-file-excel text-green-700"></i>
+                                <div>
+                                    <div class="font-semibold">Exportar a Excel</div>
+                                    <div class="text-xs text-gray-500">Formato optimizado</div>
+                                </div>
+                            </button>
+                            <button onclick="crmDashboard.exportSummaryReport()" class="export-option">
+                                <i class="fas fa-file-alt text-blue-600"></i>
+                                <div>
+                                    <div class="font-semibold">Resumen Estadístico</div>
+                                    <div class="text-xs text-gray-500">Archivo de texto</div>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div id="tasks-tab" class="tab-content hidden">
-                <div id="tasksList">
-                    <div class="text-center py-16">
-                        <p class="text-gray-400">No hay tareas</p>
+                
+                <!-- Properties List -->
+                <div id="propertiesList" class="properties-list">
+                    <!-- Loading state -->
+                    <div id="loadingState" class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600">Cargando propiedades...</p>
                     </div>
+                    
+                    <!-- Empty state -->
+                    <div id="emptyState" class="empty-state hidden">
+                        <i class="fas fa-building text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No hay propiedades todavía</h3>
+                        <p class="text-gray-500 mb-6">Empieza añadiendo tu primera propiedad</p>
+                        <button onclick="window.location.href='index.html'" class="btn-primary">
+                            <i class="fas fa-comments"></i> Hablar con Sofía
+                        </button>
+                    </div>
+                    
+                    <!-- Properties will be inserted here -->
                 </div>
-            </div>
+            </section>
             
+        </main>
+    </div>
+    
+    <!-- Modal: Ver Detalles de Propiedad -->
+    <div id="viewModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('viewModal')"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-building text-gold-600"></i>
+                    Detalles de la Propiedad
+                </h3>
+                <button onclick="closeModal('viewModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="viewModalBody" class="modal-body">
+                <!-- Content will be inserted dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('viewModal')" class="btn-secondary">Cerrar</button>
+            </div>
         </div>
     </div>
     
+    <!-- Modal: Editar Propiedad -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('editModal')"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-edit text-gold-600"></i>
+                    Editar Propiedad
+                </h3>
+                <button onclick="closeModal('editModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editPropertyForm" onsubmit="savePropertyChanges(event)">
+                    <input type="hidden" id="editPropertyId">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Dirección *</label>
+                            <input type="text" id="editAddress" required class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ciudad *</label>
+                            <input type="text" id="editCity" required class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Propiedad</label>
+                            <select id="editType" class="form-input">
+                                <option value="piso">Piso</option>
+                                <option value="casa">Casa</option>
+                                <option value="chalet">Chalet</option>
+                                <option value="apartamento">Apartamento</option>
+                                <option value="local">Local</option>
+                                <option value="terreno">Terreno</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Estado</label>
+                            <select id="editStatus" class="form-input">
+                                <option value="disponible">Disponible</option>
+                                <option value="reservado">Reservado</option>
+                                <option value="vendido">Vendido</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Precio (€)</label>
+                            <input type="number" id="editPrice" class="form-input" step="1000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Superficie (m²)</label>
+                            <input type="number" id="editSurface" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Habitaciones</label>
+                            <input type="number" id="editRooms" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Baños</label>
+                            <input type="number" id="editBathrooms" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="editDescription" rows="4" class="form-input"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('editModal')" class="btn-secondary">Cancelar</button>
+                <button onclick="document.getElementById('editPropertyForm').requestSubmit()" class="btn-primary">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Confirmar Eliminación -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('deleteModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    Confirmar Eliminación
+                </h3>
+                <button onclick="closeModal('deleteModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-gray-700">¿Estás seguro de que deseas eliminar esta propiedad?</p>
+                <p class="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
+                <input type="hidden" id="deletePropertyId">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('deleteModal')" class="btn-secondary">Cancelar</button>
+                <button onclick="confirmDelete()" class="btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/toast-notifications.js"></script>
+    <script src="js/form-validation.js"></script>
+    <script src="js/crm-export.js"></script>
+    <script src="js/crm-enhancements.js"></script>
     <script src="js/crm-dashboard.js"></script>
     
 </body>
