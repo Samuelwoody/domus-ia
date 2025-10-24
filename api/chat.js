@@ -5,7 +5,7 @@
 // ============================================
 // 💾 MEMORIA PERSISTENTE CON SUPABASE
 // ============================================
-const supabaseClient = require('./supabase-client.js');
+import supabaseClient from './supabase-client.js';
 
 // ============================================================================
 // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
@@ -78,7 +78,7 @@ function shouldSearchWeb(message) {
   return webSearchKeywords.some(keyword => lowerMessage.includes(keyword));
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // ============================================================================
   // CORS Configuration
   // ============================================================================
