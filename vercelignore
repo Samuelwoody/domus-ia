@@ -1,0 +1,6 @@
+netlify/
+netlify.toml
+*.md
+*.bat
+node_modules/
+.git/
