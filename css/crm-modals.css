@@ -1,0 +1,251 @@
+/**
+ * 🏠 CRM PROPERTY DETECTION MODALS
+ * Estilos para modales de confirmación de propiedades detectadas
+ * @author Domus-IA España
+ * @version 2.0
+ */
+
+/* ===== PROPERTY MODAL BASE ===== */
+.property-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.property-modal.show {
+    opacity: 1;
+}
+
+.property-modal.hidden {
+    display: none;
+}
+
+/* ===== OVERLAY ===== */
+.property-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* ===== MODAL CONTENT ===== */
+.property-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.property-modal.show .property-modal-content {
+    transform: translateY(0);
+}
+
+/* ===== HEADER ===== */
+.property-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #C0C0C0 0%, #1e3a8a 100%);
+}
+
+.property-modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.property-modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #1a1a1a;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.property-modal-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+/* ===== BODY ===== */
+.property-modal-body {
+    padding: 24px;
+}
+
+.property-summary {
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+}
+
+.property-confidence {
+    margin-bottom: 20px;
+}
+
+.property-confidence-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.property-confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #C0C0C0 0%, #4ade80 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.property-details {
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.property-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.property-details li {
+    padding: 4px 0;
+}
+
+.property-details li strong {
+    color: #374151;
+}
+
+/* ===== FOOTER ===== */
+.property-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.property-btn-cancel,
+.property-btn-save {
+    flex: 1;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.property-btn-cancel {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.property-btn-cancel:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+.property-btn-save {
+    background: linear-gradient(135deg, #C0C0C0 0%, #1e3a8a 100%);
+    color: #1a1a1a;
+}
+
+.property-btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+    .property-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .property-modal-header {
+        padding: 16px 20px;
+    }
+    
+    .property-modal-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .property-modal-body {
+        padding: 20px;
+    }
+    
+    .property-modal-footer {
+        flex-direction: column;
+        padding: 16px 20px;
+    }
+    
+    .property-btn-cancel,
+    .property-btn-save {
+        width: 100%;
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.property-modal.show .property-modal-content {
+    animation: slideInUp 0.3s ease;
+}
+
+/* ===== SCROLLBAR ===== */
+.property-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.property-modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.property-modal-content::-webkit-scrollbar-thumb {
+    background: #C0C0C0;
+    border-radius: 4px;
+}
+
+.property-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #b8972f;
+}

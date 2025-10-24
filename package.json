@@ -1,0 +1,31 @@
+{
+  "name": "domus-ia-espana",
+  "version": "1.1.0",
+  "description": "SuperAgente Inmobiliario con IA - Domus-IA España by MontCastell-AI",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "real-estate",
+    "AI",
+    "chatbot",
+    "OpenAI",
+    "GPT-4",
+    "inmobiliaria",
+    "España"
+  ],
+  "author": "MontCastell-AI",
+  "license": "UNLICENSED"
+}

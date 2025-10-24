@@ -1,0 +1,207 @@
+/* 🍞 Toast Notifications System - DomusIA CRM */
+
+/* Contenedor de toasts */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+/* Toast individual */
+.toast {
+    min-width: 300px;
+    max-width: 400px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: all;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.hide {
+    transform: translateX(400px);
+    opacity: 0;
+}
+
+/* Iconos de toast */
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+/* Contenido del toast */
+.toast-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.toast-message {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+}
+
+/* Botón de cerrar */
+.toast-close {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: color 0.2s;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.toast-close:hover {
+    color: #4b5563;
+}
+
+/* Barra de progreso */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.3;
+    border-radius: 0 0 12px 12px;
+    transition: width linear;
+}
+
+/* Tipos de toast */
+.toast.toast-success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.toast-success .toast-icon {
+    color: #10b981;
+}
+
+.toast.toast-success .toast-progress {
+    color: #10b981;
+}
+
+.toast.toast-error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.toast-error .toast-icon {
+    color: #ef4444;
+}
+
+.toast.toast-error .toast-progress {
+    color: #ef4444;
+}
+
+.toast.toast-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.toast.toast-warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast.toast-warning .toast-progress {
+    color: #f59e0b;
+}
+
+.toast.toast-info {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast.toast-info .toast-icon {
+    color: #3b82f6;
+}
+
+.toast.toast-info .toast-progress {
+    color: #3b82f6;
+}
+
+/* Responsive móvil */
+@media (max-width: 640px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        align-items: stretch;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+        width: 100%;
+    }
+}
+
+/* Animación de entrada alternativa (desde arriba) */
+.toast-container.toast-top .toast {
+    transform: translateY(-100px);
+}
+
+.toast-container.toast-top .toast.show {
+    transform: translateY(0);
+}
+
+.toast-container.toast-top .toast.hide {
+    transform: translateY(-100px);
+}
+
+/* Spinner/Loader para estados de carga */
+.toast-loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Estados de carga en el toast */
+.toast.toast-loading {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast.toast-loading .toast-close {
+    display: none;
+}

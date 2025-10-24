@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>SuperAgente Inmobiliario de España | Domus-IA</title>
+    <meta name="description" content="Sofía, el primer SuperAgente Inmobiliario de España para Propietarios Espabilados y Agentes Saturados. Formación, estrategias y acompañamiento para vender más.">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8b1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Domus-IA España">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23d4af37'/%3E%3Cstop offset='100%25' style='stop-color:%238b1a1a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 75V45l25-20 25 20v30H60V55H40v20H25z' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- CDN Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/typing-cursor.css">
+    <link rel="stylesheet" href="css/cookie-consent.css">
+    <link rel="stylesheet" href="css/crm-modals.css">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'domus-navy': '#0f172a',
+                        'domus-silver': '#C0C0C0',
+                        'domus-gold': '#C0C0C0', // Alias para compatibilidad
+                        'domus-sage': '#6b7280',
+                        'domus-cream': '#fafafa',
+                        'domus-stone': '#78716c',
+                        'domus-accent': '#1e3a8a'
+                    },
+                    fontFamily: {
+                        'sans': ['Source Sans Pro', 'sans-serif'],
+                        'roboto': ['Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-gradient-to-br from-gray-50 to-domus-cream min-h-screen">
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-3 md:py-4">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2 md:space-x-3">
+                    <div class="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-domus-silver to-domus-accent rounded-lg md:rounded-xl flex items-center justify-center md:flex hidden">
+                        <i class="fas fa-home text-white text-sm md:text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base md:text-xl font-bold text-domus-navy">Domus-IA España</h1>
+                        <p class="text-xs text-domus-sage">by MontCastell-AI</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden lg:flex items-center space-x-6">
+                    <a href="#inicio" class="text-domus-navy hover:text-domus-silver transition-colors text-sm">Inicio</a>
+                    <a href="#sofia" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Sofía</a>
+                    <a href="#planes" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Planes</a>
+                    <a href="#contacto" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Contacto</a>
+                </nav>
+
+                <!-- Auth Buttons -->
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <button id="loginBtn" onclick="showLoginModal()" class="text-domus-sage hover:text-domus-silver transition-colors text-sm md:text-base hidden md:block">Acceder</button>
+                    <button id="registerBtn" onclick="showRegisterModal()" class="bg-gradient-to-r from-domus-silver to-domus-accent text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:opacity-90 transition-all text-sm md:text-base">
+                        Comenzar
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="lg:hidden text-domus-navy ml-2">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="lg:hidden hidden bg-white border-t border-gray-100">
+                <nav class="px-4 py-3 space-y-3">
+                    <a href="#inicio" class="block text-domus-navy hover:text-domus-silver transition-colors py-2">Inicio</a>
+                    <a href="#sofia" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Sofía</a>
+                    <a href="#planes" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Planes</a>
+                    <a href="#contacto" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Contacto</a>
+                    <a href="#" id="mobileLoginBtn" onclick="showLoginModal()" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Acceder</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section id="inicio" class="relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+                <div class="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+                    <!-- Left Content -->
+                    <div class="space-y-6 md:space-y-8">
+                        <div class="space-y-4 md:space-y-5">
+                            <h1 class="text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
+                                <span class="bg-gradient-to-r from-domus-silver to-domus-accent bg-clip-text text-transparent">SuperAgente</span>
+                                <span class="bg-gradient-to-r from-domus-silver to-domus-accent bg-clip-text text-transparent block">Inmobiliario</span>
+                                <span class="block text-2xl md:text-3xl lg:text-4xl text-domus-navy mt-2 font-normal">de España</span>
+                            </h1>
+                            <p class="text-lg md:text-xl lg:text-2xl text-domus-navy font-semibold leading-snug">
+                                Soy <span class="text-domus-accent">Sofía</span>, el primer SuperAgente Inmobiliario para <span class="text-domus-silver">Propietarios Espabilados</span> y <span class="text-domus-accent">Agentes Saturados</span>
+                            </p>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-domus-cream to-white rounded-2xl p-5 md:p-6 border border-domus-silver/20 shadow-sm">
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-gradient-to-r from-domus-silver to-domus-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-domus-navy font-semibold text-sm md:text-base block">Respuestas instantáneas 24/7</span>
+                                        <span class="text-domus-sage text-xs md:text-sm">Disponible cuando tú lo necesites</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-gradient-to-r from-domus-silver to-domus-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-domus-navy font-semibold text-sm md:text-base block">Especializada en mercado español</span>
+                                        <span class="text-domus-sage text-xs md:text-sm">Legislación, zonas y tendencias de España</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-gradient-to-r from-domus-silver to-domus-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-domus-navy font-semibold text-sm md:text-base block">Formación + Estrategias + Acompañamiento</span>
+                                        <span class="text-domus-sage text-xs md:text-sm">Todo lo que necesitas para vender más</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <button id="startChatBtn" class="bg-gradient-to-r from-domus-silver to-domus-accent text-white px-8 py-4 md:px-10 md:py-5 rounded-xl font-bold text-lg md:text-xl hover:opacity-90 transition-all hover:shadow-2xl hover:scale-105 w-full sm:w-auto">
+                                💬 Hablar con Sofía Ahora
+                            </button>
+                            <p class="text-xs md:text-sm text-domus-sage mt-3 text-center sm:text-left">
+                                ⚡ Gratis · Sin registro · 15 mensajes diarios
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right Content - Chat Preview -->
+                    <div class="relative hidden md:block">
+                        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                            <!-- Chat Header -->
+                            <div class="bg-gradient-to-r from-domus-silver to-domus-accent p-4">
+                                <div class="flex items-center space-x-3">
+                                    <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg">
+                                    <div>
+                                        <h3 class="text-white font-semibold">Sofía - SIG</h3>
+                                        <p class="text-white/80 text-sm">SuperAgente Inmobiliario</p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chat Messages Preview -->
+                            <div class="p-6 space-y-4 h-80 overflow-y-auto">
+                                <div class="flex space-x-3">
+                                    <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-md">
+                                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                                        <p class="text-sm text-domus-navy">¡Hola! Soy Sofía, tu SuperAgente Inmobiliario. ¿Eres propietario particular o agente profesional?</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <div class="bg-gradient-to-r from-domus-silver to-domus-accent text-white rounded-lg p-3 max-w-xs">
+                                        <p class="text-sm">Soy agente inmobiliario y necesito ayuda con la captación</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex space-x-3">
+                                    <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-md">
+                                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                                        <p class="text-sm text-domus-navy">Perfecto. Te ayudaré con estrategias de captación premium, construcción de marca y embudo de ventas. ¿En qué zona trabajas?</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chat Input Preview -->
+                            <div class="border-t border-gray-100 p-4">
+                                <div class="flex items-center space-x-3">
+                                    <input type="text" placeholder="Escribe tu mensaje..." class="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-sm" disabled>
+                                    <button class="bg-gradient-to-r from-domus-silver to-domus-accent text-white p-2 rounded-lg">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Stats -->
+                        <div class="absolute -top-6 -right-6 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold bg-gradient-to-r from-domus-silver to-domus-accent bg-clip-text text-transparent">99%</div>
+                                <div class="text-xs text-domus-sage">Satisfacción</div>
+                            </div>
+                        </div>
+
+                        <div class="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold bg-gradient-to-r from-domus-silver to-domus-accent bg-clip-text text-transparent">24/7</div>
+                                <div class="text-xs text-domus-sage">Disponible</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sofia Section -->
+        <section id="sofia" class="py-16 md:py-20 bg-gradient-to-br from-gray-50 to-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Sofia Presentation -->
+                <div class="max-w-4xl mx-auto mb-16">
+                    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                        <div class="grid md:grid-cols-2 gap-0">
+                            <!-- Sofia Image -->
+                            <div class="relative h-80 md:h-auto">
+                                <img src="images/sofia-avatar.jpg" alt="Sofía - SuperAgente Inmobiliario" class="w-full h-full object-contain md:object-cover bg-gradient-to-br from-domus-cream to-white">
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                        <span class="text-white font-semibold">Disponible 24/7</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sofia Info -->
+                            <div class="p-8 md:p-10 flex flex-col justify-center">
+                                <div class="inline-block bg-gradient-to-r from-domus-silver to-domus-accent text-white px-4 py-2 rounded-full text-sm font-medium mb-4 w-fit">
+                                    SuperAgente Inmobiliario
+                                </div>
+                                <h3 class="text-3xl md:text-4xl font-bold text-domus-navy mb-3">
+                                    Soy Sofía
+                                </h3>
+                                <p class="text-domus-sage text-lg mb-6 leading-relaxed">
+                                    Te doy el <strong class="text-domus-accent">know-how profesional</strong> de las grandes inmobiliarias para que <strong class="text-domus-silver">propietarios vendan como expertos</strong> y <strong class="text-domus-silver">agentes trabajen con método probado</strong>. Todo potenciado con <strong class="text-domus-accent">Inteligencia Artificial</strong>.
+                                </p>
+                                <div class="space-y-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-domus-silver to-domus-accent rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-brain text-white text-sm"></i>
+                                        </div>
+                                        <span class="text-domus-navy">Inteligencia Artificial Avanzada</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-domus-silver to-domus-accent rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-map-marker-alt text-white text-sm"></i>
+                                        </div>
+                                        <span class="text-domus-navy">Experta en Mercado Español</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-domus-silver to-domus-accent rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-graduation-cap text-white text-sm"></i>
+                                        </div>
+                                        <span class="text-domus-navy">Programa MontCastell-AI</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center space-y-3 mb-12 md:mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-domus-navy">
+                        ¿Qué puedo hacer por ti?
+                    </h2>
+                    <p class="text-lg md:text-xl text-domus-sage max-w-2xl mx-auto">
+                        Soluciones específicas según tus necesidades
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+                    <!-- For Professionals -->
+                    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-domus-accent/20 hover:border-domus-accent/40 transition-all">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-12 h-12 bg-gradient-to-r from-domus-silver to-domus-accent rounded-xl flex items-center justify-center">
+                                <i class="fas fa-briefcase text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-domus-navy">Agentes Saturados</h3>
+                        </div>
+                        <ul class="space-y-3">
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-accent mt-1">✓</span>
+                                <span class="text-domus-navy">Automatiza tareas repetitivas y ahorra tiempo</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-accent mt-1">✓</span>
+                                <span class="text-domus-navy">Genera informes de mercado al instante</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-accent mt-1">✓</span>
+                                <span class="text-domus-navy">Estrategias de captación que funcionan</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-accent mt-1">✓</span>
+                                <span class="text-domus-navy">Formación continua MontCastell-AI</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-accent mt-1">✓</span>
+                                <span class="text-domus-navy">Cierra más ventas con menos esfuerzo</span>
+                            </li>
+                        </ul>
+                        <button class="mt-6 w-full bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
+                            Empezar como Agente
+                        </button>
+                    </div>
+
+                    <!-- For Owners -->
+                    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-domus-silver/20 hover:border-domus-silver/40 transition-all">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-12 h-12 bg-gradient-to-r from-domus-silver to-domus-accent rounded-xl flex items-center justify-center">
+                                <i class="fas fa-home text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-domus-navy">Propietarios Espabilados</h3>
+                        </div>
+                        <ul class="space-y-3">
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-silver mt-1">✓</span>
+                                <span class="text-domus-navy">Descubre el precio real de tu inmueble</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-silver mt-1">✓</span>
+                                <span class="text-domus-navy">Prepara tu casa para vender mejor</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-silver mt-1">✓</span>
+                                <span class="text-domus-navy">Toda la documentación en orden</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-silver mt-1">✓</span>
+                                <span class="text-domus-navy">Negocia como un profesional</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="text-domus-silver mt-1">✓</span>
+                                <span class="text-domus-navy">Desde el anuncio hasta la firma</span>
+                            </li>
+                        </ul>
+                        <button class="mt-6 w-full bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
+                            Empezar como Propietario
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="planes" class="py-20 bg-gradient-to-br from-domus-cream to-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center space-y-4 mb-16">
+                    <span class="inline-block bg-domus-silver/10 text-domus-accent px-4 py-2 rounded-full text-sm font-medium">
+                        Oferta Especial hasta 31 Dic 2025
+                    </span>
+                    <h2 class="text-4xl font-bold text-domus-navy">
+                        Planes de Suscripción
+                    </h2>
+                    <p class="text-xl text-domus-sage max-w-3xl mx-auto">
+                        Sofía se adapta automáticamente a tus necesidades. Comienza gratis y actualiza cuando estés listo.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <!-- Free Plan -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 relative">
+                        <div class="text-center space-y-4">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto">
+                                <i class="fas fa-gift text-domus-sage text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-domus-navy">Gratuito</h3>
+                            <div>
+                                <span class="text-4xl font-bold text-domus-navy">€0</span>
+                                <span class="text-domus-sage">/mes</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mt-8">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">15 mensajes diarios</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Acceso a Sofía básico</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Detección automática de usuario</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-times text-gray-300"></i>
+                                <span class="text-gray-400">Funcionalidades avanzadas</span>
+                            </div>
+                        </div>
+
+                        <button class="w-full mt-8 border-2 border-domus-sage text-domus-sage py-3 rounded-xl font-semibold hover:bg-domus-sage hover:text-white transition-all">
+                            Comenzar Gratis
+                        </button>
+                    </div>
+
+                    <!-- Professional Plan -->
+                    <div class="bg-white rounded-2xl shadow-2xl border-2 border-domus-accent p-8 relative transform scale-105">
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                            <span class="bg-domus-accent text-white px-6 py-2 rounded-full text-sm font-semibold">
+                                Más Popular
+                            </span>
+                        </div>
+
+                        <div class="text-center space-y-4">
+                            <div class="w-16 h-16 bg-domus-accent/10 rounded-2xl flex items-center justify-center mx-auto">
+                                <i class="fas fa-briefcase text-domus-accent text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-domus-navy">Profesional</h3>
+                            <div>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <span class="text-2xl text-gray-400 line-through">€499</span>
+                                    <span class="text-4xl font-bold text-domus-silver">€199</span>
+                                </div>
+                                <span class="text-domus-sage">/mes hasta enero 2026</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mt-8">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Mensajes ilimitados</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Todas las funcionalidades IA</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Formación MontCastell-AI</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Generación de imágenes/videos</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Informes de mercado avanzados</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Roleplay y formación IA</span>
+                            </div>
+                        </div>
+
+                        <button class="w-full mt-8 bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
+                            Elegir Profesional
+                        </button>
+                    </div>
+
+                    <!-- Particular Plan -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 relative">
+                        <div class="text-center space-y-4">
+                            <div class="w-16 h-16 bg-domus-silver/10 rounded-2xl flex items-center justify-center mx-auto">
+                                <i class="fas fa-home text-domus-silver text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-domus-navy">Particular</h3>
+                            <div>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <span class="text-2xl text-gray-400 line-through">€299</span>
+                                    <span class="text-4xl font-bold text-domus-silver">€99</span>
+                                </div>
+                                <span class="text-domus-sage">/mes hasta enero 2026</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mt-8">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Mensajes ilimitados</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Asesoramiento inmobiliario</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Estudio de mercado</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Preparación de venta</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="text-domus-stone">Soporte documentación</span>
+                            </div>
+                        </div>
+
+                        <button class="w-full mt-8 bg-domus-gold text-white py-3 rounded-xl font-semibold hover:bg-domus-gold/90 transition-all">
+                            Elegir Particular
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Offer Banner -->
+                <div class="mt-16 bg-gradient-to-r from-domus-silver to-domus-accent rounded-2xl p-8 text-center text-white">
+                    <h3 class="text-2xl font-bold mb-2">🎉 Oferta Especial de Lanzamiento</h3>
+                    <p class="text-lg mb-4">Si te suscribes antes del 31 de diciembre de 2025, mantienes el precio promocional mientras no interrumpas el servicio</p>
+                    <div class="flex justify-center items-center space-x-4 text-sm">
+                        <span>Quedan:</span>
+                        <div id="countdown" class="flex space-x-4">
+                            <!-- Countdown will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======================== -->
+    <!-- MODALES DE AUTENTICACIÓN -->
+    <!-- ======================== -->
+    
+    <!-- Modal de Registro -->
+    <div id="registerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-domus-navy">Crear Cuenta</h2>
+                <button onclick="closeAuthModals()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleRegister(event)">
+                <div class="space-y-4">
+                    <!-- Nombre -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                        <input 
+                            type="text" 
+                            name="name" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="Juan García"
+                        >
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="tu@email.com"
+                        >
+                    </div>
+                    
+                    <!-- Contraseña -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            required 
+                            minlength="6"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="Mínimo 6 caracteres"
+                        >
+                    </div>
+                    
+                    <!-- Tipo de usuario -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de usuario</label>
+                        <select 
+                            name="userType" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            onchange="toggleBusinessDocument(this)"
+                        >
+                            <option value="">Selecciona...</option>
+                            <option value="particular">Particular (propietario)</option>
+                            <option value="profesional">Profesional (agente/inmobiliaria)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- CIF/NIF (oculto por defecto, se muestra si es profesional) -->
+                    <div id="businessDocumentField" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            CIF/NIF Profesional *
+                        </label>
+                        <input 
+                            type="text" 
+                            name="businessDocument" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="B12345678 o 12345678A"
+                            pattern="[A-Z]?[0-9]{8}[A-Z]?"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">
+                            Formato: CIF (B12345678) o NIF (12345678A)
+                        </p>
+                    </div>
+                    
+                    <!-- RGPD Checkbox -->
+                    <div class="flex items-start">
+                        <input 
+                            type="checkbox" 
+                            name="acceptTerms" 
+                            id="acceptTerms" 
+                            required 
+                            class="mt-1 mr-2"
+                        >
+                        <label for="acceptTerms" class="text-xs text-gray-600">
+                            Acepto la <a href="legal/privacidad.html" target="_blank" class="text-domus-silver hover:underline">Política de Privacidad</a> y los <a href="legal/terminos.html" target="_blank" class="text-domus-silver hover:underline">Términos de Uso</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Botón submit -->
+                <button 
+                    type="submit" 
+                    class="w-full mt-6 bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all"
+                >
+                    Crear Cuenta
+                </button>
+            </form>
+            
+            <p class="text-center text-sm text-gray-600 mt-4">
+                ¿Ya tienes cuenta? 
+                <button onclick="closeAuthModals(); showLoginModal()" class="text-domus-silver hover:underline">
+                    Inicia sesión
+                </button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-domus-navy">Iniciar Sesión</h2>
+                <button onclick="closeAuthModals()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleLogin(event)">
+                <div class="space-y-4">
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="tu@email.com"
+                        >
+                    </div>
+                    
+                    <!-- Contraseña -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-domus-gold focus:border-transparent"
+                            placeholder="Tu contraseña"
+                        >
+                    </div>
+                </div>
+                
+                <!-- Botón submit -->
+                <button 
+                    type="submit" 
+                    class="w-full mt-6 bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all"
+                >
+                    Iniciar Sesión
+                </button>
+            </form>
+            
+            <p class="text-center text-sm text-gray-600 mt-4">
+                ¿No tienes cuenta? 
+                <button onclick="closeAuthModals(); showRegisterModal()" class="text-domus-silver hover:underline">
+                    Regístrate gratis
+                </button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="w-full h-full md:h-auto md:max-w-4xl md:max-h-[600px] md:p-4 md:rounded-2xl flex items-center justify-center">
+            <div class="bg-white w-full h-full md:h-[600px] md:rounded-2xl shadow-2xl flex flex-col">
+                <!-- Chat Header -->
+                <div class="bg-gradient-to-r from-domus-silver to-domus-accent p-4 md:rounded-t-2xl flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <img src="images/sofia-avatar.jpg" alt="Sofía" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg">
+                            <div>
+                                <h3 class="text-white font-semibold text-lg">Sofía - SuperAgente Inmobiliario</h3>
+                                <p class="text-white/80 text-sm flex items-center">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                                    Especialista en sector inmobiliario • En línea
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <!-- Botón de Voz Mejorado con Texto -->
+                            <button id="toggleVoiceBtn" class="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all group" title="Activar/Desactivar lectura de voz">
+                                <i class="fas fa-volume-mute text-white text-base"></i>
+                                <span class="text-white text-xs font-medium hidden md:inline animate-pulse">Activa lectura automática</span>
+                            </button>
+                            <button id="closeChatBtn" class="text-white/80 hover:text-white text-xl cursor-pointer" type="button" aria-label="Cerrar chat">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-6 md:p-6 p-4 space-y-4" style="padding-bottom: env(safe-area-inset-bottom, 1rem);">
+                    <!-- Initial message will be added by JS -->
+                </div>
+
+                <!-- Chat Input -->
+                <div class="border-t border-gray-100 p-3 md:p-4" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); min-height: 70px;">
+                    <!-- Preview de archivos subidos -->
+                    <div id="filePreview" class="mb-2 hidden">
+                        <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                            <div id="previewContent" class="flex-1 text-sm"></div>
+                            <button type="button" id="removeFileBtn" class="text-gray-400 hover:text-red-500 transition-colors p-1">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <form id="chatForm" class="flex items-center gap-2">
+                        <!-- Hidden file inputs -->
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden">
+                        
+                        <!-- Botón subir imagen -->
+                        <button 
+                            type="button"
+                            id="uploadImageBtn"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
+                            title="Subir imagen para análisis"
+                            aria-label="Subir imagen"
+                        >
+                            <i class="fas fa-image text-sm md:text-base"></i>
+                        </button>
+                        
+                        <!-- Botón subir documento -->
+                        <button 
+                            type="button"
+                            id="uploadDocBtn"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
+                            title="Subir documento (PDF, Word, Excel)"
+                            aria-label="Subir documento"
+                        >
+                            <i class="fas fa-file-alt text-sm md:text-base"></i>
+                        </button>
+                        
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            placeholder="Escribe a Sofía..." 
+                            class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 md:px-4 md:py-3 focus:outline-none focus:border-domus-gold"
+                            style="font-size: 16px !important;"
+                            maxlength="500"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="sentences"
+                        >
+                        
+                        <button 
+                            type="button"
+                            id="voiceBtn"
+                            class="bg-gray-100 text-domus-navy p-2.5 md:p-3 rounded-xl hover:bg-domus-gold hover:text-white transition-all flex-shrink-0"
+                            style="min-width: 40px; min-height: 40px;"
+                            title="Mantén presionado para hablar"
+                            aria-label="Grabar voz"
+                        >
+                            <i class="fas fa-microphone text-sm md:text-base"></i>
+                        </button>
+                        
+                        <button 
+                            type="submit" 
+                            class="bg-gradient-to-r from-domus-silver to-domus-accent text-white p-2.5 md:p-3 rounded-xl hover:opacity-90 transition-all flex-shrink-0"
+                            style="min-width: 44px !important; min-height: 44px !important;"
+                            aria-label="Enviar mensaje"
+                        >
+                            <i class="fas fa-paper-plane text-sm md:text-base"></i>
+                        </button>
+                    </form>
+                    <div class="flex justify-between items-center mt-2 text-xs text-domus-sage px-1">
+                        <span class="text-[10px] md:text-xs">Mensajes: <span id="messageCount">0</span>/15 (Gratuito)</span>
+                        <span class="hidden md:inline text-[10px] md:text-xs">Powered by OpenAI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-domus-navy text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-domus-silver to-domus-accent rounded-xl flex items-center justify-center">
+                            <i class="fas fa-home text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">Domus-IA España</span>
+                    </div>
+                    <p class="text-gray-300 text-sm">
+                        Tu SuperAgente Inmobiliario General (SIG) especializado en formar, acompañar y motivar en el sector inmobiliario.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Servicios</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="#" class="hover:text-white transition-colors">Formación Profesional</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Asesoramiento Particular</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Análisis de Mercado</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Generación de Contenido</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Empresa</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="#" class="hover:text-white transition-colors">MontCastell-AI</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Grupo Más Urba</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="legal/privacidad.html" class="hover:text-domus-silver transition-colors" target="_blank"><i class="fas fa-shield-alt"></i> Política de Privacidad</a></li>
+                        <li><a href="legal/terminos.html" class="hover:text-domus-silver transition-colors" target="_blank"><i class="fas fa-file-contract"></i> Términos y Condiciones</a></li>
+                        <li><a href="legal/cookies.html" class="hover:text-domus-silver transition-colors" target="_blank"><i class="fas fa-cookie-bite"></i> Política de Cookies</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Contacto</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-envelope"></i>
+                            <span>info@domus-ia.com</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:+34610949539" class="hover:text-domus-silver transition-colors">+34 610 94 95 39</a>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Valdemorillo</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-700 mt-12 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Domus-IA España - MontCastell-AI, Grupo Más Urba Multiservicios. Todos los derechos reservados.</p>
+                <div class="mt-3 flex justify-center gap-4 text-xs">
+                    <a href="legal/privacidad.html" class="hover:text-domus-silver transition-colors" target="_blank">Privacidad</a>
+                    <span>|</span>
+                    <a href="legal/terminos.html" class="hover:text-domus-silver transition-colors" target="_blank">Términos</a>
+                    <span>|</span>
+                    <a href="legal/cookies.html" class="hover:text-domus-silver transition-colors" target="_blank">Cookies</a>
+                    <span>|</span>
+                    <span>RGPD Compliant</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Safe Initialization - Load FIRST to catch all errors -->
+    <script src="js/safe-init.js"></script>
+    
+    <!-- Document Processing Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Application Scripts - Load in order -->
+    <script src="js/cookie-consent.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/email-capture.js"></script>
+    <script src="js/payments.js"></script>
+    <script src="js/sofia-ai.js"></script>
+    <script src="js/voice-reader.js"></script>
+    <script src="js/crm-property-detector.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

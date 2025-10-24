@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM - Domus-IA España</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/crm-dashboard.css">
+    <link rel="stylesheet" href="css/toast-notifications.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="crm-header">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="text-2xl font-bold text-gold-600">
+                    🏠 Domus-IA
+                </a>
+                <span class="text-sm text-gray-500">Panel CRM</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="user-info">
+                    <i class="fas fa-user-circle text-2xl text-gray-600"></i>
+                    <span id="userName" class="ml-2 text-sm text-gray-700">Usuario</span>
+                </div>
+                <button onclick="logout()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="crm-container">
+        
+        <!-- Sidebar -->
+        <aside class="crm-sidebar">
+            <nav class="crm-nav">
+                <a href="#dashboard" class="crm-nav-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#properties" class="crm-nav-item" data-section="properties">
+                    <i class="fas fa-building"></i>
+                    <span>Propiedades</span>
+                </a>
+                <a href="index.html" class="crm-nav-item">
+                    <i class="fas fa-comments"></i>
+                    <span>Chat con Sofía</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="crm-main">
+            
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="crm-section active">
+                <div class="crm-header-section">
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        <i class="fas fa-chart-line text-gold-600"></i>
+                        Dashboard
+                    </h1>
+                    <p class="text-gray-600 mt-2">Visión general de tus propiedades</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue-100 text-blue-600">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Total Propiedades</p>
+                            <p class="stat-value" id="statTotal">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green-100 text-green-600">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Disponibles</p>
+                            <p class="stat-value" id="statAvailable">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow-100 text-yellow-600">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Ciudades</p>
+                            <p class="stat-value" id="statCities">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple-100 text-purple-600">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Valor Total</p>
+                            <p class="stat-value" id="statValue">0€</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Acciones Rápidas</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="window.location.href='index.html'" class="quick-action-btn">
+                            <i class="fas fa-comments text-2xl mb-2"></i>
+                            <span class="font-semibold">Hablar con Sofía</span>
+                            <span class="text-sm text-gray-500">Detecta propiedades automáticamente</span>
+                        </button>
+                        <button onclick="showNewPropertyModal()" class="quick-action-btn">
+                            <i class="fas fa-plus-circle text-2xl mb-2"></i>
+                            <span class="font-semibold">Añadir Manualmente</span>
+                            <span class="text-sm text-gray-500">Crear propiedad desde formulario</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Properties Section -->
+            <section id="propertiesSection" class="crm-section">
+                <div class="crm-header-section">
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        <i class="fas fa-building text-gold-600"></i>
+                        Mis Propiedades
+                    </h1>
+                    <button onclick="showNewPropertyModal()" class="btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Propiedad
+                    </button>
+                </div>
+                
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <input type="text" id="searchInput" placeholder="Buscar por dirección, ciudad..." class="filter-input">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    
+                    <select id="filterCity" class="filter-select">
+                        <option value="">Todas las ciudades</option>
+                    </select>
+                    
+                    <select id="filterType" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="piso">Piso</option>
+                        <option value="casa">Casa</option>
+                        <option value="chalet">Chalet</option>
+                        <option value="apartamento">Apartamento</option>
+                        <option value="local">Local</option>
+                        <option value="terreno">Terreno</option>
+                    </select>
+                    
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="reservado">Reservado</option>
+                        <option value="vendido">Vendido</option>
+                    </select>
+                </div>
+                
+                <!-- Properties List -->
+                <div id="propertiesList" class="properties-list">
+                    <!-- Loading state -->
+                    <div id="loadingState" class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600">Cargando propiedades...</p>
+                    </div>
+                    
+                    <!-- Empty state -->
+                    <div id="emptyState" class="empty-state hidden">
+                        <i class="fas fa-building text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No hay propiedades todavía</h3>
+                        <p class="text-gray-500 mb-6">Empieza añadiendo tu primera propiedad</p>
+                        <button onclick="window.location.href='index.html'" class="btn-primary">
+                            <i class="fas fa-comments"></i> Hablar con Sofía
+                        </button>
+                    </div>
+                    
+                    <!-- Properties will be inserted here -->
+                </div>
+            </section>
+            
+        </main>
+    </div>
+    
+    <!-- Modal: Ver Detalles de Propiedad -->
+    <div id="viewModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('viewModal')"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-building text-gold-600"></i>
+                    Detalles de la Propiedad
+                </h3>
+                <button onclick="closeModal('viewModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="viewModalBody" class="modal-body">
+                <!-- Content will be inserted dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('viewModal')" class="btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Editar Propiedad -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('editModal')"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-edit text-gold-600"></i>
+                    Editar Propiedad
+                </h3>
+                <button onclick="closeModal('editModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editPropertyForm" onsubmit="savePropertyChanges(event)">
+                    <input type="hidden" id="editPropertyId">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Dirección *</label>
+                            <input type="text" id="editAddress" required class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ciudad *</label>
+                            <input type="text" id="editCity" required class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Propiedad</label>
+                            <select id="editType" class="form-input">
+                                <option value="piso">Piso</option>
+                                <option value="casa">Casa</option>
+                                <option value="chalet">Chalet</option>
+                                <option value="apartamento">Apartamento</option>
+                                <option value="local">Local</option>
+                                <option value="terreno">Terreno</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Estado</label>
+                            <select id="editStatus" class="form-input">
+                                <option value="disponible">Disponible</option>
+                                <option value="reservado">Reservado</option>
+                                <option value="vendido">Vendido</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Precio (€)</label>
+                            <input type="number" id="editPrice" class="form-input" step="1000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Superficie (m²)</label>
+                            <input type="number" id="editSurface" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Habitaciones</label>
+                            <input type="number" id="editRooms" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Baños</label>
+                            <input type="number" id="editBathrooms" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="editDescription" rows="4" class="form-input"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('editModal')" class="btn-secondary">Cancelar</button>
+                <button onclick="document.getElementById('editPropertyForm').requestSubmit()" class="btn-primary">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Confirmar Eliminación -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('deleteModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    Confirmar Eliminación
+                </h3>
+                <button onclick="closeModal('deleteModal')" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-gray-700">¿Estás seguro de que deseas eliminar esta propiedad?</p>
+                <p class="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
+                <input type="hidden" id="deletePropertyId">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('deleteModal')" class="btn-secondary">Cancelar</button>
+                <button onclick="confirmDelete()" class="btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/toast-notifications.js"></script>
+    <script src="js/form-validation.js"></script>
+    <script src="js/crm-dashboard.js"></script>
+    
+</body>
+</html>

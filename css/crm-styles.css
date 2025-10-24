@@ -1,0 +1,59 @@
+/**
+ * 🏠 DOMUS-IA CRM STYLES
+ * @version 2.0
+ */
+
+.tab-btn {
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: #C0C0C0;
+}
+
+.tab-btn.active {
+    color: #C0C0C0;
+    border-bottom-color: #C0C0C0;
+    font-weight: 600;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s;
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.property-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.property-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+}
+
+.property-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-disponible {
+    background: #d1fae5;
+    color: #065f46;
+}

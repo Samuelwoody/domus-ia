@@ -1,0 +1,339 @@
+/* 📜 ESTILOS PARA PÁGINAS LEGALES - DOMUS-IA ESPAÑA */
+/* Versión: 1.0.0 */
+/* Diseño profesional y legible para políticas legales */
+
+:root {
+    --gold-primary: #C0C0C0;
+    --gold-dark: #a0a0a0;
+    --silver-primary: #C0C0C0;
+    --silver-dark: #a0a0a0;
+    --red-accent: #ff4444;
+    --dark-bg: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+    --border-color: rgba(212, 175, 55, 0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    color: var(--text-primary);
+    line-height: 1.7;
+    min-height: 100vh;
+}
+
+/* 🎨 HEADER LEGAL */
+.legal-header {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(184, 134, 11, 0.05) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.legal-header .logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.legal-header .logo-container img {
+    height: 48px;
+    width: auto;
+}
+
+.legal-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--gold-primary) 0%, #1e3a8a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.legal-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.legal-header .last-update {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.25rem;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: var(--gold-primary);
+}
+
+/* 📄 CONTENIDO PRINCIPAL */
+.legal-content {
+    max-width: 900px;
+    margin: 3rem auto;
+    padding: 0 1.5rem 3rem;
+}
+
+.legal-content section {
+    margin-bottom: 3rem;
+}
+
+.legal-content h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gold-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.legal-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.legal-content p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+.legal-content ul, 
+.legal-content ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.legal-content li {
+    margin-bottom: 0.5rem;
+}
+
+.legal-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.legal-content a {
+    color: var(--gold-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.legal-content a:hover {
+    border-bottom-color: var(--gold-primary);
+}
+
+/* 📊 TABLAS */
+.legal-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background: rgba(212, 175, 55, 0.03);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.legal-content th {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--gold-primary);
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.legal-content td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.05);
+    color: var(--text-secondary);
+}
+
+/* 💡 CAJAS DE INFORMACIÓN */
+.info-box {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(184, 134, 11, 0.05) 100%);
+    border-left: 4px solid var(--gold-primary);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-radius: 8px;
+}
+
+.info-box p {
+    margin-bottom: 0;
+}
+
+.info-box strong {
+    color: var(--gold-primary);
+}
+
+/* 🔗 FOOTER LEGAL */
+.legal-footer {
+    background: rgba(212, 175, 55, 0.05);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 1rem;
+    text-align: center;
+    margin-top: 4rem;
+}
+
+.legal-footer .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.legal-footer .footer-links a {
+    color: var(--gold-primary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+}
+
+.legal-footer .footer-links a:hover {
+    color: var(--red-accent);
+}
+
+.legal-footer .copyright {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* 🔙 BOTÓN VOLVER */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 2rem;
+}
+
+.back-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+    .legal-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .legal-content {
+        padding: 0 1rem 2rem;
+        margin: 2rem auto;
+    }
+    
+    .legal-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    .legal-content h3 {
+        font-size: 1.125rem;
+    }
+    
+    .legal-content ul, 
+    .legal-content ol {
+        margin-left: 1.5rem;
+    }
+    
+    .legal-footer .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .legal-content table {
+        font-size: 0.875rem;
+    }
+    
+    .legal-content th,
+    .legal-content td {
+        padding: 0.75rem;
+    }
+}
+
+/* ⚡ ANIMACIONES */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.legal-content section {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* 🎯 SMOOTH SCROLL */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 📌 ÍNDICE DE CONTENIDOS */
+.table-of-contents {
+    background: rgba(212, 175, 55, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0 3rem;
+}
+
+.table-of-contents h2 {
+    font-size: 1.5rem;
+    color: var(--gold-primary);
+    margin-bottom: 1.5rem;
+    border-bottom: none;
+}
+
+.table-of-contents ul {
+    list-style: none;
+    margin-left: 0;
+}
+
+.table-of-contents li {
+    margin-bottom: 0.75rem;
+}
+
+.table-of-contents a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-of-contents a:hover {
+    color: var(--gold-primary);
+    border-bottom: none;
+}
+
+.table-of-contents a::before {
+    content: '→';
+    color: var(--gold-primary);
+    font-weight: bold;
+}
