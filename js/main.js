@@ -247,10 +247,16 @@ class DomusIA {
     updateAuthButtons() {
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
+        const crmNavLink = document.getElementById('crmNavLink');
+        const crmNavLinkMobile = document.getElementById('crmNavLinkMobile');
         
         if (this.isAuthenticated && this.userName) {
             loginBtn.textContent = `Hola, ${this.userName}`;
             registerBtn.textContent = 'Mi Cuenta';
+            
+            // Mostrar links de CRM en navegación
+            if (crmNavLink) crmNavLink.classList.remove('hidden');
+            if (crmNavLinkMobile) crmNavLinkMobile.classList.remove('hidden');
             
             // Añadir botón al CRM si no existe
             if (!document.getElementById('crmBtn')) {
@@ -266,6 +272,10 @@ class DomusIA {
         } else {
             loginBtn.textContent = 'Acceder';
             registerBtn.textContent = 'Comenzar Gratis';
+            
+            // Ocultar links de CRM en navegación
+            if (crmNavLink) crmNavLink.classList.add('hidden');
+            if (crmNavLinkMobile) crmNavLinkMobile.classList.add('hidden');
             
             // Remover botón CRM si existe
             const crmBtn = document.getElementById('crmBtn');
