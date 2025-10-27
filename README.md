@@ -30,11 +30,14 @@
 **🆕 Mejoras Recientes v1.2:**
 - ✅ **Nueva Paleta de Colores** - Silver (#C0C0C0) y Azul Marino (#1e3a8a)
 - ✅ **Fix Botón Cierre Chat** - Event listeners mejorados con null checks
+- ✅ **Fix Botón Contacto** - Modal profesional con múltiples opciones de contacto
+- ✅ **Ejemplos de Prompts en Chat** - 10 sugerencias clicables para guiar al usuario
 - ✅ **Limpieza Masiva del Proyecto** - 170+ archivos obsoletos eliminados
 - ✅ **Sistema de notificaciones Toast** profesional
 - ✅ **Validaciones de formulario** robustas en tiempo real
 - ✅ **Estados de carga** (spinners) en todas las operaciones
 - ✅ **Optimización de rendimiento** con debounce en filtros
+- ✅ **Deployment exitoso en Vercel** - Proyecto 100% funcional en producción
 
 **📦 Estado del Proyecto:**
 - ✨ **Limpio y optimizado** - Solo archivos esenciales (reducido de ~180 a ~50 archivos)
@@ -43,6 +46,176 @@
 
 **Próxima Fase:** 
 - 🚀 **Deployment a Producción** (LISTO)
+
+---
+
+## 🚀 GUÍA DE DEPLOYMENT A VERCEL
+
+### 📋 Requisitos Previos
+
+1. **Git instalado** en tu sistema
+   - Descarga: https://git-scm.com/download/win
+   - Instala con opciones por defecto
+
+2. **Cuenta de GitHub**
+   - Crea una en: https://github.com/signup
+
+3. **Cuenta de Vercel**
+   - Crea una en: https://vercel.com/signup
+   - Conecta con tu cuenta de GitHub
+
+### 🎯 Método 1: Subir con Script Automático (RECOMENDADO)
+
+**Este proyecto incluye un script que hace todo automáticamente:**
+
+1. **Ejecuta el script de verificación** (opcional):
+   ```bash
+   VERIFICAR_ARCHIVOS.bat
+   ```
+   - Confirma que todos los archivos necesarios existen
+
+2. **Ejecuta el script de subida**:
+   ```bash
+   SUBIR_A_GITHUB.bat
+   ```
+   - Sigue las instrucciones en pantalla
+   - Ingresa tu usuario de GitHub
+   - Ingresa el nombre del repositorio (ej: `domus-ia-v2`)
+   - El script hará todo el proceso Git automáticamente
+
+3. **Ve a Vercel**:
+   - https://vercel.com/new
+   - Click en "Import Git Repository"
+   - Selecciona tu repositorio recién creado
+   - **Vercel detectará automáticamente** la configuración
+   - Click en "Deploy"
+
+### 🎯 Método 2: Subir Manualmente con Git
+
+Si prefieres hacerlo manualmente:
+
+```bash
+# 1. Inicializar Git
+git init
+
+# 2. Agregar todos los archivos CON estructura de carpetas
+git add .
+
+# 3. Crear commit
+git commit -m "Domus-IA España v1.2 - Paleta Silver/Blue"
+
+# 4. Configurar repositorio remoto
+git remote add origin https://github.com/TU-USUARIO/TU-REPOSITORIO.git
+
+# 5. Subir a GitHub
+git branch -M main
+git push -u origin main
+```
+
+### ⚠️ IMPORTANTE: Estructura de Carpetas
+
+**Vercel NECESITA que los archivos estén organizados en carpetas:**
+
+```
+✅ CORRECTO:
+📁 api/
+  ├─ chat.js
+  ├─ dalle.js
+  └─ ...
+📁 js/
+  ├─ main.js
+  └─ ...
+📁 css/
+  └─ style.css
+📄 index.html
+📄 vercel.json
+
+❌ INCORRECTO:
+📄 chat.js
+📄 dalle.js
+📄 main.js
+📄 style.css
+📄 index.html
+```
+
+**Si subes archivos UNO POR UNO** a GitHub, SE PIERDE la estructura de carpetas.
+
+**Usa siempre Git** o **arrastra carpetas completas** a GitHub.
+
+### 🔧 Configuración de Vercel
+
+El proyecto incluye `vercel.json` con la configuración correcta:
+
+```json
+{
+  "buildCommand": "echo 'Static site - no build needed'",
+  "outputDirectory": ".",
+  "headers": [...],
+  "routes": [...]
+}
+```
+
+**No necesitas modificar nada** - Vercel lo detectará automáticamente.
+
+### 🔐 Variables de Entorno en Vercel
+
+Después de desplegar, agrega estas variables de entorno en Vercel:
+
+1. Ve a tu proyecto en Vercel
+2. Settings → Environment Variables
+3. Agrega estas variables:
+
+```env
+OPENAI_API_KEY=sk-...
+TAVILY_API_KEY=tvly-...
+SUPABASE_URL=https://....supabase.co
+SUPABASE_ANON_KEY=eyJ...
+```
+
+### ✅ Verificación Post-Deployment
+
+Una vez desplegado, verifica que funcione:
+
+1. **Página principal**: `https://tu-proyecto.vercel.app`
+   - ✅ Debe cargar correctamente
+   - ✅ Chat debe abrir al hacer clic
+
+2. **Funciones API**: `https://tu-proyecto.vercel.app/api/chat`
+   - ✅ Debe responder (aunque sea con error si no hay body)
+
+3. **Chat con Sofía**:
+   - ✅ Debe funcionar completamente
+   - ✅ GPT-4o responde
+   - ✅ DALL-E genera imágenes
+
+4. **Sistema CRM**:
+   - ✅ Registro funciona
+   - ✅ Login funciona
+   - ✅ Panel CRM carga propiedades
+
+### 🆘 Solución de Problemas
+
+#### Error: "Missing public directory"
+**Causa**: `vercel.json` mal configurado o falta
+**Solución**: Usa el `vercel.json` actualizado incluido en el proyecto
+
+#### Error: "Functions not found"
+**Causa**: Carpeta `api/` no existe o archivos sueltos
+**Solución**: Verifica que GitHub muestre la carpeta `api/` con archivos dentro
+
+#### Error: "Build failed"
+**Causa**: Sintaxis incorrecta en archivos JavaScript
+**Solución**: Todos los archivos API deben usar `export default` (ES6)
+
+#### Error 500 en funciones API
+**Causa**: Variables de entorno no configuradas
+**Solución**: Agrega todas las variables en Vercel Settings
+
+### 📚 Recursos Adicionales
+
+- **Guía completa de subida**: Ver archivo `🚀_GUIA_SUBIR_GITHUB_CORRECTAMENTE.md`
+- **Documentación de Vercel**: https://vercel.com/docs
+- **Soporte Vercel**: https://vercel.com/support
 
 ---
 
