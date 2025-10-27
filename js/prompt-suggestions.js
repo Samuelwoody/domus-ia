@@ -92,10 +92,23 @@ class PromptSuggestions {
             return;
         }
         
+        // Verificar si ya existe el contenedor
+        if (document.getElementById('promptSuggestions')) {
+            console.log('✅ Contenedor ya existe');
+            return;
+        }
+        
         // Buscar el form container
-        const formContainer = chatInput.closest('form') || chatInput.parentElement;
+        const formContainer = chatInput.closest('form');
         if (!formContainer) {
-            console.error('❌ No se pudo encontrar el contenedor del formulario');
+            console.log('⚠️ No se encontró form, buscando alternativa...');
+            // Intentar insertar después del input directamente
+            const container = document.createElement('div');
+            container.id = 'promptSuggestions';
+            container.className = 'prompt-suggestions-container';
+            container.innerHTML = `<div class="suggestions-wrapper"></div>`;
+            chatInput.parentNode.insertBefore(container, chatInput);
+            console.log('✅ Contenedor creado (alternativa)');
             return;
         }
         
@@ -103,14 +116,12 @@ class PromptSuggestions {
         const container = document.createElement('div');
         container.id = 'promptSuggestions';
         container.className = 'prompt-suggestions-container';
-        container.innerHTML = `
-            <div class="suggestions-wrapper"></div>
-        `;
+        container.innerHTML = `<div class="suggestions-wrapper"></div>`;
         
-        // Insertar antes del form
-        formContainer.parentNode.insertBefore(container, formContainer);
+        // Insertar DENTRO del form, antes del input
+        formContainer.insertBefore(container, chatInput.parentElement || chatInput);
         
-        console.log('✅ Contenedor de sugerencias creado');
+        console.log('✅ Contenedor de sugerencias creado dentro del form');
     }
     
     selectRandomSuggestions() {
@@ -174,16 +185,44 @@ class PromptSuggestions {
         }
         
         // Refrescar sugerencias cada vez que se abre el chat
-        const originalOpenChat = window.domusIA?.openChat;
-        if (originalOpenChat) {
-            window.domusIA.openChat = () => {
-                originalOpenChat.call(window.domusIA);
-                setTimeout(() => {
-                    this.show();
-                    this.selectRandomSuggestions();
-                    this.renderSuggestions();
-                }, 300);
-            };
+        // Usar observer para detectar cuando el chat se abre
+        this.observeChatModal();
+    }
+    
+    observeChatModal() {
+        // Intentar override del método openChat
+        const tryOverride = () => {
+            if (window.domusIA?.openChat) {
+                const originalOpenChat = window.domusIA.openChat;
+                window.domusIA.openChat = function() {
+                    originalOpenChat.call(this);
+                    setTimeout(() => {
+                        // Re-crear contenedor si no existe
+                        if (!document.getElementById('promptSuggestions')) {
+                            window.promptSuggestions.createSuggestionsContainer();
+                        }
+                        window.promptSuggestions.show();
+                        window.promptSuggestions.selectRandomSuggestions();
+                        window.promptSuggestions.renderSuggestions();
+                    }, 500);
+                };
+                console.log('✅ Chat open hook instalado');
+                return true;
+            }
+            return false;
+        };
+        
+        // Intentar inmediatamente
+        if (!tryOverride()) {
+            // Si no está listo, reintentar cada segundo
+            const interval = setInterval(() => {
+                if (tryOverride()) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+            
+            // Timeout después de 10 segundos
+            setTimeout(() => clearInterval(interval), 10000);
         }
     }
     
