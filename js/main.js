@@ -2271,6 +2271,87 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
 }
 
+// ===== CONTACT MODAL =====
+function openContactModal(event) {
+    if (event) event.preventDefault();
+    
+    // Crear modal de contacto si no existe
+    let contactModal = document.getElementById('contactModal');
+    if (!contactModal) {
+        contactModal = document.createElement('div');
+        contactModal.id = 'contactModal';
+        contactModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        contactModal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+                <button onclick="closeContactModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                
+                <h2 class="text-2xl font-bold text-domus-navy mb-4">Contáctanos</h2>
+                <p class="text-domus-sage mb-6">¿Tienes alguna pregunta? Estamos aquí para ayudarte.</p>
+                
+                <div class="space-y-4">
+                    <!-- Email -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i class="fas fa-envelope text-domus-accent text-xl"></i>
+                        <div>
+                            <p class="text-sm text-domus-sage">Email</p>
+                            <a href="mailto:soporte@domus-ia.com" class="text-domus-navy font-semibold hover:text-domus-accent">
+                                soporte@domus-ia.com
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Teléfono -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i class="fas fa-phone text-domus-accent text-xl"></i>
+                        <div>
+                            <p class="text-sm text-domus-sage">Teléfono</p>
+                            <a href="tel:+34900123456" class="text-domus-navy font-semibold hover:text-domus-accent">
+                                +34 900 123 456
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- WhatsApp -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i class="fab fa-whatsapp text-domus-accent text-xl"></i>
+                        <div>
+                            <p class="text-sm text-domus-sage">WhatsApp</p>
+                            <a href="https://wa.me/34900123456" target="_blank" class="text-domus-navy font-semibold hover:text-domus-accent">
+                                Chatear por WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat con Sofía -->
+                    <button onclick="closeContactModal(); openChatWindow();" class="w-full bg-gradient-to-r from-domus-silver to-domus-accent text-white py-3 rounded-lg hover:opacity-90 transition-all font-semibold">
+                        <i class="fas fa-comment-dots mr-2"></i>
+                        O chatea con Sofía IA
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(contactModal);
+    }
+    
+    contactModal.classList.remove('hidden');
+}
+
+function closeContactModal() {
+    const contactModal = document.getElementById('contactModal');
+    if (contactModal) {
+        contactModal.classList.add('hidden');
+    }
+}
+
+function openChatWindow(event) {
+    if (event) event.preventDefault();
+    if (window.domusIA) {
+        window.domusIA.openChat();
+    }
+}
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     window.domusIA = new DomusIA();
@@ -2279,6 +2360,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== GLOBAL UTILITIES =====
 window.openChat = () => window.domusIA.openChat();
 window.closeChat = () => window.domusIA.closeChat();
+window.openContactModal = openContactModal;
+window.closeContactModal = closeContactModal;
+window.openChatWindow = openChatWindow;
 
 // ===== DIAGNOSTIC FUNCTION =====
 window.diagnosticoChat = function() {
