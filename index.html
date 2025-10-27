@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="css/typing-cursor.css">
     <link rel="stylesheet" href="css/cookie-consent.css">
     <link rel="stylesheet" href="css/crm-modals.css">
+    <link rel="stylesheet" href="css/prompt-suggestions.css">
     
     <!-- Tailwind Config -->
     <script>
@@ -49,6 +50,9 @@
     </script>
 </head>
 <body class="font-sans bg-gradient-to-br from-gray-50 to-domus-cream min-h-screen">
+    
+    <!-- Prompt Suggestions Script -->
+    <script src="js/prompt-suggestions.js" defer></script>
     <!-- Header -->
     <header class="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,9 +71,10 @@
                 <!-- Navigation -->
                 <nav class="hidden lg:flex items-center space-x-6">
                     <a href="#inicio" class="text-domus-navy hover:text-domus-silver transition-colors text-sm">Inicio</a>
-                    <a href="#sofia" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Sofía</a>
-                    <a href="#planes" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Planes</a>
-                    <a href="#contacto" class="text-domus-sage hover:text-domus-silver transition-colors text-sm">Contacto</a>
+                    <a href="#chat" onclick="openChatWindow(event)" class="text-domus-sage hover:text-domus-silver transition-colors text-sm cursor-pointer">Chat con Sofía</a>
+                    <a href="#contacto" onclick="openContactModal(event)" class="text-domus-sage hover:text-domus-silver transition-colors text-sm cursor-pointer">Contacto</a>
+                    <!-- Mi CRM link (solo visible cuando autenticado) -->
+                    <a href="crm.html" id="crmNavLink" class="text-domus-sage hover:text-domus-silver transition-colors text-sm hidden">Mi CRM</a>
                 </nav>
 
                 <!-- Auth Buttons -->
@@ -90,9 +95,10 @@
             <div id="mobileMenu" class="lg:hidden hidden bg-white border-t border-gray-100">
                 <nav class="px-4 py-3 space-y-3">
                     <a href="#inicio" class="block text-domus-navy hover:text-domus-silver transition-colors py-2">Inicio</a>
-                    <a href="#sofia" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Sofía</a>
-                    <a href="#planes" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Planes</a>
-                    <a href="#contacto" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Contacto</a>
+                    <a href="#chat" onclick="openChatWindow(event)" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Chat con Sofía</a>
+                    <a href="#contacto" onclick="openContactModal(event)" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Contacto</a>
+                    <!-- Mi CRM link mobile (solo visible cuando autenticado) -->
+                    <a href="crm.html" id="crmNavLinkMobile" class="block text-domus-sage hover:text-domus-silver transition-colors py-2 hidden">Mi CRM</a>
                     <a href="#" id="mobileLoginBtn" onclick="showLoginModal()" class="block text-domus-sage hover:text-domus-silver transition-colors py-2">Acceder</a>
                 </nav>
             </div>
