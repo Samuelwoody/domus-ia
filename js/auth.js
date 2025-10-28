@@ -158,9 +158,20 @@ class AuthSystem {
 
     // Cerrar sesión
     logout() {
-        console.log('👋 Cerrando sesión:', this.currentUser.name);
+        console.log('👋 Cerrando sesión:', this.currentUser?.name || 'Usuario');
         this.clearSession();
-        window.location.reload(); // Recargar página
+        
+        // Asegurar que main.js también limpie su estado
+        if (window.domusIA) {
+            window.domusIA.isAuthenticated = false;
+            window.domusIA.userName = null;
+            window.domusIA.userEmail = null;
+            window.domusIA.userType = null;
+            window.domusIA.saveUserData();
+        }
+        
+        // Recargar página para resetear UI
+        window.location.href = '/';
     }
 
     // Obtener usuario actual
