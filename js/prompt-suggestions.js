@@ -73,14 +73,34 @@ class PromptSuggestions {
     }
     
     setup() {
-        // Intentar crear el contenedor después de un delay
-        // (el chat modal puede cargarse dinámicamente)
+        // Usar MutationObserver para detectar cuando se crea el chat
+        const observer = new MutationObserver(() => {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput && !document.getElementById('promptSuggestions')) {
+                console.log('✅ Chat input detectado, creando sugerencias...');
+                this.createSuggestionsContainer();
+                this.selectRandomSuggestions();
+                this.renderSuggestions();
+                this.bindEvents();
+            }
+        });
+        
+        // Observar cambios en el body
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // También intentar inmediatamente por si ya existe
         setTimeout(() => {
-            this.createSuggestionsContainer();
-            this.selectRandomSuggestions();
-            this.renderSuggestions();
-            this.bindEvents();
-        }, 500);
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput && !document.getElementById('promptSuggestions')) {
+                this.createSuggestionsContainer();
+                this.selectRandomSuggestions();
+                this.renderSuggestions();
+                this.bindEvents();
+            }
+        }, 1000);
     }
     
     createSuggestionsContainer() {
