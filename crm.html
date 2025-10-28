@@ -17,6 +17,16 @@
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    
+    <script>
+    // Función para abrir chat desde CRM
+    function openChatFromCRM(event) {
+        event.preventDefault();
+        // Redirigir a index.html con hash #chat y parámetro para abrir modal
+        window.location.href = 'index.html?openChat=true#chat';
+        return false;
+    }
+    </script>
 </head>
 <body class="bg-gray-50">
     
@@ -56,7 +66,7 @@
                     <i class="fas fa-building"></i>
                     <span>Propiedades</span>
                 </a>
-                <a href="index.html" class="crm-nav-item">
+                <a href="index.html#chat" onclick="return openChatFromCRM(event)" class="crm-nav-item">
                     <i class="fas fa-comments"></i>
                     <span>Chat con Sofía</span>
                 </a>
