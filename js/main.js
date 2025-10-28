@@ -37,6 +37,16 @@ class DomusIA {
         this.updateUI();
         this.startCountdown();
         this.loadConversationHistory();
+        
+        // Abrir chat automáticamente si viene de CRM
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('openChat') === 'true') {
+            setTimeout(() => {
+                this.openChat();
+                // Limpiar el parámetro de la URL
+                window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+            }, 500);
+        }
     }
 
     // ===== USER DATA MANAGEMENT =====
@@ -244,6 +254,56 @@ class DomusIA {
         }
     }
 
+    showAccountPanel() {
+        // Crear modal de cuenta de usuario
+        let accountModal = document.getElementById('accountModal');
+        if (!accountModal) {
+            accountModal = document.createElement('div');
+            accountModal.id = 'accountModal';
+            accountModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            accountModal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+                    <button onclick="document.getElementById('accountModal').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                    
+                    <h2 class="text-2xl font-bold text-domus-navy mb-4">Mi Cuenta</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-domus-sage">Nombre</p>
+                            <p class="font-semibold text-domus-navy">${this.userName || 'Usuario'}</p>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-domus-sage">Email</p>
+                            <p class="font-semibold text-domus-navy">${this.userEmail || 'No disponible'}</p>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-domus-sage">Tipo de cuenta</p>
+                            <p class="font-semibold text-domus-navy capitalize">${this.userType || 'Particular'}</p>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-domus-sage">Plan</p>
+                            <p class="font-semibold text-domus-navy">${this.subscriptionPlan === 'free' ? 'Plan Gratuito' : 'Plan Premium'}</p>
+                        </div>
+                        
+                        <button onclick="if(confirm('¿Seguro que deseas cerrar sesión?')) window.authSystem.logout();" 
+                                class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                            <i class="fas fa-sign-out-alt mr-2"></i>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(accountModal);
+        } else {
+            accountModal.classList.remove('hidden');
+        }
+    }
+    
     updateAuthButtons() {
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
@@ -253,6 +313,9 @@ class DomusIA {
         if (this.isAuthenticated && this.userName) {
             loginBtn.textContent = `Hola, ${this.userName}`;
             registerBtn.textContent = 'Mi Cuenta';
+            
+            // Cambiar el onclick de registerBtn a mostrar panel de cuenta
+            registerBtn.onclick = () => this.showAccountPanel();
             
             // Mostrar links de CRM en navegación
             if (crmNavLink) crmNavLink.classList.remove('hidden');
@@ -272,6 +335,9 @@ class DomusIA {
         } else {
             loginBtn.textContent = 'Acceder';
             registerBtn.textContent = 'Comenzar Gratis';
+            
+            // Restaurar el onclick original
+            registerBtn.onclick = () => showRegisterModal();
             
             // Ocultar links de CRM en navegación
             if (crmNavLink) crmNavLink.classList.add('hidden');
