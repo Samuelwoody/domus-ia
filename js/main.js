@@ -473,14 +473,30 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         }
         */
         
-        // Guardar archivo actual para procesamiento
-        const fileToProcess = this.currentFile;
-        const fileTypeToProcess = this.currentFileType;
+        // 🔥 LÓGICA CORREGIDA: Solo enviar archivo si NO hay URL de Cloudinary
+        // Si hay URL de Cloudinary, el backend la encontrará en el historial
+        const hasCloudinaryUrl = this.currentUploadedImageUrl && this.currentFileType === 'image';
+        
+        const fileToProcess = hasCloudinaryUrl ? null : this.currentFile;
+        const fileTypeToProcess = hasCloudinaryUrl ? null : this.currentFileType;
         const documentTextToProcess = this.currentDocumentText; // 🔥 GUARDAR TEXTO EXTRAÍDO
+        
+        console.log('📤 Enviando mensaje:', {
+            hasCloudinaryUrl: hasCloudinaryUrl,
+            cloudinaryUrl: this.currentUploadedImageUrl,
+            willSendFile: !!fileToProcess,
+            fileType: fileTypeToProcess
+        });
         
         // Clear input and file
         input.value = '';
         this.clearFileUpload();
+        
+        // 🔥 Limpiar URL de Cloudinary después de usar (para que próximo mensaje no la reutilice)
+        if (hasCloudinaryUrl) {
+            console.log('🧹 Limpiando URL de Cloudinary usada');
+            this.currentUploadedImageUrl = null;
+        }
         
         // Add user message (con indicador de archivo si existe)
         let displayMessage = finalMessage;
