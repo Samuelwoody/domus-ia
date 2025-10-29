@@ -672,15 +672,11 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     webSearch: 'auto'  // Búsqueda automática cuando sea necesario
                 };
                 
-                // 🔥 LÓGICA CORREGIDA: Enviar imagen si hay archivo O si hay URL de Cloudinary guardada
+                // Añadir imagen si existe
                 if (file && fileType === 'image') {
                     console.log('👁️ Enviando imagen para análisis Vision...');
                     const base64 = await this.fileToBase64(file);
                     requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
-                } else if (this.currentUploadedImageUrl) {
-                    // Si no hay archivo nuevo pero sí URL de Cloudinary, enviarla para que GPT-4o la vea
-                    console.log('👁️ Enviando URL de Cloudinary para Vision API:', this.currentUploadedImageUrl);
-                    requestBody.imageUrl = this.currentUploadedImageUrl;
                 }
                 
                 // Añadir documento si existe
