@@ -13,12 +13,12 @@ class PromptSuggestions {
             },
             {
                 icon: '💰',
-                text: 'Precio del m² en Barcelona',
+                text: '¿Cuánto cuesta el m² en Barcelona?',
                 category: 'precios'
             },
             {
                 icon: '🎨',
-                text: 'Crea una visualización 3D',
+                text: 'Diseña una imagen de un salón moderno',
                 category: 'imagenes'
             },
             {
@@ -28,7 +28,7 @@ class PromptSuggestions {
             },
             {
                 icon: '🔍',
-                text: 'Busca info del mercado',
+                text: 'Dame datos del mercado actual',
                 category: 'web'
             },
             {
@@ -38,22 +38,22 @@ class PromptSuggestions {
             },
             {
                 icon: '📈',
-                text: 'Mercado en Valencia',
+                text: '¿Cómo está el mercado en Valencia?',
                 category: 'mercado'
             },
             {
                 icon: '🎯',
-                text: 'Valora una propiedad',
+                text: 'Valora esta propiedad',
                 category: 'valoracion'
             },
             {
                 icon: '📝',
-                text: 'Documentos para vender',
+                text: '¿Qué documentos necesito para vender?',
                 category: 'documentacion'
             },
             {
                 icon: '🏘️',
-                text: 'Compara barrios',
+                text: 'Compara barrios de Madrid',
                 category: 'comparacion'
             }
         ];
