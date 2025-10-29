@@ -1226,8 +1226,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 350) {
-        // 🎯 EFECTO ESCRITURA ULTRA RÁPIDA (70 palabras/seg ≈ 350 chars/seg)
+    async typeMessage(element, content, speed = 500) {
+        // 🎯 EFECTO ESCRITURA CASI INSTANTÁNEA (100 palabras/seg ≈ 500 chars/seg)
         console.log('⌨️ Iniciando typeMessage con speed:', speed);
         
         const delay = 1000 / speed;
@@ -2006,11 +2006,13 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         // Initialize speech recognition
         this.recognition = new SpeechRecognition();
         this.recognition.lang = 'es-ES';
-        this.recognition.continuous = false;
-        this.recognition.interimResults = false;
+        this.recognition.continuous = true; // ✅ MODO CONTINUO
+        this.recognition.interimResults = true; // ✅ RESULTADOS EN TIEMPO REAL
         this.recognition.maxAlternatives = 1;
 
         this.isRecording = false;
+        this.silenceTimer = null; // Timer para detección de silencio
+        this.lastSpeechTime = null; // Última vez que se detectó voz
 
         // Voice button click handler
         voiceBtn.addEventListener('click', () => {
@@ -2021,25 +2023,41 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             }
         });
 
-        // Recognition result handler
+        // Recognition result handler (mejorado con detección continua)
         this.recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
             const chatInput = document.getElementById('chatInput');
             
-            // Append to existing text or replace
-            if (chatInput.value.trim()) {
-                chatInput.value += ' ' + transcript;
-            } else {
-                chatInput.value = transcript;
+            // Resetear timer de silencio cada vez que se detecta voz
+            this.lastSpeechTime = Date.now();
+            this.resetSilenceTimer();
+            
+            // Construir transcripción completa desde todos los resultados
+            let transcript = '';
+            for (let i = 0; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
             }
+            
+            // Actualizar input con transcripción completa
+            chatInput.value = transcript;
             
             // Focus input
             chatInput.focus();
+            
+            console.log('🎤 Transcripción:', transcript);
         };
 
-        // Recognition end handler
+        // Recognition end handler (reiniciar si sigue activo)
         this.recognition.onend = () => {
-            this.stopRecording();
+            // Solo reiniciar si isRecording sigue true (no fue detenido manualmente)
+            if (this.isRecording) {
+                console.log('🔄 Reconocimiento finalizado, reiniciando...');
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    console.log('⚠️ No se pudo reiniciar reconocimiento');
+                    this.stopRecording();
+                }
+            }
         };
 
         // Recognition error handler
@@ -2064,15 +2082,21 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         try {
             this.recognition.start();
             this.isRecording = true;
+            this.lastSpeechTime = Date.now();
             
             // Update button UI
             voiceBtn.classList.remove('bg-gray-100', 'text-domus-navy');
             voiceBtn.classList.add('bg-domus-accent', 'text-white', 'animate-pulse');
-            voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
-            voiceBtn.title = 'Click para detener';
+            voiceBtn.innerHTML = '<i class="fas fa-stop text-sm md:text-base"></i>';
+            voiceBtn.title = 'Click para detener (o espera 4s sin hablar)';
             
             // Show recording indicator
-            this.showVoiceMessage('🎤 Escuchando... Habla ahora', true);
+            this.showVoiceMessage('🎤 Escuchando... Habla con pausas normales', true);
+            
+            // ✅ NUEVO: Iniciar detección de silencio de 4 segundos
+            this.startSilenceDetection();
+            
+            console.log('🎤 Grabación iniciada en modo continuo');
         } catch (error) {
             console.error('Error starting recording:', error);
             this.stopRecording();
@@ -2093,14 +2117,22 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         this.isRecording = false;
         
+        // ✅ NUEVO: Limpiar timer de detección de silencio
+        if (this.silenceTimer) {
+            clearInterval(this.silenceTimer);
+            this.silenceTimer = null;
+        }
+        
         // Reset button UI
         voiceBtn.classList.remove('bg-domus-accent', 'text-white', 'animate-pulse');
         voiceBtn.classList.add('bg-gray-100', 'text-domus-navy');
-        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-        voiceBtn.title = 'Click para hablar';
+        voiceBtn.innerHTML = '<i class="fas fa-microphone text-sm md:text-base"></i>';
+        voiceBtn.title = 'Mantén presionado para hablar';
         
         // Hide recording indicator
         this.hideVoiceMessage();
+        
+        console.log('🎤 Grabación detenida');
     }
 
     showVoiceMessage(message, isPersistent = false) {
@@ -2131,6 +2163,30 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         if (voiceMessage) {
             voiceMessage.remove();
         }
+    }
+
+    // ✅ NUEVO: Detección de silencio de 4 segundos
+    startSilenceDetection() {
+        // Limpiar timer existente si hay
+        if (this.silenceTimer) {
+            clearInterval(this.silenceTimer);
+        }
+        
+        // Verificar cada 500ms si han pasado 4 segundos sin hablar
+        this.silenceTimer = setInterval(() => {
+            const timeSinceLastSpeech = Date.now() - this.lastSpeechTime;
+            
+            if (timeSinceLastSpeech >= 4000) { // 4 segundos
+                console.log('🔇 4 segundos de silencio detectados, deteniendo grabación');
+                this.showVoiceMessage('⏸️ Grabación detenida por silencio', false);
+                this.stopRecording();
+            }
+        }, 500);
+    }
+    
+    resetSilenceTimer() {
+        // Simplemente actualizar el timestamp, el timer verifica automáticamente
+        this.lastSpeechTime = Date.now();
     }
 
     // ===== AUTHENTICATION MODALS =====
