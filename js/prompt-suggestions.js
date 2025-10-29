@@ -129,29 +129,16 @@ class PromptSuggestions {
             return;
         }
         
-        // Buscar el contenedor del input
-        let targetContainer = chatInput.parentElement;
-        
-        // Si el input está dentro de un form, usar el form
-        const formContainer = chatInput.closest('form');
-        if (formContainer) {
-            targetContainer = formContainer;
-        }
-        
-        if (!targetContainer) {
-            throw new Error('No se encontró contenedor padre para el input');
-        }
-        
         // Crear contenedor de sugerencias
         const container = document.createElement('div');
         container.id = 'promptSuggestions';
         container.className = 'prompt-suggestions-container';
         container.innerHTML = `<div class="suggestions-wrapper"></div>`;
         
-        // Insertar AL PRINCIPIO del contenedor (más seguro que insertBefore)
-        targetContainer.insertAdjacentElement('afterbegin', container);
+        // Insertar JUSTO ANTES del input (usa beforebegin)
+        chatInput.insertAdjacentElement('beforebegin', container);
         
-        console.log('✅ Contenedor de sugerencias creado');
+        console.log('✅ Contenedor de sugerencias creado ANTES del input');
     }
     
     selectRandomSuggestions() {
@@ -173,9 +160,8 @@ class PromptSuggestions {
                 class="suggestion-pill" 
                 data-prompt="${this.escapeHtml(suggestion.text)}"
                 data-index="${index}"
-                style="animation-delay: ${index * 0.1}s"
+                style="animation-delay: ${index * 0.08}s"
             >
-                <span class="suggestion-icon">${suggestion.icon}</span>
                 <span class="suggestion-text">${this.escapeHtml(suggestion.text)}</span>
             </button>
         `).join('');
