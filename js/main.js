@@ -1964,7 +1964,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         messagesContainer.insertAdjacentHTML('beforeend', previewHTML);
         this.scrollToBottom();
         
-        // Mensaje automático de Sofía
+        // 🔥 CRÍTICO: Añadir URL al historial INMEDIATAMENTE (no esperar)
+        console.log('📝 Añadiendo URL de Cloudinary al historial:', imageUrl);
+        this.conversationHistory.push({
+            role: 'user',
+            content: `[IMAGEN SUBIDA] ${imageUrl}`,
+            timestamp: new Date().toISOString()
+        });
+        this.saveConversationHistory();
+        
+        // Mensaje automático de Sofía (después del delay visual)
         setTimeout(() => {
             this.addMessage(
                 'assistant',
