@@ -1899,13 +1899,14 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             
             // CONFIGURACIÓN CLOUDINARY
             const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca'; // ✅ Cloud Name correcto
+            const CLOUDINARY_API_KEY = '479784297866979';
             const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
             
-            // Crear FormData
+            // Crear FormData con API Key (requerida por configuración de cuenta)
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+            formData.append('api_key', CLOUDINARY_API_KEY); // ✅ Añadida API Key
             formData.append('folder', 'domus-properties');
             
             // Upload a Cloudinary (DIRECTO desde navegador)
