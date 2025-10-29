@@ -473,12 +473,15 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         }
         */
         
-        // 🔥 LÓGICA CORREGIDA: Solo enviar archivo si NO hay URL de Cloudinary
-        // Si hay URL de Cloudinary, el backend la encontrará en el historial
-        const hasCloudinaryUrl = !!this.currentUploadedImageUrl; // No depender de currentFileType
+        // 🔥 NUEVA LÓGICA: Enviar tanto archivo como URL de Cloudinary
+        // Vision API necesita la imagen en CADA mensaje
+        // Replicate puede buscar en historial
+        const hasCloudinaryUrl = !!this.currentUploadedImageUrl;
+        const cloudinaryUrlToSend = hasCloudinaryUrl ? this.currentUploadedImageUrl : null;
         
-        const fileToProcess = hasCloudinaryUrl ? null : this.currentFile;
-        const fileTypeToProcess = hasCloudinaryUrl ? null : this.currentFileType;
+        // Siempre enviar el archivo si existe (para Vision API)
+        const fileToProcess = this.currentFile;
+        const fileTypeToProcess = this.currentFileType;
         const documentTextToProcess = this.currentDocumentText; // 🔥 GUARDAR TEXTO EXTRAÍDO
         
         console.log('📤 Enviando mensaje:', {
@@ -523,8 +526,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         this.showTypingIndicator(isImageRequest);
         
         try {
-            // Process message with file if exists
-            const response = await this.processMessage(finalMessage, fileToProcess, fileTypeToProcess, documentTextToProcess);
+            // Process message with file if exists (y URL de Cloudinary si está disponible)
+            const response = await this.processMessage(finalMessage, fileToProcess, fileTypeToProcess, documentTextToProcess, cloudinaryUrlToSend);
             this.hideTypingIndicator();
             
             // Add message with typing effect
@@ -561,7 +564,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         return imageKeywords.some(keyword => lowerMessage.includes(keyword));
     }
 
-    async processMessage(message, file = null, fileType = null, documentText = null) {
+    async processMessage(message, file = null, fileType = null, documentText = null, cloudinaryUrl = null) {
         // Handle document analysis if message starts with DOCUMENTO:
         if (message.startsWith('DOCUMENTO:')) {
             const docContent = message.replace('DOCUMENTO:', '').trim();
@@ -591,8 +594,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             return advancedResponse;
         }
         
-        // Process with AI (con archivo si existe)
-        return await this.generateAIResponse(message, file, fileType, documentText);
+        // Process with AI (con archivo y URL de Cloudinary si existen)
+        return await this.generateAIResponse(message, file, fileType, documentText, cloudinaryUrl);
     }
 
     detectUserFromMessage(message) {
@@ -646,7 +649,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         return `Gracias ${this.userName || ''}. Para personalizar mejor mi ayuda, ¿podrías decirme si eres propietario particular que quiere vender o agente inmobiliario profesional?`;
     }
 
-    async generateAIResponse(message, file = null, fileType = null, documentText = null) {
+    async generateAIResponse(message, file = null, fileType = null, documentText = null, cloudinaryUrl = null) {
         // Try to use Vercel/Netlify Function (ChatGPT real via backend)
         const endpoints = [
             '/api/chat',                      // Vercel
@@ -677,6 +680,13 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     console.log('👁️ Enviando imagen para análisis Vision...');
                     const base64 = await this.fileToBase64(file);
                     requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
+                }
+                
+                // 🔥 FIX: Si hay URL de Cloudinary, enviarla para Vision API
+                // Nota: Esto permite que GPT-4o vea la imagen subida a Cloudinary
+                if (cloudinaryUrl) {
+                    console.log('🌐 Enviando URL de Cloudinary para Vision API:', cloudinaryUrl);
+                    requestBody.imageUrl = cloudinaryUrl;
                 }
                 
                 // Añadir documento si existe
