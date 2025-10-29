@@ -475,7 +475,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         // 🔥 LÓGICA CORREGIDA: Solo enviar archivo si NO hay URL de Cloudinary
         // Si hay URL de Cloudinary, el backend la encontrará en el historial
-        const hasCloudinaryUrl = this.currentUploadedImageUrl && this.currentFileType === 'image';
+        const hasCloudinaryUrl = !!this.currentUploadedImageUrl; // No depender de currentFileType
         
         const fileToProcess = hasCloudinaryUrl ? null : this.currentFile;
         const fileTypeToProcess = hasCloudinaryUrl ? null : this.currentFileType;
@@ -672,11 +672,15 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     webSearch: 'auto'  // Búsqueda automática cuando sea necesario
                 };
                 
-                // Añadir imagen si existe
+                // 🔥 LÓGICA CORREGIDA: Enviar imagen si hay archivo O si hay URL de Cloudinary guardada
                 if (file && fileType === 'image') {
                     console.log('👁️ Enviando imagen para análisis Vision...');
                     const base64 = await this.fileToBase64(file);
                     requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
+                } else if (this.currentUploadedImageUrl) {
+                    // Si no hay archivo nuevo pero sí URL de Cloudinary, enviarla para que GPT-4o la vea
+                    console.log('👁️ Enviando URL de Cloudinary para Vision API:', this.currentUploadedImageUrl);
+                    requestBody.imageUrl = this.currentUploadedImageUrl;
                 }
                 
                 // Añadir documento si existe
@@ -710,6 +714,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                 console.log('🚀 Enviando request al backend:', {
                     endpoint: endpoint,
                     hasImageFile: !!requestBody.imageFile,
+                    hasImageUrl: !!requestBody.imageUrl,
+                    imageUrl: requestBody.imageUrl || 'N/A',
                     hasDocumentText: !!requestBody.documentText,
                     documentTextLength: requestBody.documentText?.length || 0,
                     documentTextPreview: requestBody.documentText?.substring(0, 100) || 'N/A'
