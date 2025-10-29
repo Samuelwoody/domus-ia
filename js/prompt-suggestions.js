@@ -18,7 +18,7 @@ class PromptSuggestions {
             },
             {
                 icon: '🎨',
-                text: 'Genera un render 3D',
+                text: 'Crea una visualización 3D',
                 category: 'imagenes'
             },
             {
