@@ -262,26 +262,35 @@ export default async function handler(req, res) {
       const lastMessageIndex = processedMessages.length - 1;
       const lastMsg = processedMessages[lastMessageIndex];
       
-      const imageUrlToUse = imageUrl || `data:image/jpeg;base64,${imageFile}`;
+      // 🔥 Determinar URL correctamente
+      let imageUrlToUse;
+      if (imageUrl) {
+        imageUrlToUse = imageUrl;
+      } else if (imageFile) {
+        imageUrlToUse = `data:image/jpeg;base64,${imageFile}`;
+      }
       
-      processedMessages[lastMessageIndex] = {
-        role: lastMsg.role,
-        content: [
-          {
-            type: 'text',
-            text: lastMsg.content
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageUrlToUse,
-              detail: 'high'
+      // Solo procesar si tenemos URL válida
+      if (imageUrlToUse) {
+        processedMessages[lastMessageIndex] = {
+          role: lastMsg.role,
+          content: [
+            {
+              type: 'text',
+              text: lastMsg.content
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrlToUse,
+                detail: 'high'
+              }
             }
-          }
-        ]
-      };
-      
-      console.log('👁️ Vision API activada - Analizando imagen');
+          ]
+        };
+        
+        console.log('👁️ Vision API activada - Analizando imagen');
+      }
     }
     
     // Si hay documento, añadir su texto al contexto
@@ -1070,12 +1079,8 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 
 ## 🎨 HERRAMIENTAS DISPONIBLES
 
-**⚠️ REGLA DE ORO - CÓMO ELEGIR LA HERRAMIENTA CORRECTA:**
-- **¿Usuario subió imagen + pide cambios?** → USA `edit_real_estate_image` (Replicate)
-- **¿Usuario pide crear imagen nueva desde cero?** → USA `generate_dalle_image` (DALL-E)
-
 ### 1️⃣ DALL-E 3 - Generación de Imágenes (generate_dalle_image)
-✅ **ÚSALA PARA:** Crear imágenes NUEVAS desde cero (no hay imagen existente)
+✅ **TIENES ACCESO DIRECTO** - úsala inmediatamente
 ✅ **Palabras clave:** "crea", "genera", "muestra", "diseña", "visualiza" una imagen
 ✅ **NO preguntes** - GENERA DIRECTAMENTE, explica después
 
@@ -1085,17 +1090,10 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 ✅ **Cuándo:** "mejora esta foto", "añade muebles", "limpia", "pinta las paredes", "cambia el suelo"
 ✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen con botón 📷 → Se sube automáticamente a Cloudinary → URL disponible en contexto
 
-**🔥 REGLA CRÍTICA: SI VES UNA IMAGEN EN EL CONTEXTO + USUARIO PIDE CAMBIOS = USA edit_real_estate_image**
-- SI el usuario ha subido una imagen previamente (la ves con Vision API)
-- Y el usuario pide modificaciones ("añade muebles", "limpia", "pinta paredes", "cambia suelo")
-- **DEBES usar edit_real_estate_image INMEDIATAMENTE**
-- NO uses generate_dalle_image (eso es para crear imágenes NUEVAS desde cero)
-
 **⚠️ IMPORTANTE: El sistema detecta AUTOMÁTICAMENTE la URL de la imagen subida**
 - NO necesitas pedir URL al usuario
 - NO necesitas que el usuario use imgur/servicios externos
 - El botón 📷 sube la imagen y genera URL pública automáticamente
-- La URL se pasa automáticamente a través del historial de conversación
 
 **Si no hay imagen subida:**
 Responde: "📸 Para editar la imagen, primero súbela con el botón 📷 (subir imagen). Luego dime qué cambios quieres hacer."
