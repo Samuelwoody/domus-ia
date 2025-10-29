@@ -7,54 +7,44 @@ class PromptSuggestions {
     constructor() {
         this.suggestions = [
             {
-                icon: '🏠',
-                text: 'Busco piso en Madrid',
-                category: 'busqueda'
-            },
-            {
-                icon: '💰',
-                text: '¿Cuánto cuesta el m² en Barcelona?',
-                category: 'precios'
-            },
-            {
-                icon: '🎨',
-                text: 'Diseña una imagen de un salón moderno',
-                category: 'imagenes'
-            },
-            {
                 icon: '📊',
-                text: 'Analiza este contrato',
-                category: 'documentos'
-            },
-            {
-                icon: '🔍',
-                text: 'Dame datos del mercado actual',
-                category: 'web'
-            },
-            {
-                icon: '🏢',
-                text: '¿Cómo vender mi piso?',
-                category: 'venta'
-            },
-            {
-                icon: '📈',
-                text: '¿Cómo está el mercado en Valencia?',
-                category: 'mercado'
-            },
-            {
-                icon: '🎯',
-                text: 'Valora esta propiedad',
+                text: 'Informe de valoración',
                 category: 'valoracion'
             },
             {
-                icon: '📝',
-                text: '¿Qué documentos necesito para vender?',
-                category: 'documentacion'
+                icon: '🎨',
+                text: 'Imagen para Facebook',
+                category: 'imagen'
             },
             {
-                icon: '🏘️',
-                text: 'Compara barrios de Madrid',
-                category: 'comparacion'
+                icon: '📝',
+                text: 'Texto para anuncio',
+                category: 'anuncio'
+            },
+            {
+                icon: '🎯',
+                text: 'Embudo Vendedores',
+                category: 'embudo'
+            },
+            {
+                icon: '🏢',
+                text: 'Formato corporativo',
+                category: 'corporativo'
+            },
+            {
+                icon: '💰',
+                text: 'Informe de ajuste de precio',
+                category: 'precio'
+            },
+            {
+                icon: '📋',
+                text: 'Contrato de arras',
+                category: 'contrato'
+            },
+            {
+                icon: '🎓',
+                text: 'Formación Montcastell-ai',
+                category: 'formacion'
             }
         ];
         
@@ -148,9 +138,8 @@ class PromptSuggestions {
     }
     
     selectRandomSuggestions() {
-        // Seleccionar 4 sugerencias aleatorias
-        const shuffled = [...this.suggestions].sort(() => Math.random() - 0.5);
-        this.currentSuggestions = shuffled.slice(0, 4);
+        // Mostrar TODAS las sugerencias (8 botones profesionales)
+        this.currentSuggestions = this.suggestions;
     }
     
     renderSuggestions() {
