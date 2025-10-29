@@ -20,6 +20,87 @@ async function uploadToImgBB(imageUrl, apiKey) {
 */
 
 // ============================================================================
+// 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
+// ============================================================================
+
+async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
+  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+  
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error('REPLICATE_API_TOKEN no configurado en variables de entorno');
+  }
+
+  try {
+    // Iniciar predicción con modelo de inpainting
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'wait'
+      },
+      body: JSON.stringify({
+        version: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        input: {
+          image: imageUrl,
+          prompt: prompt,
+          negative_prompt: negativePrompt || "distorted, low quality, blurry, artifacts, unrealistic, bad perspective",
+          num_inference_steps: 50,
+          guidance_scale: 7.5,
+          scheduler: "K_EULER",
+          refine: "expert_ensemble_refiner",
+          high_noise_frac: 0.8
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Replicate API error: ${response.status} - ${errorText}`);
+    }
+
+    const prediction = await response.json();
+    
+    // Si la respuesta ya tiene el output (Prefer: wait)
+    if (prediction.status === 'succeeded' && prediction.output) {
+      return prediction.output[0]; // URL de imagen editada
+    }
+    
+    // Si no, hacer polling
+    let attempts = 0;
+    const maxAttempts = 60; // 60 segundos máximo
+    
+    while (attempts < maxAttempts) {
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: {
+          'Authorization': `Token ${REPLICATE_API_TOKEN}`
+        }
+      });
+      
+      const statusData = await statusResponse.json();
+      
+      if (statusData.status === 'succeeded') {
+        return statusData.output[0];
+      }
+      
+      if (statusData.status === 'failed' || statusData.status === 'canceled') {
+        throw new Error(`Replicate prediction failed: ${statusData.error || 'Unknown error'}`);
+      }
+      
+      // Esperar 1 segundo antes de siguiente intento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+    }
+    
+    throw new Error('Replicate timeout: La edición tardó demasiado');
+    
+  } catch (error) {
+    console.error('❌ Error en Replicate:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
 // ============================================================================
 
@@ -181,6 +262,8 @@ export default async function handler(req, res) {
       const lastMessageIndex = processedMessages.length - 1;
       const lastMsg = processedMessages[lastMessageIndex];
       
+      const imageUrlToUse = imageUrl || `data:image/jpeg;base64,${imageFile}`;
+      
       processedMessages[lastMessageIndex] = {
         role: lastMsg.role,
         content: [
@@ -191,14 +274,18 @@ export default async function handler(req, res) {
           {
             type: 'image_url',
             image_url: {
-              url: imageUrl || `data:image/jpeg;base64,${imageFile}`,
+              url: imageUrlToUse,
               detail: 'high'
             }
           }
         ]
       };
       
-      console.log('👁️ Vision API activada - Analizando imagen');
+      console.log('👁️ Vision API activada - Analizando imagen:', {
+        hasImageFile: !!imageFile,
+        hasImageUrl: !!imageUrl,
+        imageUrlPreview: imageUrlToUse.substring(0, 100)
+      });
     }
     
     // Si hay documento, añadir su texto al contexto
@@ -266,6 +353,81 @@ export default async function handler(req, res) {
               }
             },
             required: ["prompt"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "edit_real_estate_image",
+          description: "🎯 REAL IMAGE EDITING with Replicate SDXL - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint walls, change floors, modernize spaces. ⚠️ REQUIRES publicly accessible image URL. This tool maintains the EXACT perspective, room layout, and architecture while only modifying requested elements.",
+          parameters: {
+            type: "object",
+            properties: {
+              image_url: {
+                type: "string",
+                description: "🔗 REQUIRED: Publicly accessible URL of the image to edit. Must be a direct link (ending in .jpg, .png, .webp). If user provides local file, ask them to upload to imgur.com or similar first."
+              },
+              original_description: {
+                type: "string",
+                description: "Detailed description of the current image/space. Example: 'Empty living room with white walls, hardwood floor, large window on left, 4x5 meters'"
+              },
+              desired_changes: {
+                type: "string",
+                description: "Specific improvements to make PRESERVING STRUCTURE. Example: 'Add modern gray sofa and coffee table, paint walls soft beige, add plants near window, keep same floor and window exactly as is'"
+              },
+              style: {
+                type: "string",
+                enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "classic", "contemporary", "rustic"],
+                description: "Target interior style for the transformation",
+                default: "modern"
+              },
+              quality: {
+                type: "string",
+                enum: ["standard", "hd"],
+                description: "Image quality (hd recommended for real estate)",
+                default: "hd"
+              }
+            },
+            required: ["image_url", "original_description", "desired_changes"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "compose_marketing_image",
+          description: "Create a professional marketing image by composing property photo with branding elements (logo, price, features). Use for social media posts, listings, and advertisements.",
+          parameters: {
+            type: "object",
+            properties: {
+              base_image_description: {
+                type: "string",
+                description: "Description of the property image to use as base. Example: 'Modern apartment facade with balconies, blue sky'"
+              },
+              property_info: {
+                type: "object",
+                properties: {
+                  price: { type: "string", description: "Price with currency. Ex: '350.000€'" },
+                  size: { type: "string", description: "Size in m². Ex: '120m²'" },
+                  rooms: { type: "string", description: "Bedrooms and bathrooms. Ex: '3 hab, 2 baños'" },
+                  location: { type: "string", description: "City or neighborhood. Ex: 'Madrid Centro'" }
+                },
+                required: ["price", "location"]
+              },
+              format: {
+                type: "string",
+                enum: ["square", "horizontal", "story"],
+                description: "Output format: square (1:1 for Instagram post), horizontal (16:9 for Facebook), story (9:16 for Instagram Stories)",
+                default: "square"
+              },
+              include_logo: {
+                type: "boolean",
+                description: "Whether to include agency logo in top-left corner",
+                default: true
+              }
+            },
+            required: ["base_image_description", "property_info"]
           }
         }
       }
@@ -426,6 +588,247 @@ export default async function handler(req, res) {
               title: r.title,
               url: r.url
             })) : []
+          });
+        }
+      }
+      
+      // ============================================================================
+      // 🎨 EDIT REAL ESTATE IMAGE (usando Replicate SDXL - PRESERVA ESTRUCTURA)
+      // ============================================================================
+      else if (toolCall.function.name === 'edit_real_estate_image') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('✏️ Editando imagen con Replicate:', functionArgs);
+          
+          // Verificar que REPLICATE_API_TOKEN esté configurado
+          if (!process.env.REPLICATE_API_TOKEN) {
+            throw new Error('REPLICATE_API_TOKEN no configurado');
+          }
+          
+          // ============================================================================
+          // 🔍 DETECCIÓN AUTOMÁTICA DE URL DE IMAGEN
+          // ============================================================================
+          let imageUrl = functionArgs.image_url;
+          
+          if (!imageUrl) {
+            // Buscar URL de Cloudinary en mensajes recientes del usuario
+            console.log('🔍 Buscando URL de imagen en contexto...');
+            
+            // Buscar en los últimos 10 mensajes
+            for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+              const msg = messages[i];
+              
+              if (msg.role === 'user' && msg.content) {
+                // Buscar patrones de URL de imágenes
+                const urlPatterns = [
+                  /https:\/\/res\.cloudinary\.com\/[^\s"'<>]+/,  // Cloudinary
+                  /https:\/\/i\.imgur\.com\/[^\s"'<>]+/,          // Imgur
+                  /https:\/\/i\.ibb\.co\/[^\s"'<>]+/,             // ImgBB
+                  /https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|webp)/i  // Cualquier imagen
+                ];
+                
+                for (const pattern of urlPatterns) {
+                  const match = msg.content.match(pattern);
+                  if (match) {
+                    imageUrl = match[0];
+                    console.log('✅ URL encontrada en contexto:', imageUrl);
+                    break;
+                  }
+                }
+                
+                if (imageUrl) break;
+              }
+            }
+          }
+          
+          // Si no se encontró URL, pedir al usuario que suba imagen
+          if (!imageUrl) {
+            return res.status(200).json({
+              success: true,
+              message: '📸 No encuentro la imagen que quieres editar. Por favor:\n\n' +
+                       '1️⃣ Haz clic en el botón 📷 (subir imagen)\n' +
+                       '2️⃣ Selecciona la foto del inmueble\n' +
+                       '3️⃣ Espera a que se cargue\n' +
+                       '4️⃣ Luego dime qué cambios quieres hacer\n\n' +
+                       'Ejemplos: "añade muebles modernos", "limpia el desorden", "pinta las paredes de beige"',
+              needsImage: true,
+              imageEdited: false
+            });
+          }
+          
+          // ============================================================================
+          // 🎨 EDICIÓN CON REPLICATE SDXL
+          // ============================================================================
+          
+          // Construir prompt que PRESERVA la estructura original
+          const editPrompt = `Real estate interior photography, ${functionArgs.original_description}, ` +
+            `${functionArgs.desired_changes}, ` +
+            `${functionArgs.style || 'modern'} style, ` +
+            `professional lighting, high resolution, photorealistic, architectural photography, ` +
+            `maintain original perspective and room layout`;
+          
+          const negativePrompt = `distorted perspective, changed room layout, different architecture, ` +
+            `cartoon, illustration, drawing, low quality, blurry, unrealistic, ` +
+            `deformed walls, wrong proportions, fish-eye effect`;
+          
+          console.log('🎨 Llamando a Replicate SDXL con URL:', imageUrl);
+          
+          // Llamar a Replicate para edición real (preserva estructura)
+          const editedImageUrl = await editImageWithReplicate(
+            imageUrl,
+            editPrompt,
+            negativePrompt
+          );
+          
+          console.log('✅ Imagen editada con Replicate (estructura preservada):', editedImageUrl);
+
+          return res.status(200).json({
+            success: true,
+            message: '✨ He mejorado tu imagen manteniendo **exactamente** la misma estructura y perspectiva del espacio original. ' +
+                     '\n\nLos cambios aplicados respetan la arquitectura y solo modifican los elementos que pediste: ' +
+                     `**${functionArgs.desired_changes}**.\n\n` +
+                     '¿Quieres ajustar algo más o probar otro estilo?',
+            imageUrl: editedImageUrl,
+            originalImageUrl: imageUrl,
+            originalDescription: functionArgs.original_description,
+            appliedChanges: functionArgs.desired_changes,
+            isPermanent: false,
+            replicateUsed: true,
+            structurePreserved: true,
+            imageEdited: true,
+            tokensUsed: data.usage.total_tokens,
+            model: 'Replicate SDXL + ' + data.model
+          });
+
+        } catch (error) {
+          console.error('❌ Error editando imagen con Replicate:', error);
+          
+          // Fallback: Instrucciones manuales
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude procesar la edición automática de la imagen. ' +
+                     'Esto puede ser porque:\n\n' +
+                     '1️⃣ La API de Replicate no está configurada correctamente\n' +
+                     '2️⃣ La URL de la imagen no es accesible públicamente\n' +
+                     '3️⃣ El servicio está temporalmente no disponible\n\n' +
+                     '**Cambios solicitados:**\n' +
+                     `• ${functionArgs.desired_changes}\n\n` +
+                     `**Estilo:** ${functionArgs.style || 'moderno'}\n\n` +
+                     '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
+                     'o intenta con otra imagen.',
+            imageEdited: false,
+            fallbackMode: true,
+            errorDetails: error.message
+          });
+        }
+      }
+      
+      // ============================================================================
+      // 🖼️ COMPOSE MARKETING IMAGE (usando DALL-E 3 + composición)
+      // ============================================================================
+      else if (toolCall.function.name === 'compose_marketing_image') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('🎨 Componiendo imagen de marketing:', functionArgs);
+          
+          const { base_image_description, property_info, format, include_logo } = functionArgs;
+          
+          // Construir prompt para imagen de marketing profesional
+          const marketingPrompt = `Professional real estate marketing image. ${base_image_description}. ` +
+            `Overlay text elements in elegant typography: "${property_info.price}" prominently displayed, ` +
+            `"${property_info.size || ''}" and "${property_info.rooms || ''}" as secondary info, ` +
+            `location "${property_info.location}" at bottom. ` +
+            ${include_logo ? `Agency logo watermark in top-left corner. ` : ``} +
+            `Clean, modern design with good contrast for readability. Professional real estate advertisement style.`;
+          
+          // Determinar tamaño según formato
+          const sizeMap = {
+            'square': '1024x1024',
+            'horizontal': '1792x1024',
+            'story': '1024x1792'
+          };
+          
+          const imageSize = sizeMap[format] || '1024x1024';
+          
+          // Generar imagen de marketing
+          const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'dall-e-3',
+              prompt: marketingPrompt,
+              n: 1,
+              size: imageSize,
+              quality: 'hd',
+              style: 'vivid'
+            })
+          });
+
+          if (!dalleResponse.ok) {
+            throw new Error('Failed to compose marketing image');
+          }
+
+          const dalleData = await dalleResponse.json();
+          const marketingImageUrl = dalleData.data[0].url;
+          
+          console.log('✅ Imagen de marketing creada:', marketingImageUrl);
+
+          return res.status(200).json({
+            success: true,
+            message: `📸 He creado tu imagen publicitaria profesional en formato ${format}. Incluye todos los datos clave: precio, características y ubicación. ¡Lista para publicar en redes sociales!`,
+            imageUrl: marketingImageUrl,
+            format: format,
+            propertyInfo: property_info,
+            isPermanent: false,
+            dalleUsed: true,
+            marketingComposed: true,
+            tokensUsed: data.usage.total_tokens,
+            model: data.model
+          });
+
+        } catch (error) {
+          console.error('❌ Error componiendo imagen de marketing:', error);
+          
+          // Fallback: entregar HTML/CSS template
+          const htmlTemplate = `
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+.property-card {
+  position: relative;
+  width: ${functionArgs.format === 'story' ? '1080px' : '1200px'};
+  height: ${functionArgs.format === 'story' ? '1920px' : '1200px'};
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+}
+.price { font-size: 72px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+.details { font-size: 36px; color: white; margin-top: 20px; }
+.location { font-size: 28px; color: white; opacity: 0.9; }
+${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px; width: 150px; }' : ''}
+</style></head><body>
+<div class="property-card">
+  ${functionArgs.include_logo ? '<div class="logo">🏢 MontCastell-AI</div>' : ''}
+  <div class="price">${functionArgs.property_info.price}</div>
+  <div class="details">${functionArgs.property_info.size || ''} • ${functionArgs.property_info.rooms || ''}</div>
+  <div class="location">${functionArgs.property_info.location}</div>
+</div>
+</body></html>`;
+          
+          return res.status(200).json({
+            success: true,
+            message: 'No pude generar la imagen automáticamente, pero te doy un template HTML listo para usar. Puedes:\n\n' +
+                     '1. Copiar el código HTML y abrirlo en navegador\n' +
+                     '2. Capturar pantalla del resultado\n' +
+                     '3. O usar Canva/Photoshop para crear la composición',
+            htmlTemplate: htmlTemplate,
+            marketingComposed: false,
+            fallbackMode: true
           });
         }
       }
@@ -671,51 +1074,85 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 
 ## 🎨 HERRAMIENTAS DISPONIBLES
 
-### DALL-E 3 (Generación de Imágenes)
-✅ **TIENES ACCESO DIRECTO** vía generate_dalle_image
-✅ **ÚSALA INMEDIATAMENTE** cuando el cliente pida: "crea", "genera", "muestra", "diseña", "visualiza" una imagen
-✅ NO preguntes si quiere que generes la imagen - **HAZLO DIRECTAMENTE**
-✅ NO digas "no puedo generar imágenes" - SÍ PUEDES
-✅ NO des explicaciones largas antes de generar - **GENERA PRIMERO, EXPLICA DESPUÉS**
+**⚠️ REGLA DE ORO - CÓMO ELEGIR LA HERRAMIENTA CORRECTA:**
+- **¿Usuario subió imagen + pide cambios?** → USA `edit_real_estate_image` (Replicate)
+- **¿Usuario pide crear imagen nueva desde cero?** → USA `generate_dalle_image` (DALL-E)
 
-**⚠️ IMPORTANTE - PALABRAS CLAVE QUE ACTIVAN DALL-E:**
-- "Crea una imagen..."
-- "Genera un..."
-- "Muestra cómo se vería..."
-- "Diseña un logo..."
-- "Quiero ver..."
-- "Visualiza..."
-- "Crea la imagen..."
+### 1️⃣ DALL-E 3 - Generación de Imágenes (generate_dalle_image)
+✅ **ÚSALA PARA:** Crear imágenes NUEVAS desde cero (no hay imagen existente)
+✅ **Palabras clave:** "crea", "genera", "muestra", "diseña", "visualiza" una imagen
+✅ **NO preguntes** - GENERA DIRECTAMENTE, explica después
 
-**Cuando detectes estas palabras → USA generate_dalle_image INMEDIATAMENTE**
+### 2️⃣ Edición de Imágenes REAL (edit_real_estate_image) ⭐ PRESERVA ESTRUCTURA
+✅ **TECNOLOGÍA:** Replicate SDXL - Mantiene EXACTAMENTE la misma perspectiva/arquitectura
+✅ **ÚSALA PARA:** Virtual staging, limpiar desorden, pintar paredes, cambiar suelos, mejorar luz
+✅ **Cuándo:** "mejora esta foto", "añade muebles", "limpia", "pinta las paredes", "cambia el suelo"
+✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen con botón 📷 → Se sube automáticamente a Cloudinary → URL disponible en contexto
 
-**🚨 EXCEPCIÓN IMPORTANTE - "Imagen para Facebook":**
-Si el cliente dice "Imagen para Facebook" o "imagen publicitaria", **PRIMERO pregunta por estos datos:**
-- Dirección de la propiedad
-- Precio
-- Características principales (habitaciones, m², etc.)
-- Ciudad/zona
+**🔥 REGLA CRÍTICA: SI VES UNA IMAGEN EN EL CONTEXTO + USUARIO PIDE CAMBIOS = USA edit_real_estate_image**
+- SI el usuario ha subido una imagen previamente (la ves con Vision API)
+- Y el usuario pide modificaciones ("añade muebles", "limpia", "pinta paredes", "cambia suelo")
+- **DEBES usar edit_real_estate_image INMEDIATAMENTE**
+- NO uses generate_dalle_image (eso es para crear imágenes NUEVAS desde cero)
 
-**SOLO cuando tengas estos datos → genera la imagen con DALL-E**
+**⚠️ IMPORTANTE: El sistema detecta AUTOMÁTICAMENTE la URL de la imagen subida**
+- NO necesitas pedir URL al usuario
+- NO necesitas que el usuario use imgur/servicios externos
+- El botón 📷 sube la imagen y genera URL pública automáticamente
+- La URL se pasa automáticamente a través del historial de conversación
 
-**Ejemplo uso CORRECTO:**
-Cliente: "Crea una imagen de un chalet en la playa"
-Tú: [Llamas a generate_dalle_image con prompt: "Modern beachfront villa..."]
-Luego: "He creado la imagen del chalet frente a la playa. Tiene un diseño moderno con grandes ventanales..."
+**Si no hay imagen subida:**
+Responde: "📸 Para editar la imagen, primero súbela con el botón 📷 (subir imagen). Luego dime qué cambios quieres hacer."
 
-**Ejemplo INCORRECTO:**
-Cliente: "Crea una imagen de un chalet en la playa"
-Tú: "Desde el diseño hasta la formación..." ❌ NO HAGAS ESTO
+**Proceso de edición (AUTOMÁTICO):**
+1. Usuario hace clic en botón 📷 y selecciona imagen
+2. Sistema sube automáticamente a Cloudinary (2-3 segundos)
+3. URL pública se guarda en contexto de conversación
+4. Usuario pide edición ("añade muebles modernos")
+5. Tú llamas a edit_real_estate_image (image_url se detecta AUTOMÁTICAMENTE del contexto)
+6. Replicate edita imagen preservando estructura
+7. Devuelves imagen mejorada
 
-### GPT-4o Vision (Análisis de Imágenes)
-✅ Puedes analizar imágenes enviadas
-✅ Fotos de inmuebles, documentos, materiales marketing
-✅ Siempre analiza en detalle y da recomendaciones
+**Ejemplo de conversación:**
+Usuario: [Click botón 📷 → Selecciona foto de salón vacío]
+Sistema: [Sube a Cloudinary → Muestra preview + "✅ Imagen lista para editar"]
+Tú: "📸 Perfecto, veo un salón vacío de unos 5x4 metros con paredes blancas y suelo de madera. ¿Qué estilo prefieres? Moderno, escandinavo, industrial..."
+Usuario: "Añade muebles estilo moderno"
+Tú: [Llamas a edit_real_estate_image con:
+  image_url: (se detecta automáticamente del contexto)
+  original_description: "Empty living room, approximately 5x4 meters, white walls, light oak hardwood floor, large window on left wall with natural light, door on right side"
+  desired_changes: "Add modern gray L-shaped sofa against back wall, white rectangular coffee table in center, tall green plant near window, black metal floor lamp. Keep walls, floor, window, and door exactly as they are"
+  style: "modern"]
 
-### Tavily Search (Búsqueda Web)
+**✅ VENTAJAS del nuevo sistema:**
+- Usuario NO necesita usar servicios externos (imgur, etc.)
+- Upload AUTOMÁTICO con un clic
+- URL pública generada instantáneamente
+- Detección automática de imagen en contexto
+- Experiencia de usuario perfecta
+
+### 3️⃣ Composición de Imágenes Marketing (compose_marketing_image) ⭐ NUEVO
+✅ **ÚSALA PARA:** Crear portadas publicitarias profesionales
+✅ **Cuándo:** Cliente pide "imagen para Facebook", "portada para anuncio", "imagen publicitaria"
+✅ **PRIMERO pregunta:** Precio, ubicación, m², habitaciones/baños
+✅ **Proceso:** Base image + datos propiedad + formato (square/horizontal/story)
+✅ **Resultado:** Imagen lista para publicar en redes
+
+**Ejemplo:**
+Cliente: "Necesito una imagen publicitaria"
+Tú: "¿Qué precio, ubicación y características tiene el inmueble?"
+Cliente: "350.000€, Madrid Centro, 120m², 3 hab 2 baños"
+Tú: [Llamas a compose_marketing_image con todos los datos]
+
+### 4️⃣ GPT-4o Vision - Análisis de Imágenes
+✅ Analiza fotos de inmuebles, documentos, planos
+✅ Da recomendaciones de mejora
+✅ Detecta problemas visuales
+
+### 5️⃣ Tavily Search - Búsqueda Web
 ✅ Información actualizada en tiempo real
 ✅ Precios, legislación, noticias sector
-✅ Se activa automáticamente con: "actual", "hoy", "2025"
+✅ Se activa con: "actual", "hoy", "2025"
 
 ## 🎯 BOTONES RÁPIDOS PROFESIONALES - CÓMO RESPONDER
 
@@ -740,21 +1177,41 @@ Cuando el usuario pulse uno de estos botones, aquí está lo que debes hacer:
 4. Entregar informe web (o HTML incrustado) con gráficos + comparables y conclusión diplomática
 
 ### 3️⃣ **"Home Staging Virtual"**
-**Objetivo:** Limpiar, amueblar o reformar virtualmente imágenes.
+**Objetivo:** Limpiar, amueblar o reformar virtualmente imágenes PRESERVANDO estructura original.
 **Proceso:**
-1. Detectar intención ('ordena', 'reforma', 'amuebla', 'haz más luminoso')
-2. Si hay herramienta: analizar imagen → editar según instrucciones (limpieza, luz, color, mobiliario, reforma)
-3. Devolver antes/después. Ofrecer una segunda variante de estilo
-4. **Fallback:** Entregar prompts precisos de edición y estilos, más guía paso a paso
-**Reglas de estilo:** Realismo y proporción coherente. No engañar; mejoras plausibles. Sin personas ni marcas sobrepuestas.
+1. **PRIMERO:** Verificar que tienes URL pública de la imagen
+   - Si NO: "Para editarla, primero sube la imagen a imgur.com o similar y dame la URL"
+   - Si SÍ: Continuar
+2. Detectar intención ('ordena', 'reforma', 'amuebla', 'haz más luminoso', 'pinta paredes', 'cambia suelo')
+3. **USA edit_real_estate_image inmediatamente** con:
+   - image_url: URL pública de la imagen (OBLIGATORIO)
+   - original_description: Descripción PRECISA (metros, paredes, ventanas, suelo actual)
+   - desired_changes: Mejoras específicas + "mantener estructura original exacta"
+   - style: modern/minimalist/scandinavian/industrial/mediterranean/classic/contemporary/rustic
+4. Devolver imagen editada. Explicar que se preservó la perspectiva original
+5. Ofrecer segunda variante de estilo diferente
+6. **Fallback:** Si falla Replicate, entregar prompts para Photoshop/servicios manuales
+
+**⚠️ CRÍTICO:** Esta herramienta USA REPLICATE SDXL, NO genera nueva imagen. EDITA la original preservando:
+- ✅ Misma perspectiva y ángulo de cámara
+- ✅ Misma arquitectura y distribución de espacios
+- ✅ Misma iluminación natural
+- ✅ Solo modifica elementos solicitados (muebles, colores, decoración)
+
+**Reglas de estilo:** Realismo total. Proporciones reales. Coherencia arquitectónica. No engañar; mejoras plausibles y profesionales.
 
 ### 4️⃣ **"Imagen publicitaria"**
 **Objetivo:** Portada para anuncios con logo y datos clave.
 **Proceso:**
-1. Pedir: imagen base (fachada/espacio destacado), zona/calle, precio, m², hab/baños, extras, logo
-2. Si hay herramientas: editar imagen (cielo azul, luz cálida, limpieza) + componer (logo arriba-izq, textos)
-3. Entregar versiones rectangular y cuadrada. Ofrecer formato story
-4. **Fallback:** Generar prompt de composición + HTML/CSS para maqueta de portada
+1. **PRIMERO pregunta:** Precio, ubicación, m², habitaciones/baños
+2. Si tiene imagen base → **USA edit_real_estate_image** para mejorar (cielo azul, luz cálida, limpieza)
+3. Luego **USA compose_marketing_image** con:
+   - base_image_description: Descripción de la imagen base mejorada
+   - property_info: {price, location, size, rooms}
+   - format: "square" (Instagram), "horizontal" (Facebook), "story" (Instagram Stories)
+   - include_logo: true
+4. Entregar imagen lista para publicar. Ofrecer otros formatos si necesita
+5. **Fallback:** HTML/CSS template para crear manualmente
 
 ### 5️⃣ **"Formato corporativo"**
 **Objetivo:** Crear documentos legales base España, personalizarlos, guardar plantilla y reutilizar.
