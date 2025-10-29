@@ -60,6 +60,7 @@ class PromptSuggestions {
         
         this.currentSuggestions = [];
         this.isVisible = true;
+        this.containerCreated = false;
         this.init();
     }
     
@@ -73,15 +74,14 @@ class PromptSuggestions {
     }
     
     setup() {
+        console.log('🚀 Iniciando PromptSuggestions...');
+        
         // Usar MutationObserver para detectar cuando se crea el chat
         const observer = new MutationObserver(() => {
             const chatInput = document.getElementById('chatInput');
-            if (chatInput && !document.getElementById('promptSuggestions')) {
-                console.log('✅ Chat input detectado, creando sugerencias...');
-                this.createSuggestionsContainer();
-                this.selectRandomSuggestions();
-                this.renderSuggestions();
-                this.bindEvents();
+            if (chatInput && !this.containerCreated) {
+                console.log('✅ Chat input detectado, intentando crear sugerencias...');
+                this.tryCreateSuggestions();
             }
         });
         
@@ -92,24 +92,35 @@ class PromptSuggestions {
         });
         
         // También intentar inmediatamente por si ya existe
-        setTimeout(() => {
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput && !document.getElementById('promptSuggestions')) {
-                this.createSuggestionsContainer();
-                this.selectRandomSuggestions();
-                this.renderSuggestions();
-                this.bindEvents();
-            }
-        }, 1000);
+        setTimeout(() => this.tryCreateSuggestions(), 500);
+    }
+    
+    tryCreateSuggestions() {
+        const chatInput = document.getElementById('chatInput');
+        if (!chatInput || this.containerCreated) {
+            return;
+        }
+        
+        try {
+            this.createSuggestionsContainer();
+            this.selectRandomSuggestions();
+            this.renderSuggestions();
+            this.bindEvents();
+            this.containerCreated = true;
+            console.log('✅ Sugerencias de prompt creadas exitosamente');
+        } catch (error) {
+            console.error('❌ Error al crear sugerencias:', error);
+            this.containerCreated = false;
+            // Reintentar después de 1 segundo
+            setTimeout(() => this.tryCreateSuggestions(), 1000);
+        }
     }
     
     createSuggestionsContainer() {
         // Buscar el input del chat
         const chatInput = document.getElementById('chatInput');
         if (!chatInput) {
-            console.log('⏳ Chat input no encontrado aún, reintentando...');
-            setTimeout(() => this.setup(), 1000);
-            return;
+            throw new Error('Chat input no encontrado');
         }
         
         // Verificar si ya existe el contenedor
@@ -118,18 +129,17 @@ class PromptSuggestions {
             return;
         }
         
-        // Buscar el form container
+        // Buscar el contenedor del input
+        let targetContainer = chatInput.parentElement;
+        
+        // Si el input está dentro de un form, usar el form
         const formContainer = chatInput.closest('form');
-        if (!formContainer) {
-            console.log('⚠️ No se encontró form, buscando alternativa...');
-            // Intentar insertar después del input directamente
-            const container = document.createElement('div');
-            container.id = 'promptSuggestions';
-            container.className = 'prompt-suggestions-container';
-            container.innerHTML = `<div class="suggestions-wrapper"></div>`;
-            chatInput.parentNode.insertBefore(container, chatInput);
-            console.log('✅ Contenedor creado (alternativa)');
-            return;
+        if (formContainer) {
+            targetContainer = formContainer;
+        }
+        
+        if (!targetContainer) {
+            throw new Error('No se encontró contenedor padre para el input');
         }
         
         // Crear contenedor de sugerencias
@@ -138,10 +148,10 @@ class PromptSuggestions {
         container.className = 'prompt-suggestions-container';
         container.innerHTML = `<div class="suggestions-wrapper"></div>`;
         
-        // Insertar DENTRO del form, antes del input
-        formContainer.insertBefore(container, chatInput.parentElement || chatInput);
+        // Insertar AL PRINCIPIO del contenedor (más seguro que insertBefore)
+        targetContainer.insertAdjacentElement('afterbegin', container);
         
-        console.log('✅ Contenedor de sugerencias creado dentro del form');
+        console.log('✅ Contenedor de sugerencias creado');
     }
     
     selectRandomSuggestions() {
@@ -153,8 +163,7 @@ class PromptSuggestions {
     renderSuggestions() {
         const wrapper = document.querySelector('.suggestions-wrapper');
         if (!wrapper) {
-            console.log('⏳ Wrapper no encontrado, reintentando...');
-            setTimeout(() => this.renderSuggestions(), 500);
+            console.log('⏳ Wrapper no encontrado');
             return;
         }
         
@@ -180,6 +189,7 @@ class PromptSuggestions {
             const pill = e.target.closest('.suggestion-pill');
             if (pill) {
                 e.preventDefault();
+                e.stopPropagation();
                 const prompt = pill.dataset.prompt;
                 this.selectSuggestion(prompt);
             }
@@ -204,46 +214,7 @@ class PromptSuggestions {
             });
         }
         
-        // Refrescar sugerencias cada vez que se abre el chat
-        // Usar observer para detectar cuando el chat se abre
-        this.observeChatModal();
-    }
-    
-    observeChatModal() {
-        // Intentar override del método openChat
-        const tryOverride = () => {
-            if (window.domusIA?.openChat) {
-                const originalOpenChat = window.domusIA.openChat;
-                window.domusIA.openChat = function() {
-                    originalOpenChat.call(this);
-                    setTimeout(() => {
-                        // Re-crear contenedor si no existe
-                        if (!document.getElementById('promptSuggestions')) {
-                            window.promptSuggestions.createSuggestionsContainer();
-                        }
-                        window.promptSuggestions.show();
-                        window.promptSuggestions.selectRandomSuggestions();
-                        window.promptSuggestions.renderSuggestions();
-                    }, 500);
-                };
-                console.log('✅ Chat open hook instalado');
-                return true;
-            }
-            return false;
-        };
-        
-        // Intentar inmediatamente
-        if (!tryOverride()) {
-            // Si no está listo, reintentar cada segundo
-            const interval = setInterval(() => {
-                if (tryOverride()) {
-                    clearInterval(interval);
-                }
-            }, 1000);
-            
-            // Timeout después de 10 segundos
-            setTimeout(() => clearInterval(interval), 10000);
-        }
+        console.log('✅ Event listeners vinculados');
     }
     
     selectSuggestion(prompt) {
@@ -262,6 +233,7 @@ class PromptSuggestions {
         const container = document.getElementById('promptSuggestions');
         if (container && !this.isVisible) {
             container.classList.remove('hidden');
+            container.style.display = '';
             this.isVisible = true;
         }
     }
@@ -270,6 +242,7 @@ class PromptSuggestions {
         const container = document.getElementById('promptSuggestions');
         if (container && this.isVisible) {
             container.classList.add('hidden');
+            container.style.display = 'none';
             this.isVisible = false;
         }
     }
