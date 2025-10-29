@@ -745,10 +745,17 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         }
                         
                         // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
-                        // Si el backend ya generó la imagen con DALL-E (Function Calling), mostrarla
-                        if (data.imageUrl && data.dalleUsed) {
-                            console.log('✅ Backend usó Function Calling - Imagen ya generada:', data.imageUrl);
+                        // Si el backend ya generó/editó la imagen (DALL-E o Replicate), mostrarla
+                        if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited)) {
+                            const imageSource = data.replicateUsed ? 'Replicate SDXL (edición real)' : 
+                                              data.dalleUsed ? 'DALL-E 3 (generación)' : 'IA';
+                            
+                            console.log(`✅ Backend usó ${imageSource} - Imagen lista:`, data.imageUrl);
                             console.log('🖼️ URL de la imagen:', data.imageUrl);
+                            
+                            if (data.structurePreserved) {
+                                console.log('🏗️ Estructura original preservada ✓');
+                            }
                             
                             // Guardar referencia a imageUrl para usarla después del efecto typing
                             this.pendingImageUrl = data.imageUrl;
