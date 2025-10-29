@@ -1832,7 +1832,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         }
     }
     
-    handleImageUpload(file) {
+    async handleImageUpload(file) {
         // Validar tamaño (máximo 10MB)
         if (file.size > 10 * 1024 * 1024) {
             alert('⚠️ La imagen es demasiado grande. Máximo 10MB.');
@@ -1848,7 +1848,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         this.currentFile = file;
         this.currentFileType = 'image';
         
-        // Mostrar preview
+        // Mostrar preview local primero
         const reader = new FileReader();
         reader.onload = (e) => {
             const previewContainer = document.getElementById('filePreview');
@@ -1869,6 +1869,137 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         reader.readAsDataURL(file);
         
         console.log('🖼️ Imagen cargada:', file.name);
+        
+        // Subir automáticamente a Cloudinary para obtener URL pública
+        try {
+            const publicUrl = await this.uploadImageToCloudinary(file);
+            console.log('✅ Imagen subida a Cloudinary:', publicUrl);
+            
+            // Guardar URL para uso posterior con Replicate
+            this.currentUploadedImageUrl = publicUrl;
+            
+            // Mostrar imagen en el chat con URL pública
+            this.showImageInChat(publicUrl, file.name);
+            
+        } catch (error) {
+            console.error('❌ Error subiendo a Cloudinary:', error);
+            // Si falla Cloudinary, continuar con funcionalidad básica (Vision API)
+            console.log('ℹ️ Imagen disponible solo para análisis (no para edición)');
+        }
+    }
+    
+    // ============================================================================
+    // 🖼️ CLOUDINARY IMAGE UPLOAD
+    // ============================================================================
+    
+    async uploadImageToCloudinary(file) {
+        try {
+            // Mostrar indicador de carga
+            this.showUploadProgress('Subiendo imagen a la nube...');
+            
+            // CONFIGURACIÓN CLOUDINARY
+            const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca'; // ✅ Cloud Name correcto
+            const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+            formData.append('folder', 'domus-properties');
+            
+            // Upload a Cloudinary (DIRECTO desde navegador)
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: 'POST',
+                    body: formData
+                }
+            );
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Cloudinary error: ${errorData.error?.message || 'Unknown error'}`);
+            }
+            
+            const data = await response.json();
+            
+            // URL pública de la imagen
+            const publicUrl = data.secure_url;
+            
+            console.log('✅ Imagen subida a Cloudinary:', publicUrl);
+            
+            this.hideUploadProgress();
+            
+            return publicUrl;
+            
+        } catch (error) {
+            console.error('❌ Error subiendo a Cloudinary:', error);
+            this.hideUploadProgress();
+            throw error;
+        }
+    }
+    
+    // Mostrar imagen subida en el chat
+    showImageInChat(imageUrl, fileName) {
+        const messagesContainer = document.getElementById('chatMessages');
+        
+        const previewHTML = `
+            <div class="message user-message" style="max-width: 400px;">
+                <div class="image-preview-container" style="position: relative;">
+                    <img src="${imageUrl}" alt="${fileName}" 
+                         style="max-width: 100%; border-radius: 12px; margin-bottom: 8px; cursor: pointer;"
+                         onclick="window.open('${imageUrl}', '_blank')">
+                    <p style="font-size: 12px; color: #666; margin: 0;">
+                        📎 ${fileName}
+                    </p>
+                    <p style="font-size: 11px; color: #10b981; margin-top: 4px; font-weight: 500;">
+                        ✅ Imagen lista para editar
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.insertAdjacentHTML('beforeend', previewHTML);
+        this.scrollToBottom();
+        
+        // Mensaje automático de Sofía
+        setTimeout(() => {
+            this.addMessage(
+                'assistant',
+                '📸 Perfecto, he recibido tu imagen. Ahora puedes pedirme:\n\n' +
+                '• **"Añade muebles modernos"** - Virtual staging\n' +
+                '• **"Limpia el desorden"** - Orden y limpieza\n' +
+                '• **"Pinta las paredes de beige"** - Cambio de colores\n' +
+                '• **"Cambia el suelo a parquet"** - Cambio de materiales\n' +
+                '• **"Haz la foto más luminosa"** - Mejora de luz\n\n' +
+                '💡 La edición mantiene **exactamente** la misma estructura original.'
+            );
+        }, 800);
+    }
+    
+    // Indicadores de progreso
+    showUploadProgress(message) {
+        const messagesContainer = document.getElementById('chatMessages');
+        
+        const progressHTML = `
+            <div id="upload-progress" class="message assistant-message">
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">${message}</p>
+            </div>
+        `;
+        
+        messagesContainer.insertAdjacentHTML('beforeend', progressHTML);
+        this.scrollToBottom();
+    }
+    
+    hideUploadProgress() {
+        const progressElement = document.getElementById('upload-progress');
+        if (progressElement) {
+            progressElement.remove();
+        }
     }
     
     async handleDocumentUpload(file) {
