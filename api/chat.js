@@ -361,6 +361,10 @@ export default async function handler(req, res) {
           }
         }
       },
+      // ============================================================================
+      // 🚧 TOOL REPLICATE TEMPORALMENTE DESACTIVADO (restaurar funcionalidad básica)
+      // ============================================================================
+      /*
       {
         type: "function",
         function: {
@@ -383,7 +387,7 @@ export default async function handler(req, res) {
               },
               style: {
                 type: "string",
-                enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "classic", "contemporary", "rustic"],
+                enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "class ic", "contemporary", "rustic"],
                 description: "Target interior style for the transformation",
                 default: "modern"
               },
@@ -398,6 +402,7 @@ export default async function handler(req, res) {
           }
         }
       },
+      */
       {
         type: "function",
         function: {
@@ -598,8 +603,9 @@ export default async function handler(req, res) {
       }
       
       // ============================================================================
-      // 🎨 EDIT REAL ESTATE IMAGE (usando Replicate SDXL - PRESERVA ESTRUCTURA)
+      // 🚧 EDIT REAL ESTATE IMAGE - TEMPORALMENTE DESACTIVADO
       // ============================================================================
+      /*
       else if (toolCall.function.name === 'edit_real_estate_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
@@ -727,11 +733,12 @@ export default async function handler(req, res) {
           });
         }
       }
+      */
       
       // ============================================================================
       // 🖼️ COMPOSE MARKETING IMAGE (usando DALL-E 3 + composición)
       // ============================================================================
-      else if (toolCall.function.name === 'compose_marketing_image') {
+      if (toolCall.function.name === 'compose_marketing_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('🎨 Componiendo imagen de marketing:', functionArgs);
