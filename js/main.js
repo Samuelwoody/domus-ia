@@ -492,11 +492,9 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         input.value = '';
         this.clearFileUpload();
         
-        // 🔥 Limpiar URL de Cloudinary después de usar (para que próximo mensaje no la reutilice)
-        if (hasCloudinaryUrl) {
-            console.log('🧹 Limpiando URL de Cloudinary usada');
-            this.currentUploadedImageUrl = null;
-        }
+        // 🔥 NO LIMPIAR currentUploadedImageUrl AQUÍ
+        // La URL permanece disponible para mensajes subsecuentes ("añade muebles", etc.)
+        // El backend la encontrará en el historial de conversación
         
         // Add user message (con indicador de archivo si existe)
         let displayMessage = finalMessage;
@@ -1326,11 +1324,26 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         console.log('🖼️ Insertando imagen:', this.pendingImageUrl);
         
+        // 🔥 Detectar si es Replicate (edición) o DALL-E (generación)
+        const isReplicate = this.pendingImageData?.replicateUsed || this.pendingImageData?.imageEdited;
+        const imageSource = isReplicate ? 'Replicate SDXL (edición)' : 'DALL-E 3 (generación)';
+        const altText = isReplicate ? 'Imagen editada con Replicate SDXL' : 'Imagen generada por DALL-E 3';
+        
+        // Badge de estructura preservada si es Replicate
+        const structureBadge = (isReplicate && this.pendingImageData?.structurePreserved) 
+            ? '<span style="font-size: 9px; color: #10b981; font-weight: 600;">✓ Estructura original preservada</span>'
+            : '';
+        
+        console.log(`📦 Tipo de imagen: ${imageSource}`, {
+            isReplicate,
+            structurePreserved: this.pendingImageData?.structurePreserved
+        });
+        
         // Crear HTML de la imagen con botón de descarga
         const imageHtml = `
             <div class="generated-image-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(184, 134, 11, 0.02)); border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2);">
                 <img src="${this.pendingImageUrl}" 
-                     alt="Imagen generada por DALL-E 3" 
+                     alt="${altText}" 
                      style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: block;" 
                      onload="console.log('✅ Imagen cargada correctamente'); this.style.opacity='1';"
                      onerror="console.error('❌ Error al cargar imagen:', this.src);" />
@@ -1344,7 +1357,10 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     </button>
                 </div>
                 
-                <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center;">Generado con DALL-E 3</p>
+                <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>${imageSource}</span>
+                    ${structureBadge ? '<span style="color: #6b7280;">•</span>' + structureBadge : ''}
+                </p>
             </div>
         `;
         
@@ -1866,6 +1882,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         if (!file.type.startsWith('image/')) {
             alert('⚠️ Por favor selecciona un archivo de imagen válido.');
             return;
+        }
+        
+        // 🔥 LIMPIAR URL ANTERIOR (si existe) antes de subir nueva imagen
+        if (this.currentUploadedImageUrl) {
+            console.log('🧹 Limpiando URL anterior antes de subir nueva imagen');
+            this.currentUploadedImageUrl = null;
         }
         
         this.currentFile = file;
