@@ -8,52 +8,52 @@ class PromptSuggestions {
         this.suggestions = [
             {
                 icon: '🏠',
-                text: 'Busco un piso de 3 habitaciones en Madrid',
+                text: 'Busco piso en Madrid',
                 category: 'busqueda'
             },
             {
                 icon: '💰',
-                text: '¿Cuánto vale el m² en Barcelona?',
+                text: 'Precio del m² en Barcelona',
                 category: 'precios'
             },
             {
                 icon: '🎨',
-                text: 'Genera un render de una cocina moderna',
+                text: 'Genera un render 3D',
                 category: 'imagenes'
             },
             {
                 icon: '📊',
-                text: 'Analiza este contrato de arrendamiento',
+                text: 'Analiza este contrato',
                 category: 'documentos'
             },
             {
                 icon: '🔍',
-                text: 'Busca información sobre el mercado inmobiliario actual',
+                text: 'Busca info del mercado',
                 category: 'web'
             },
             {
                 icon: '🏢',
-                text: 'Quiero vender mi piso, ¿por dónde empiezo?',
+                text: '¿Cómo vender mi piso?',
                 category: 'venta'
             },
             {
                 icon: '📈',
-                text: '¿Cómo está el mercado en Valencia?',
+                text: 'Mercado en Valencia',
                 category: 'mercado'
             },
             {
                 icon: '🎯',
-                text: 'Ayúdame a valorar una propiedad',
+                text: 'Valora una propiedad',
                 category: 'valoracion'
             },
             {
                 icon: '📝',
-                text: '¿Qué documentos necesito para vender?',
+                text: 'Documentos para vender',
                 category: 'documentacion'
             },
             {
                 icon: '🏘️',
-                text: 'Compara barrios de Madrid',
+                text: 'Compara barrios',
                 category: 'comparacion'
             }
         ];
@@ -129,16 +129,22 @@ class PromptSuggestions {
             return;
         }
         
+        // Buscar el FORM que contiene el input
+        const chatForm = document.getElementById('chatForm');
+        if (!chatForm) {
+            throw new Error('Chat form no encontrado');
+        }
+        
         // Crear contenedor de sugerencias
         const container = document.createElement('div');
         container.id = 'promptSuggestions';
         container.className = 'prompt-suggestions-container';
         container.innerHTML = `<div class="suggestions-wrapper"></div>`;
         
-        // Insertar JUSTO ANTES del input (usa beforebegin)
-        chatInput.insertAdjacentElement('beforebegin', container);
+        // Insertar ANTES del form completo
+        chatForm.insertAdjacentElement('beforebegin', container);
         
-        console.log('✅ Contenedor de sugerencias creado ANTES del input');
+        console.log('✅ Contenedor de sugerencias creado ANTES del form');
     }
     
     selectRandomSuggestions() {
