@@ -281,11 +281,7 @@ export default async function handler(req, res) {
         ]
       };
       
-      console.log('👁️ Vision API activada - Analizando imagen:', {
-        hasImageFile: !!imageFile,
-        hasImageUrl: !!imageUrl,
-        imageUrlPreview: imageUrlToUse.substring(0, 100)
-      });
+      console.log('👁️ Vision API activada - Analizando imagen');
     }
     
     // Si hay documento, añadir su texto al contexto
