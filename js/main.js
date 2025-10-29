@@ -1191,11 +1191,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
     
     formatMessageContent(content) {
-        // Convertir markdown-style bold PRIMERO con gradiente dorado→rojo
+        // Convertir markdown-style bold con gradiente (solo pares completos)
         let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong class="gradient-text">$1</strong>');
         
+        // Si hay ** sin cerrar al final (durante typing), cerrarlo temporalmente para que se vea
+        if ((formatted.match(/\*\*/g) || []).length % 2 !== 0) {
+            formatted += '**';
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="gradient-text">$1</strong>');
+        }
+        
         // Separar por párrafos (doble salto de línea o punto seguido de salto)
-        // Esto crea párrafos más naturales
         formatted = formatted
             .replace(/\.\s*\n/g, '.</p><p class="mb-4">') // Punto + salto = nuevo párrafo
             .replace(/\n\n+/g, '</p><p class="mb-4">') // Doble salto = nuevo párrafo
@@ -1218,16 +1223,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         return formatted;
     }
     
-    async typeMessage(element, content, speed = 50) {
-        // 🎯 EFECTO ESCRITURA TIPO CHATGPT
-        // Speed: caracteres por segundo (50 = similar a ChatGPT)
+    async typeMessage(element, content, speed = 35) {
+        // 🎯 EFECTO ESCRITURA ESTILO CHATGPT CON FORMATO HTML PRESERVADO
+        // Speed: caracteres por segundo (35 = velocidad de ChatGPT)
         
         const delay = 1000 / speed;
         
         // Añadir clase 'typing' para mostrar cursor parpadeante
         element.classList.add('typing');
         
-        // Extraer texto plano sin HTML para escribir carácter por carácter
+        // Extraer texto plano
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
         const textContent = tempDiv.textContent || tempDiv.innerText;
@@ -1271,11 +1276,14 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                 currentText += textContent[currentIndex];
                 currentIndex++;
                 
-                // Re-aplicar formato al texto visible
+                // CLAVE: Aplicar formato HTML INMEDIATAMENTE al texto acumulado
+                // Esto mantiene títulos, negritas, párrafos desde el principio
                 element.innerHTML = this.formatMessageContent(currentText);
                 
-                // Auto-scroll durante escritura
-                this.scrollToBottom();
+                // Auto-scroll durante escritura (cada 3 caracteres para fluidez)
+                if (currentIndex % 3 === 0) {
+                    this.scrollToBottom();
+                }
                 
                 // Continuar con siguiente carácter
                 setTimeout(typeChar, delay);
