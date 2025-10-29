@@ -715,10 +715,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     endpoint: endpoint,
                     hasImageFile: !!requestBody.imageFile,
                     hasImageUrl: !!requestBody.imageUrl,
-                    imageUrl: requestBody.imageUrl || 'N/A',
-                    hasDocumentText: !!requestBody.documentText,
-                    documentTextLength: requestBody.documentText?.length || 0,
-                    documentTextPreview: requestBody.documentText?.substring(0, 100) || 'N/A'
+                    hasDocumentText: !!requestBody.documentText
                 });
                 
                 const response = await fetch(endpoint, {
