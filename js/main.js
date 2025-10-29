@@ -1998,16 +1998,23 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         // Mensaje automático de Sofía (después del delay visual)
         setTimeout(() => {
-            this.addMessage(
-                'assistant',
-                '📸 Perfecto, he recibido tu imagen. Ahora puedes pedirme:\n\n' +
+            const sofiaMessage = '📸 Perfecto, he recibido tu imagen. Ahora puedes pedirme:\n\n' +
                 '• **"Añade muebles modernos"** - Virtual staging\n' +
                 '• **"Limpia el desorden"** - Orden y limpieza\n' +
                 '• **"Pinta las paredes de beige"** - Cambio de colores\n' +
                 '• **"Cambia el suelo a parquet"** - Cambio de materiales\n' +
                 '• **"Haz la foto más luminosa"** - Mejora de luz\n\n' +
-                '💡 La edición mantiene **exactamente** la misma estructura original.'
-            );
+                '💡 La edición mantiene **exactamente** la misma estructura original.';
+            
+            this.addMessage('assistant', sofiaMessage);
+            
+            // 🔥 CRÍTICO: Añadir también al historial
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: sofiaMessage,
+                timestamp: new Date().toISOString()
+            });
+            this.saveConversationHistory();
         }, 800);
     }
     
