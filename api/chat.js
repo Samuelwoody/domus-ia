@@ -368,14 +368,10 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 VIRTUAL STAGING & IMAGE EDITING TOOL - USE THIS TOOL IMMEDIATELY when user requests furniture additions or space modifications in Spanish like: 'ponle muebles', 'pon muebles', 'añade muebles', 'mete muebles', 'coloca muebles', 'amuebla', 'decora', 'añade sofá', 'pon mesa', 'coloca sillas', 'limpia', 'reforma', 'cambia color', 'pinta', 'mejora luz', 'staging virtual'. This tool PHYSICALLY EDITS the image content (furniture, decor, colors, lighting) while preserving original structure. CRITICAL: If user uploaded an image and asks to add/modify ANYTHING in the space, you MUST use this tool. DO NOT just describe what you would do - actually DO IT by calling this function.",
+          description: "🎯 VIRTUAL STAGING & IMAGE EDITING TOOL - USE THIS TOOL IMMEDIATELY when user requests furniture additions or space modifications in Spanish like: 'ponle muebles', 'pon muebles', 'añade muebles', 'mete muebles', 'coloca muebles', 'amuebla', 'decora', 'añade sofá', 'pon mesa', 'coloca sillas', 'limpia', 'reforma', 'cambia color', 'pinta', 'mejora luz', 'staging virtual'. This tool PHYSICALLY EDITS the image content (furniture, decor, colors, lighting) while preserving original structure. CRITICAL: If user uploaded an image and asks to add/modify ANYTHING in the space, you MUST use this tool. DO NOT just describe what you would do - actually DO IT by calling this function. IMPORTANT: The image URL will be detected automatically from the conversation context - you do NOT need to provide it.",
           parameters: {
             type: "object",
             properties: {
-              image_url: {
-                type: "string",
-                description: "🔗 REQUIRED: Publicly accessible URL of the image to edit. Must be a direct link (ending in .jpg, .png, .webp). If user provides local file, ask them to upload to imgur.com or similar first."
-              },
               original_description: {
                 type: "string",
                 description: "Detailed description of the current image/space. Example: 'Empty living room with white walls, hardwood floor, large window on left, 4x5 meters'"
@@ -397,7 +393,7 @@ export default async function handler(req, res) {
                 default: "hd"
               }
             },
-            required: ["image_url", "original_description", "desired_changes"]
+            required: ["original_description", "desired_changes"]
           }
         }
       },
@@ -1178,7 +1174,7 @@ Sistema: [Sube a Cloudinary → Muestra preview + "✅ Imagen lista para editar"
 Tú: "📸 Perfecto, veo un salón vacío de unos 5x4 metros con paredes blancas y suelo de madera. ¿Qué estilo prefieres? Moderno, escandinavo, industrial..."
 Usuario: "Añade muebles estilo moderno"
 Tú: [Llamas a edit_real_estate_image con:
-  image_url: (se detecta automáticamente del contexto)
+  ⚠️ NO PASES image_url - el backend lo detecta automáticamente del historial
   original_description: "Empty living room, approximately 5x4 meters, white walls, light oak hardwood floor, large window on left wall with natural light, door on right side"
   desired_changes: "Add modern gray L-shaped sofa against back wall, white rectangular coffee table in center, tall green plant near window, black metal floor lamp. Keep walls, floor, window, and door exactly as they are"
   style: "modern"]
