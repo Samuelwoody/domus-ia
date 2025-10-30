@@ -637,10 +637,10 @@ export default async function handler(req, res) {
               if (msg.role === 'user' && msg.content) {
                 // Buscar patrones de URL de imágenes
                 const urlPatterns = [
-                  /https:\/\/res\.cloudinary\.com\/[^\s"'<>]+/,  // Cloudinary
-                  /https:\/\/i\.imgur\.com\/[^\s"'<>]+/,          // Imgur
-                  /https:\/\/i\.ibb\.co\/[^\s"'<>]+/,             // ImgBB
-                  /https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|webp)/i  // Cualquier imagen
+                  /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,  // Cloudinary
+                  /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,          // Imgur
+                  /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,             // ImgBB
+                  /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i  // Cualquier imagen
                 ];
                 
                 for (const pattern of urlPatterns) {
