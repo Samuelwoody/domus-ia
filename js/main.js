@@ -473,14 +473,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             '¿Qué ves en esta imagen?' : 
             'Por favor analiza este documento');
         
-        // Check message limits for free users (TEMPORALMENTE DESACTIVADO)
-        // TODO: Reactivar cuando Stripe esté conectado
-        /*
-        if (this.subscriptionPlan === 'free' && this.dailyMessageCount >= this.dailyMessageLimit) {
-            this.showSubscriptionPrompt();
-            return;
-        }
-        */
+        // Verificar límites de mensajes
         
         // 🔥 NUEVA LÓGICA: Enviar tanto archivo como URL de Cloudinary
         // Vision API necesita la imagen en CADA mensaje
@@ -975,13 +968,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         console.warn('⚠️ Backend no disponible, usando respuestas simuladas');
         console.log('ℹ️ Para ChatGPT real, despliega en Vercel o Netlify.');
         
-        // Si hay archivo, dar respuesta especial
-        if (file) {
-            if (fileType === 'image') {
-                return "🖼️ He visto tu imagen. En modo demo no puedo analizarla completamente, pero una vez conectado a OpenAI Vision podré identificar características de la propiedad, detectar problemas, sugerir mejoras de home staging, y más.";
-            } else {
-                return "📄 He recibido tu documento. En modo demo no puedo procesarlo, pero cuando esté conectado podré extraer información clave, analizar contratos, revisar escrituras, y darte un resumen ejecutivo.";
-            }
+        // Si hay archivo adjunto, agregar contexto al mensaje
+        if (fileType === 'image') {
+            return "🖼️ He visto tu imagen. En modo demo no puedo analizarla completamente, pero puedo darte consejos generales basados en la descripción.";
+        }
+        if (fileType === 'document') {
+            return "📄 He recibido tu documento. En modo demo no puedo procesarlo completamente, pero puedo responder preguntas generales sobre documentación inmobiliaria.";
         }
         
         // Mock AI responses as fallback
@@ -1450,13 +1442,35 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
 
     // ===== SUBSCRIPTION MANAGEMENT =====
+    // ✅ DESACTIVADO EN FASE DE PRUEBA
     showSubscriptionPrompt() {
-        this.addMessage('assistant', `Has alcanzado el límite de 15 mensajes diarios del plan gratuito. Para continuar con acceso ilimitado y todas las funcionalidades avanzadas de Sofía, puedes suscribirte a un plan premium.
-        
-        🏠 **Plan Particular** - €99/mes (antes €299)
-        💼 **Plan Profesional** - €199/mes (antes €499)
-        
-        Los precios promocionales son válidos hasta el 31 de diciembre de 2025. ¿Te gustaría conocer más detalles?`);
+        // Mostrar aviso cada 100 mensajes para recordar upgrade
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+                <div class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-domus-accent/10 rounded-full flex items-center justify-center mx-auto">
+                        <i class="fas fa-rocket text-domus-accent text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-domus-navy">Actualización Disponible</h3>
+                    <p class="text-domus-sage">
+                        Has utilizado bastante Sofía. Para acceso ilimitado y funciones avanzadas, considera actualizar tu plan.
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="this.closest('.fixed').remove()" 
+                                class="flex-1 py-3 px-6 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all">
+                            Ahora no
+                        </button>
+                        <button onclick="window.location.href='/#planes'; this.closest('.fixed').remove()" 
+                                class="flex-1 py-3 px-6 bg-domus-accent text-white rounded-xl font-semibold hover:bg-domus-accent/90 transition-all">
+                            Ver Planes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
     handlePricingSelect(e) {
@@ -1932,8 +1946,10 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         reader.readAsDataURL(file);
         
         console.log('🖼️ Imagen cargada:', file.name);
+        console.log('✅ Imagen lista para enviar con el mensaje');
         
-        // Subir automáticamente a Cloudinary para obtener URL pública
+        // ✅ NUEVO FLUJO: Subir a Cloudinary en background, pero NO enviar automáticamente
+        // La imagen se guardará y se enviará cuando el usuario haga clic en "Enviar"
         try {
             const publicUrl = await this.uploadImageToCloudinary(file);
             console.log('✅ Imagen subida a Cloudinary:', publicUrl);
@@ -1941,12 +1957,15 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             // Guardar URL para uso posterior con Replicate
             this.currentUploadedImageUrl = publicUrl;
             
-            // 🧠 Obtener mensaje del usuario si existe (del input)
-            const chatInput = document.getElementById('chatInput');
-            const userMessage = chatInput ? chatInput.value.trim() : '';
-            
-            // Mostrar imagen en el chat con URL pública (pasa mensaje para detección)
-            this.showImageInChat(publicUrl, file.name, userMessage);
+            // Actualizar preview con indicador de "lista"
+            const previewContent = document.getElementById('previewContent');
+            if (previewContent) {
+                const currentHTML = previewContent.innerHTML;
+                previewContent.innerHTML = currentHTML.replace(
+                    '</div>',
+                    '<span class="text-xs text-green-600">✓ Lista para enviar</span></div>'
+                );
+            }
             
         } catch (error) {
             console.error('❌ Error subiendo a Cloudinary:', error);
