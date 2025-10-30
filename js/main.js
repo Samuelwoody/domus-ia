@@ -662,9 +662,17 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             try {
                 // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
                 const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
+                
+                // 🔥 CRÍTICO: Añadir URL de Cloudinary al mensaje si existe
+                let userMessageContent = message;
+                if (cloudinaryUrl) {
+                    userMessageContent = `${message}\n\n[Imagen subida: ${cloudinaryUrl}]`;
+                    console.log('📎 URL de Cloudinary añadida al contenido del mensaje');
+                }
+                
                 const messagesWithHistory = [
                     ...recentHistory,
-                    { role: 'user', content: message }
+                    { role: 'user', content: userMessageContent }
                 ];
                 
                 // Preparar body con archivo si existe
