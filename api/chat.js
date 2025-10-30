@@ -362,9 +362,8 @@ export default async function handler(req, res) {
         }
       },
       // ============================================================================
-      // 🚧 TOOL REPLICATE TEMPORALMENTE DESACTIVADO (restaurar funcionalidad básica)
+      // ✅ TOOL REPLICATE - ACTIVADO (edición real de imágenes)
       // ============================================================================
-      /*
       {
         type: "function",
         function: {
@@ -402,7 +401,6 @@ export default async function handler(req, res) {
           }
         }
       },
-      */
       {
         type: "function",
         function: {
@@ -603,9 +601,8 @@ export default async function handler(req, res) {
       }
       
       // ============================================================================
-      // 🚧 EDIT REAL ESTATE IMAGE - TEMPORALMENTE DESACTIVADO
+      // ✅ EDIT REAL ESTATE IMAGE - ACTIVADO
       // ============================================================================
-      /*
       else if (toolCall.function.name === 'edit_real_estate_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
@@ -733,7 +730,6 @@ export default async function handler(req, res) {
           });
         }
       }
-      */
       
       // ============================================================================
       // 🖼️ COMPOSE MARKETING IMAGE (usando DALL-E 3 + composición)
