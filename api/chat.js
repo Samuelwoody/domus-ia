@@ -31,10 +31,6 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
   }
 
   try {
-    // 🔍 DEBUG: Verificar URL antes de enviar a Replicate
-    console.log('🔍 DEBUG - URL que se enviará a Replicate:', imageUrl);
-    console.log('🔍 DEBUG - Prompt:', prompt);
-    
     // Iniciar predicción con modelo de inpainting
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -44,24 +40,22 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        // 🔥 SDXL img2img - Modelo verificado y funcional para virtual staging
-        // Documentación: https://replicate.com/stability-ai/sdxl
-        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        version: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
         input: {
           image: imageUrl,
           prompt: prompt,
           negative_prompt: negativePrompt || "distorted, low quality, blurry, artifacts, unrealistic, bad perspective",
-          num_inference_steps: 30,
+          num_inference_steps: 50,
           guidance_scale: 7.5,
-          prompt_strength: 0.75,  // Preservar 75% de estructura original
-          refine: "expert_ensemble_refiner"
+          scheduler: "K_EULER",
+          refine: "expert_ensemble_refiner",
+          high_noise_frac: 0.8
         }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Replicate HTTP Error:', response.status, errorText);
       throw new Error(`Replicate API error: ${response.status} - ${errorText}`);
     }
 
@@ -90,7 +84,6 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
       }
       
       if (statusData.status === 'failed' || statusData.status === 'canceled') {
-        console.error('❌ Replicate Prediction Failed:', JSON.stringify(statusData, null, 2));
         throw new Error(`Replicate prediction failed: ${statusData.error || 'Unknown error'}`);
       }
       
@@ -381,7 +374,7 @@ export default async function handler(req, res) {
             properties: {
               image_url: {
                 type: "string",
-                description: "🔗 OPTIONAL: Publicly accessible URL of the image to edit. If not provided, the system will automatically detect the uploaded image URL from the conversation context (Cloudinary upload)."
+                description: "🔗 REQUIRED: Publicly accessible URL of the image to edit. Must be a direct link (ending in .jpg, .png, .webp). If user provides local file, ask them to upload to imgur.com or similar first."
               },
               original_description: {
                 type: "string",
@@ -404,7 +397,7 @@ export default async function handler(req, res) {
                 default: "hd"
               }
             },
-            required: ["original_description", "desired_changes"]
+            required: ["image_url", "original_description", "desired_changes"]
           }
         }
       },
@@ -636,12 +629,6 @@ export default async function handler(req, res) {
           // 🔍 DETECCIÓN AUTOMÁTICA DE URL DE IMAGEN
           // ============================================================================
           let imageUrl = functionArgs.image_url;
-          
-          // 🔥 FIX: Si GPT-4o inventó una URL ficticia, ignorarla
-          if (imageUrl && (imageUrl.includes('example.com') || imageUrl.includes('uploads.noc.com') || imageUrl.includes('placeholder'))) {
-            console.log('⚠️ URL ficticia detectada, buscando URL real en contexto:', imageUrl);
-            imageUrl = null; // Forzar búsqueda automática
-          }
           
           if (!imageUrl) {
             // Buscar URL de Cloudinary en mensajes recientes del usuario
@@ -1168,12 +1155,10 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 ✅ **Cuándo:** "mejora esta foto", "añade muebles", "limpia", "pinta las paredes", "cambia el suelo"
 ✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen con botón 📷 → Se sube automáticamente a Cloudinary → URL disponible en contexto
 
-**⚠️ CRÍTICO: DETECCIÓN AUTOMÁTICA DE URL**
-- **NUNCA inventes URLs** como "example.com" o "uploads.noc.com"
-- **NUNCA uses** el parámetro `image_url` en la función - déjalo vacío o undefined
-- **El sistema backend busca automáticamente** la URL de Cloudinary en el historial
-- **Si ves una URL de Cloudinary** en el contexto (res.cloudinary.com), NO la copies al parámetro
-- **Deja que el backend la detecte** automáticamente
+**⚠️ IMPORTANTE: El sistema detecta AUTOMÁTICAMENTE la URL de la imagen subida**
+- NO necesitas pedir URL al usuario
+- NO necesitas que el usuario use imgur/servicios externos
+- El botón 📷 sube la imagen y genera URL pública automáticamente
 
 **Si no hay imagen subida:**
 Responde: "📸 Para editar la imagen, primero súbela con el botón 📷 (subir imagen). Luego dime qué cambios quieres hacer."
@@ -1193,7 +1178,7 @@ Sistema: [Sube a Cloudinary → Muestra preview + "✅ Imagen lista para editar"
 Tú: "📸 Perfecto, veo un salón vacío de unos 5x4 metros con paredes blancas y suelo de madera. ¿Qué estilo prefieres? Moderno, escandinavo, industrial..."
 Usuario: "Añade muebles estilo moderno"
 Tú: [Llamas a edit_real_estate_image con:
-  ⚠️ image_url: NO LO PASES - el backend lo detecta automáticamente
+  image_url: (se detecta automáticamente del contexto)
   original_description: "Empty living room, approximately 5x4 meters, white walls, light oak hardwood floor, large window on left wall with natural light, door on right side"
   desired_changes: "Add modern gray L-shaped sofa against back wall, white rectangular coffee table in center, tall green plant near window, black metal floor lamp. Keep walls, floor, window, and door exactly as they are"
   style: "modern"]
