@@ -662,9 +662,17 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             try {
                 // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
                 const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
+                
+                // 🔥 FIX: Si hay URL de Cloudinary, añadirla al mensaje para que el backend la encuentre
+                let userMessage = message;
+                if (cloudinaryUrl) {
+                    userMessage = `${message}\n\n[Imagen subida: ${cloudinaryUrl}]`;
+                    console.log('📎 URL de Cloudinary añadida al mensaje:', cloudinaryUrl);
+                }
+                
                 const messagesWithHistory = [
                     ...recentHistory,
-                    { role: 'user', content: message }
+                    { role: 'user', content: userMessage }
                 ];
                 
                 // Preparar body con archivo si existe
@@ -1985,14 +1993,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             
             // CONFIGURACIÓN CLOUDINARY
             const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca'; // ✅ Cloud Name correcto
-            const CLOUDINARY_API_KEY = '963855782996925';
-            const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
+            const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties'; // ⚠️ DEBE ser "unsigned" en Cloudinary Settings
             
-            // Crear FormData con API Key (requerida por configuración de cuenta)
+            // Crear FormData (unsigned upload - NO requiere API Key)
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            formData.append('api_key', CLOUDINARY_API_KEY); // ✅ Añadida API Key
             formData.append('folder', 'domus-properties');
             
             // Upload a Cloudinary (DIRECTO desde navegador)
