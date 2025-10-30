@@ -459,6 +459,15 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         // Permitir envío si hay mensaje o archivo
         if (!message && !this.currentFile) return;
         
+        // 🧠 DETECCIÓN INTELIGENTE: ¿Usuario especificó qué hacer con imagen?
+        const hasMessage = message && message.trim().length > 0;
+        const hasImage = this.currentFileType === 'image';
+        
+        // Si hay imagen + mensaje, guardar para decisión inteligente
+        if (hasImage && hasMessage) {
+            this.lastUserMessageWithImage = message;
+        }
+        
         // Si no hay mensaje pero sí archivo, usar mensaje por defecto
         const finalMessage = message || (this.currentFileType === 'image' ? 
             '¿Qué ves en esta imagen?' : 
@@ -1932,8 +1941,12 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             // Guardar URL para uso posterior con Replicate
             this.currentUploadedImageUrl = publicUrl;
             
-            // Mostrar imagen en el chat con URL pública
-            this.showImageInChat(publicUrl, file.name);
+            // 🧠 Obtener mensaje del usuario si existe (del input)
+            const chatInput = document.getElementById('chatInput');
+            const userMessage = chatInput ? chatInput.value.trim() : '';
+            
+            // Mostrar imagen en el chat con URL pública (pasa mensaje para detección)
+            this.showImageInChat(publicUrl, file.name, userMessage);
             
         } catch (error) {
             console.error('❌ Error subiendo a Cloudinary:', error);
@@ -1996,7 +2009,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
     
     // Mostrar imagen subida en el chat
-    showImageInChat(imageUrl, fileName) {
+    showImageInChat(imageUrl, fileName, userMessage = '') {
         const messagesContainer = document.getElementById('chatMessages');
         
         const previewHTML = `
@@ -2027,15 +2040,81 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         });
         this.saveConversationHistory();
         
-        // Mensaje automático de Sofía (después del delay visual)
+        // 🧠 DETECCIÓN INTELIGENTE: ¿El usuario YA dijo qué quiere hacer?
+        const lowerMessage = userMessage.toLowerCase();
+        
+        // Keywords para OPCIÓN A (editar contenido)
+        const editKeywords = ['añade', 'anade', 'pon', 'muebles', 'limpia', 'quita', 'reforma', 
+                             'cambia', 'pinta', 'mejora', 'ilumina', 'moderniza', 'staging'];
+        
+        // Keywords para OPCIÓN B (imagen publicitaria)
+        const marketingKeywords = ['publicitaria', 'precio', 'logo', 'portada', 'anuncio', 
+                                   'instagram', 'facebook', 'redes', 'marketing', 'venta'];
+        
+        // 🆕 Keywords para OPCIÓN C (análisis/descripción de visión)
+        const analysisKeywords = ['describe', 'analiza', 'qué ves', 'que ves', 'explica', 
+                                 'lee', 'leer', 'información', 'informacion', 'detalles', 
+                                 'examina', 'revisa', 'estudia', 'dime sobre', 'qué hay', 
+                                 'que hay', 'qué dice', 'que dice', 'identifica', 'reconoce'];
+        
+        const hasEditIntent = editKeywords.some(keyword => lowerMessage.includes(keyword));
+        const hasMarketingIntent = marketingKeywords.some(keyword => lowerMessage.includes(keyword));
+        const hasAnalysisIntent = analysisKeywords.some(keyword => lowerMessage.includes(keyword));
+        
+        // Si el usuario YA especificó qué quiere, NO preguntar opciones
+        if (hasEditIntent || hasMarketingIntent || hasAnalysisIntent) {
+            console.log('🧠 Usuario ya especificó intención:', 
+                hasEditIntent ? 'EDITAR' : hasMarketingIntent ? 'MARKETING' : 'ANÁLISIS',
+                '- No mostrar opciones');
+            
+            // Mensaje breve de confirmación
+            setTimeout(() => {
+                let confirmMessage;
+                
+                if (hasEditIntent) {
+                    confirmMessage = '✅ Entendido, voy a mejorar tu imagen. Un momento...';
+                } else if (hasMarketingIntent) {
+                    confirmMessage = '✅ Entendido, voy a crear la imagen publicitaria. Un momento...';
+                } else if (hasAnalysisIntent) {
+                    confirmMessage = '👁️ Entendido, voy a analizar tu imagen en detalle. Un momento...';
+                }
+                
+                this.addMessage('assistant', confirmMessage);
+                
+                this.conversationHistory.push({
+                    role: 'assistant',
+                    content: confirmMessage,
+                    timestamp: new Date().toISOString()
+                });
+                this.saveConversationHistory();
+            }, 300);
+            
+            return; // NO mostrar opciones
+        }
+        
+        // Si NO especificó, mostrar opciones
+        console.log('❓ Usuario no especificó intención - Mostrando opciones');
+        
         setTimeout(() => {
-            const sofiaMessage = '📸 Perfecto, he recibido tu imagen. Ahora puedes pedirme:\n\n' +
-                '• **"Añade muebles modernos"** - Virtual staging\n' +
-                '• **"Limpia el desorden"** - Orden y limpieza\n' +
-                '• **"Pinta las paredes de beige"** - Cambio de colores\n' +
-                '• **"Cambia el suelo a parquet"** - Cambio de materiales\n' +
-                '• **"Haz la foto más luminosa"** - Mejora de luz\n\n' +
-                '💡 La edición mantiene **exactamente** la misma estructura original.';
+            const sofiaMessage = '📸 ¡Perfecto! He recibido tu imagen.\n\n' +
+                '**¿Qué quieres hacer con esta imagen?**\n\n' +
+                '**🔧 OPCIÓN A: Mejorarla para el anuncio**\n' +
+                '_(Añadir muebles, limpiar, reformar, cambiar colores)_\n' +
+                '• "Añade muebles modernos"\n' +
+                '• "Limpia el desorden"\n' +
+                '• "Pinta las paredes de beige"\n' +
+                '• "Cambia el suelo a parquet"\n\n' +
+                '**🎨 OPCIÓN B: Crear imagen publicitaria de portada**\n' +
+                '_(Añadir precio, logo, ubicación, características)_\n' +
+                '• "Crea imagen publicitaria con precio 350.000€"\n' +
+                '• "Añádele precio y logo para Instagram"\n\n' +
+                '**👁️ OPCIÓN C: Analizar/Describir la imagen**\n' +
+                '_(Descripción detallada, lectura de texto, análisis, asesoramiento)_\n' +
+                '• "Describe esta imagen en detalle"\n' +
+                '• "¿Qué ves en esta foto?"\n' +
+                '• "Analiza esta propiedad"\n' +
+                '• "Lee el texto del documento"\n\n' +
+                '💡 Dime qué opción prefieres y te ayudo inmediatamente.';
             
             this.addMessage('assistant', sofiaMessage);
             
