@@ -48,6 +48,7 @@
 - ✅ **Detection automática de URLs** - Sistema encuentra URLs de Cloudinary en historial de chat
 - ✅ **NUEVO: Caso C - Análisis de Visión** - Sofía puede analizar, describir y leer imágenes/documentos sin editar
 - ✅ **Detección inteligente de intención** - 3 flujos: Edición (A), Marketing (B), Análisis (C)
+- ✅ **FIX FLUJO DE IMÁGENES:** Imagen se adjunta como preview, NO se envía automáticamente. Usuario escribe instrucción y se envía todo junto.
 - ⚠️ **PENDIENTE:** Configurar variables de entorno en Vercel (`REPLICATE_API_TOKEN` y `CLOUDINARY_URL`)
 
 **📦 Estado del Proyecto:**
