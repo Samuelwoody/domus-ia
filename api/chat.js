@@ -362,13 +362,13 @@ export default async function handler(req, res) {
         }
       },
       // ============================================================================
-      // ✅ TOOL REPLICATE - ACTIVADO (edición real de imágenes)
+      // ✅ TOOL REPLICATE ACTIVADO
       // ============================================================================
       {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 REAL IMAGE EDITING with Replicate SDXL - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint walls, change floors, modernize spaces. ⚠️ REQUIRES publicly accessible image URL. This tool maintains the EXACT perspective, room layout, and architecture while only modifying requested elements.",
+          description: "🎯 OPCION A: MEJORAR IMAGEN PARA ANUNCIO - Use ONLY when user wants to MODIFY THE CONTENT of the photo (add furniture, remove clutter, change colors, improve lighting, virtual staging). This tool EDITS the actual image while preserving structure. DO NOT use for: (1) Adding text/prices/logos, (2) Analyzing or describing images, (3) Reading documents. ONLY for physical content editing. Keywords: 'añade muebles', 'limpia', 'reforma', 'cambia color', 'quita', 'mejora luz', 'staging virtual'.",
           parameters: {
             type: "object",
             properties: {
@@ -405,13 +405,13 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "compose_marketing_image",
-          description: "Create a professional marketing image by composing property photo with branding elements (logo, price, features). Use for social media posts, listings, and advertisements.",
+          description: "🎨 OPCION B: CREAR IMAGEN PUBLICITARIA DE PORTADA - Use ONLY when user wants to ADD TEXT OVERLAY to their photo (price, logo, location, features) for marketing purposes. This tool does NOT modify the photo content, only adds text on top. DO NOT use for: (1) Editing photo content, (2) Analyzing or describing images, (3) Reading documents. ONLY for adding marketing text overlays. Keywords: 'imagen publicitaria', 'añade precio', 'con logo', 'para Instagram', 'portada', 'anuncio con precio', 'poner texto'.",
           parameters: {
             type: "object",
             properties: {
-              base_image_description: {
+              image_url: {
                 type: "string",
-                description: "Description of the property image to use as base. Example: 'Modern apartment facade with balconies, blue sky'"
+                description: "🔗 REQUIRED: URL of the user's uploaded property photo. Must be from Cloudinary or other public URL. This is the REAL photo to add branding to."
               },
               property_info: {
                 type: "object",
@@ -419,7 +419,8 @@ export default async function handler(req, res) {
                   price: { type: "string", description: "Price with currency. Ex: '350.000€'" },
                   size: { type: "string", description: "Size in m². Ex: '120m²'" },
                   rooms: { type: "string", description: "Bedrooms and bathrooms. Ex: '3 hab, 2 baños'" },
-                  location: { type: "string", description: "City or neighborhood. Ex: 'Madrid Centro'" }
+                  location: { type: "string", description: "City or neighborhood. Ex: 'Madrid Centro'" },
+                  title: { type: "string", description: "Optional headline. Ex: '¡Oportunidad única!' or 'Piso de lujo'" }
                 },
                 required: ["price", "location"]
               },
@@ -431,11 +432,17 @@ export default async function handler(req, res) {
               },
               include_logo: {
                 type: "boolean",
-                description: "Whether to include agency logo in top-left corner",
+                description: "Whether to include agency logo/watermark",
                 default: true
+              },
+              text_color: {
+                type: "string",
+                enum: ["white", "black", "gold"],
+                description: "Color for overlay text",
+                default: "white"
               }
             },
-            required: ["base_image_description", "property_info"]
+            required: ["image_url", "property_info"]
           }
         }
       }
@@ -601,7 +608,9 @@ export default async function handler(req, res) {
       }
       
       // ============================================================================
-      // ✅ EDIT REAL ESTATE IMAGE - ACTIVADO
+      // 🚧 EDIT REAL ESTATE IMAGE - TEMPORALMENTE DESACTIVADO
+      // ============================================================================
+      // ✅ HANDLER REPLICATE ACTIVADO
       // ============================================================================
       else if (toolCall.function.name === 'edit_real_estate_image') {
         try {
@@ -732,66 +741,114 @@ export default async function handler(req, res) {
       }
       
       // ============================================================================
-      // 🖼️ COMPOSE MARKETING IMAGE (usando DALL-E 3 + composición)
+      // 🖼️ COMPOSE MARKETING IMAGE (usando Cloudinary Transformations)
       // ============================================================================
       if (toolCall.function.name === 'compose_marketing_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('🎨 Componiendo imagen de marketing:', functionArgs);
           
-          const { base_image_description, property_info, format, include_logo } = functionArgs;
+          // 🔍 Buscar URL de imagen si no se proporciona
+          let imageUrl = functionArgs.image_url;
           
-          // Construir prompt para imagen de marketing profesional
-          const marketingPrompt = `Professional real estate marketing image. ${base_image_description}. ` +
-            `Overlay text elements in elegant typography: "${property_info.price}" prominently displayed, ` +
-            `"${property_info.size || ''}" and "${property_info.rooms || ''}" as secondary info, ` +
-            `location "${property_info.location}" at bottom. ` +
-            (include_logo ? `Agency logo watermark in top-left corner. ` : ``) +
-            `Clean, modern design with good contrast for readability. Professional real estate advertisement style.`;
+          if (!imageUrl) {
+            // Buscar en historial de mensajes
+            for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+              const msg = messages[i];
+              if (msg.role === 'user' && msg.content) {
+                const urlMatch = msg.content.match(/https:\/\/res\.cloudinary\.com\/[^\s"'<>]+/);
+                if (urlMatch) {
+                  imageUrl = urlMatch[0];
+                  console.log('✅ URL de imagen encontrada en historial:', imageUrl);
+                  break;
+                }
+              }
+            }
+          }
           
-          // Determinar tamaño según formato
-          const sizeMap = {
-            'square': '1024x1024',
-            'horizontal': '1792x1024',
-            'story': '1024x1792'
+          if (!imageUrl) {
+            return res.status(200).json({
+              success: true,
+              message: '📸 Para crear la imagen publicitaria necesito que primero subas la foto del inmueble.\n\n' +
+                       '1️⃣ Haz clic en el botón 📷 (subir imagen)\n' +
+                       '2️⃣ Selecciona la foto del inmueble\n' +
+                       '3️⃣ Luego pídeme crear la imagen publicitaria con precio y datos',
+              needsImage: true
+            });
+          }
+          
+          const { property_info, format, include_logo, text_color } = functionArgs;
+          
+          // ============================================================================
+          // 🎨 CLOUDINARY TRANSFORMATIONS - Añadir overlay de texto
+          // ============================================================================
+          
+          // Extraer public_id de la URL de Cloudinary
+          const cloudinaryUrlPattern = /https:\/\/res\.cloudinary\.com\/([^\/]+)\/image\/upload\/(.+)/;
+          const match = imageUrl.match(cloudinaryUrlPattern);
+          
+          if (!match) {
+            throw new Error('URL de imagen inválida. Debe ser de Cloudinary.');
+          }
+          
+          const cloudName = match[1];
+          const pathWithPublicId = match[2];
+          
+          // Configurar transformaciones
+          const textColorMap = {
+            'white': 'rgb:FFFFFF',
+            'black': 'rgb:000000',
+            'gold': 'rgb:D4AF37'
           };
           
-          const imageSize = sizeMap[format] || '1024x1024';
+          const selectedColor = textColorMap[text_color || 'white'];
           
-          // Generar imagen de marketing
-          const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'dall-e-3',
-              prompt: marketingPrompt,
-              n: 1,
-              size: imageSize,
-              quality: 'hd',
-              style: 'vivid'
-            })
-          });
-
-          if (!dalleResponse.ok) {
-            throw new Error('Failed to compose marketing image');
-          }
-
-          const dalleData = await dalleResponse.json();
-          const marketingImageUrl = dalleData.data[0].url;
+          // Determinar dimensiones según formato
+          const formatConfig = {
+            'square': { width: 1080, height: 1080 },
+            'horizontal': { width: 1200, height: 630 },
+            'story': { width: 1080, height: 1920 }
+          };
           
-          console.log('✅ Imagen de marketing creada:', marketingImageUrl);
+          const dimensions = formatConfig[format || 'square'];
+          
+          // Construir transformaciones de Cloudinary
+          const transformations = [
+            // Redimensionar imagen base
+            `c_fill,w_${dimensions.width},h_${dimensions.height},g_auto`,
+            // Oscurecer ligeramente para que texto resalte
+            'e_brightness:-15',
+            // Añadir título si existe
+            property_info.title ? `l_text:Arial_70_bold:${encodeURIComponent(property_info.title)},co_${selectedColor},g_north,y_80` : null,
+            // Añadir precio (texto grande)
+            `l_text:Arial_90_bold:${encodeURIComponent(property_info.price)},co_${selectedColor},g_center,y_-100`,
+            // Añadir detalles (m², habitaciones)
+            property_info.size || property_info.rooms ? 
+              `l_text:Arial_50:${encodeURIComponent((property_info.size || '') + ' • ' + (property_info.rooms || ''))},co_${selectedColor},g_center,y_20` : null,
+            // Añadir ubicación
+            `l_text:Arial_45:${encodeURIComponent(property_info.location)},co_${selectedColor},g_south,y_60`,
+            // Logo/watermark si se solicita
+            include_logo ? `l_text:Arial_35:Domus-IA,co_${selectedColor},g_north_west,x_40,y_40,o_80` : null
+          ].filter(Boolean); // Remover nulls
+          
+          // Construir URL final con transformaciones
+          const marketingImageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${transformations.join('/')}/${pathWithPublicId}`;
+          
+          console.log('✅ Imagen de marketing compuesta con Cloudinary:', marketingImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: `📸 He creado tu imagen publicitaria profesional en formato ${format}. Incluye todos los datos clave: precio, características y ubicación. ¡Lista para publicar en redes sociales!`,
+            message: `📸 ¡Imagen publicitaria lista! He añadido a tu foto real:\n\n` +
+                     `💰 Precio: **${property_info.price}**\n` +
+                     (property_info.size ? `📐 Superficie: ${property_info.size}\n` : '') +
+                     (property_info.rooms ? `🛏️ Habitaciones: ${property_info.rooms}\n` : '') +
+                     `📍 Ubicación: ${property_info.location}\n\n` +
+                     `✨ Formato ${format} optimizado para redes sociales. ¡Lista para publicar!`,
             imageUrl: marketingImageUrl,
             format: format,
             propertyInfo: property_info,
-            isPermanent: false,
-            dalleUsed: true,
+            isPermanent: true, // Cloudinary URLs son permanentes
+            cloudinaryUsed: true,
             marketingComposed: true,
             tokensUsed: data.usage.total_tokens,
             model: data.model
@@ -800,8 +857,23 @@ export default async function handler(req, res) {
         } catch (error) {
           console.error('❌ Error componiendo imagen de marketing:', error);
           
-          // Fallback: entregar HTML/CSS template
-          const htmlTemplate = `
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude crear la imagen publicitaria automáticamente.\n\n' +
+                     `Puedes crear tu imagen publicitaria manualmente con:\n\n` +
+                     `📱 **Canva** (gratis): canva.com\n` +
+                     `🎨 **Adobe Express** (gratis): adobe.com/express\n\n` +
+                     `Datos para incluir:\n` +
+                     `💰 ${functionArgs.property_info?.price || 'Precio'}\n` +
+                     `📍 ${functionArgs.property_info?.location || 'Ubicación'}\n` +
+                     (functionArgs.property_info?.size ? `📐 ${functionArgs.property_info.size}\n` : '') +
+                     (functionArgs.property_info?.rooms ? `🛏️ ${functionArgs.property_info.rooms}\n` : ''),
+            fallbackMode: true,
+            errorDetails: error.message
+          });
+          
+          // Fallback legacy: HTML template (por si acaso)
+          const htmlTemplateLegacy = `
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><style>
 .property-card {
