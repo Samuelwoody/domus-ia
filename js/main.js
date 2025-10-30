@@ -1992,16 +1992,18 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             this.showUploadProgress('Subiendo imagen a la nube...');
             
             // CONFIGURACIÓN CLOUDINARY
-            const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca'; // ✅ Cloud Name correcto
-            const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties'; // ⚠️ DEBE ser "unsigned" en Cloudinary Dashboard
+            const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca';
+            const CLOUDINARY_API_KEY = '963855782996925';
+            const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
             
-            // Crear FormData (unsigned upload - NO requiere API Key)
+            // Crear FormData
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('api_key', CLOUDINARY_API_KEY);
             formData.append('folder', 'domus-properties');
             
-            // Upload a Cloudinary (DIRECTO desde navegador)
+            // Upload a Cloudinary
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
                 {
