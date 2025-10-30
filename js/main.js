@@ -1966,7 +1966,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             
             // CONFIGURACIÓN CLOUDINARY
             const CLOUDINARY_CLOUD_NAME = 'dfb6cd2ca'; // ✅ Cloud Name correcto
-            const CLOUDINARY_API_KEY = '479784297866979';
+            const CLOUDINARY_API_KEY = '963855782996925';
             const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
             
             // Crear FormData con API Key (requerida por configuración de cuenta)
