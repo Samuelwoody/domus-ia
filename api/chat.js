@@ -613,8 +613,11 @@ export default async function handler(req, res) {
       // ✅ HANDLER REPLICATE ACTIVADO
       // ============================================================================
       else if (toolCall.function.name === 'edit_real_estate_image') {
+        // Mover functionArgs FUERA del try para que esté disponible en catch
+        let functionArgs = null;
+        
         try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
+          functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('✏️ Editando imagen con Replicate:', functionArgs);
           
           // Verificar que REPLICATE_API_TOKEN esté configurado
@@ -720,19 +723,27 @@ export default async function handler(req, res) {
         } catch (error) {
           console.error('❌ Error editando imagen con Replicate:', error);
           
-          // Fallback: Instrucciones manuales
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude procesar la edición automática de la imagen. ' +
+          // Construir mensaje de error con información disponible
+          let errorMessage = '⚠️ No pude procesar la edición automática de la imagen. ' +
                      'Esto puede ser porque:\n\n' +
                      '1️⃣ La API de Replicate no está configurada correctamente\n' +
                      '2️⃣ La URL de la imagen no es accesible públicamente\n' +
-                     '3️⃣ El servicio está temporalmente no disponible\n\n' +
-                     '**Cambios solicitados:**\n' +
-                     `• ${functionArgs.desired_changes}\n\n` +
-                     `**Estilo:** ${functionArgs.style || 'moderno'}\n\n` +
-                     '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
-                     'o intenta con otra imagen.',
+                     '3️⃣ El servicio está temporalmente no disponible\n\n';
+          
+          // Añadir detalles si functionArgs está disponible
+          if (functionArgs) {
+            errorMessage += '**Cambios solicitados:**\n' +
+                           `• ${functionArgs.desired_changes}\n\n` +
+                           `**Estilo:** ${functionArgs.style || 'moderno'}\n\n`;
+          }
+          
+          errorMessage += '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
+                         'o intenta con otra imagen.';
+          
+          // Fallback: Instrucciones manuales
+          return res.status(200).json({
+            success: true,
+            message: errorMessage,
             imageEdited: false,
             fallbackMode: true,
             errorDetails: error.message
