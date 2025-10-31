@@ -23,7 +23,7 @@ async function uploadToImgBB(imageUrl, apiKey) {
 // 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
 // ============================================================================
 
-async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
+async function editImageWithReplicate(imageUrl, editInstructions) {
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
   if (!REPLICATE_API_TOKEN) {
@@ -31,7 +31,11 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
   }
 
   try {
-    // Iniciar predicción con modelo de inpainting
+    console.log('🎨 Usando Nano Banana (Gemini 2.5 Flash) para edición conversacional');
+    console.log('📷 Imagen original:', imageUrl);
+    console.log('✍️ Instrucciones:', editInstructions);
+    
+    // Nano Banana - Edición conversacional con Gemini 2.5 Flash
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -40,16 +44,14 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        version: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        // Nano Banana (Gemini 2.5 Flash) - Edición conversacional de imágenes
+        // Version hash será verificado en deployment, usar latest para auto-update
+        version: "fal-ai/nano-banana",
         input: {
-          image: imageUrl,
-          prompt: prompt,
-          negative_prompt: negativePrompt || "distorted, low quality, blurry, artifacts, unrealistic, bad perspective",
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
-          scheduler: "K_EULER",
-          refine: "expert_ensemble_refiner",
-          high_noise_frac: 0.8
+          image_url: imageUrl,  // Imagen a editar
+          prompt: editInstructions,  // Instrucciones en lenguaje natural (español OK)
+          output_format: "webp",
+          output_quality: 90
         }
       })
     });
@@ -63,14 +65,18 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
     
     // Si la respuesta ya tiene el output (Prefer: wait)
     if (prediction.status === 'succeeded' && prediction.output) {
-      return prediction.output[0]; // URL de imagen editada
+      console.log('✅ Imagen editada con Nano Banana:', prediction.output);
+      return prediction.output; // URL de imagen editada
     }
     
     // Si no, hacer polling
+    console.log('⏳ Esperando procesamiento de Nano Banana...');
     let attempts = 0;
     const maxAttempts = 60; // 60 segundos máximo
     
     while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos entre intentos
+      
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${REPLICATE_API_TOKEN}`
@@ -78,24 +84,24 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
       });
       
       const statusData = await statusResponse.json();
+      console.log(`⏳ Estado Nano Banana: ${statusData.status} (intento ${attempts + 1}/${maxAttempts})`);
       
       if (statusData.status === 'succeeded') {
-        return statusData.output[0];
+        console.log('✅ Imagen editada exitosamente:', statusData.output);
+        return statusData.output;
       }
       
       if (statusData.status === 'failed' || statusData.status === 'canceled') {
-        throw new Error(`Replicate prediction failed: ${statusData.error || 'Unknown error'}`);
+        throw new Error(`Nano Banana failed: ${statusData.error || 'Unknown error'}`);
       }
       
-      // Esperar 1 segundo antes de siguiente intento
-      await new Promise(resolve => setTimeout(resolve, 1000));
       attempts++;
     }
     
-    throw new Error('Replicate timeout: La edición tardó demasiado');
+    throw new Error('Nano Banana timeout: La edición tardó demasiado (>60s)');
     
   } catch (error) {
-    console.error('❌ Error en Replicate:', error);
+    console.error('❌ Error en Nano Banana:', error);
     throw error;
   }
 }
@@ -368,7 +374,7 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 VIRTUAL STAGING & IMAGE EDITING TOOL - USE THIS TOOL IMMEDIATELY when user requests furniture additions or space modifications in Spanish like: 'ponle muebles', 'pon muebles', 'añade muebles', 'mete muebles', 'coloca muebles', 'amuebla', 'decora', 'añade sofá', 'pon mesa', 'coloca sillas', 'limpia', 'reforma', 'cambia color', 'pinta', 'mejora luz', 'staging virtual'. This tool PHYSICALLY EDITS the image content (furniture, decor, colors, lighting) while preserving original structure. CRITICAL: If user uploaded an image and asks to add/modify ANYTHING in the space, you MUST use this tool. DO NOT just describe what you would do - actually DO IT by calling this function. IMPORTANT: The image URL will be detected automatically from the conversation context - you do NOT need to provide it.",
+          description: "🎯 NANO BANANA IMAGE EDITOR (Gemini 2.5 Flash) - USE THIS IMMEDIATELY when user requests ANY image modification in Spanish: 'ponle muebles', 'quita muebles', 'añade', 'mete', 'coloca', 'cambia', 'limpia', 'reforma', 'pinta', 'mejora', 'pon suelo de madera', 'quita el desorden', etc. This tool uses CONVERSATIONAL AI to understand natural language edits. It PHYSICALLY EDITS the image content while PRESERVING the original structure. CRITICAL: If user uploaded an image and asks to modify ANYTHING, you MUST call this function. The image URL is detected automatically - you do NOT need to provide it.",
           parameters: {
             type: "object",
             properties: {
@@ -378,7 +384,7 @@ export default async function handler(req, res) {
               },
               desired_changes: {
                 type: "string",
-                description: "Specific improvements to make PRESERVING STRUCTURE. Example: 'Add modern gray sofa and coffee table, paint walls soft beige, add plants near window, keep same floor and window exactly as is'"
+                description: "Natural language edit instructions in Spanish or English. Nano Banana understands conversational requests. Examples: 'Quita todos los muebles', 'Añade muebles modernos', 'Pon suelo de madera', 'Cambia el color de las paredes a beige', 'Limpia el desorden pero mantén los muebles', 'Add modern furniture', 'Remove all furniture'. Be specific and conversational."
               },
               style: {
                 type: "string",
@@ -673,47 +679,39 @@ export default async function handler(req, res) {
           }
           
           // ============================================================================
-          // 🎨 EDICIÓN CON REPLICATE SDXL
+          // 🎨 EDICIÓN CON NANO BANANA (Gemini 2.5 Flash - Edición Conversacional)
           // ============================================================================
           
-          // Construir prompt que PRESERVA la estructura original
-          const editPrompt = `Real estate interior photography, ${functionArgs.original_description}, ` +
-            `${functionArgs.desired_changes}, ` +
-            `${functionArgs.style || 'modern'} style, ` +
-            `professional lighting, high resolution, photorealistic, architectural photography, ` +
-            `maintain original perspective and room layout`;
+          // Construir instrucciones conversacionales en ESPAÑOL (Nano Banana entiende lenguaje natural)
+          const editInstructions = `${functionArgs.desired_changes}. Mantén la estructura, perspectiva y arquitectura original del espacio. Solo modifica lo que te pido. Estilo ${functionArgs.style || 'modern'}.`;
           
-          const negativePrompt = `distorted perspective, changed room layout, different architecture, ` +
-            `cartoon, illustration, drawing, low quality, blurry, unrealistic, ` +
-            `deformed walls, wrong proportions, fish-eye effect`;
+          console.log('🎨 Llamando a Nano Banana (Gemini 2.5 Flash) con URL:', imageUrl);
+          console.log('📝 Instrucciones:', editInstructions);
           
-          console.log('🎨 Llamando a Replicate SDXL con URL:', imageUrl);
-          
-          // Llamar a Replicate para edición real (preserva estructura)
+          // Llamar a Nano Banana para edición conversacional real
           const editedImageUrl = await editImageWithReplicate(
             imageUrl,
-            editPrompt,
-            negativePrompt
+            editInstructions
           );
           
-          console.log('✅ Imagen editada con Replicate (estructura preservada):', editedImageUrl);
+          console.log('✅ Imagen editada con Nano Banana:', editedImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: '✨ He mejorado tu imagen manteniendo **exactamente** la misma estructura y perspectiva del espacio original. ' +
-                     '\n\nLos cambios aplicados respetan la arquitectura y solo modifican los elementos que pediste: ' +
+            message: '✨ He editado tu imagen usando **Nano Banana (Gemini 2.5 Flash)** que entiende ediciones conversacionales. ' +
+                     '\n\nLos cambios aplicados: ' +
                      `**${functionArgs.desired_changes}**.\n\n` +
-                     '¿Quieres ajustar algo más o probar otro estilo?',
+                     'Si algo no quedó como esperabas, dímelo y lo ajusto. ¿Quieres hacer más cambios?',
             imageUrl: editedImageUrl,
             originalImageUrl: imageUrl,
             originalDescription: functionArgs.original_description,
             appliedChanges: functionArgs.desired_changes,
             isPermanent: false,
-            replicateUsed: true,
-            structurePreserved: true,
+            nanoBananaUsed: true,
+            geminiFlashUsed: true,
             imageEdited: true,
             tokensUsed: data.usage.total_tokens,
-            model: 'Replicate SDXL + ' + data.model
+            model: 'Nano Banana (Gemini 2.5 Flash) + ' + data.model
           });
 
         } catch (error) {
