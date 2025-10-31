@@ -40,15 +40,28 @@
 - ✅ **Optimización de rendimiento** con debounce en filtros
 - ✅ **Deployment exitoso en Vercel** - Proyecto 100% funcional en producción
 
+**🔥 Mejoras v1.4.0 (30 Octubre 2025) - CAMBIO A NANO BANANA:**
+- 🍌 **NUEVO MODELO: Nano Banana (Gemini 2.5 Flash)** - Edición conversacional real
+- ✅ **Edición Real vs Generación:** SDXL generaba imágenes nuevas, Nano Banana EDITA de verdad
+- ✅ **Lenguaje Natural en Español:** "quita muebles", "pon suelo de madera", "pinta paredes"
+- ✅ **70% Más Barato:** $0.0075 vs $0.025 por imagen (SDXL)
+- ✅ **2-3x Más Rápido:** 10-20s vs 30-60s (SDXL)
+- ✅ **Mejor Preservación:** Mantiene estructura original perfectamente
+- ✅ **Multi-imagen Support:** Fusión de elementos de varias fotos
+- 🔥 **Fix Regex Corchetes:** URL detection ya no captura `]` al final
+- 🔥 **Sistema Completo End-to-End:** Upload → Cloudinary → Detección → Nano Banana → Edición Real
+
 **🔥 Mejoras v1.3.1 (30 Octubre 2025):**
 - ✅ **Cloudinary Integration** - Upload automático de imágenes a CDN
 - ✅ **FIX CRÍTICO Vision API:** URLs de Cloudinary ahora se envían correctamente a GPT-4o Vision
 - ✅ **FIX CRÍTICO Image Editing:** Replicate Tool activado para edición real de imágenes
+- ✅ **FIX CRÍTICO URL Detection:** URL de Cloudinary ahora se incluye en mensaje del usuario para que backend la encuentre en historial
 - ✅ **Replicate SDXL Tool** - Sistema completo de virtual staging preservando estructura
 - ✅ **Detection automática de URLs** - Sistema encuentra URLs de Cloudinary en historial de chat
 - ✅ **NUEVO: Caso C - Análisis de Visión** - Sofía puede analizar, describir y leer imágenes/documentos sin editar
 - ✅ **Detección inteligente de intención** - 3 flujos: Edición (A), Marketing (B), Análisis (C)
 - ✅ **FIX FLUJO DE IMÁGENES:** Imagen se adjunta como preview, NO se envía automáticamente. Usuario escribe instrucción y se envía todo junto.
+- ✅ **Tool Calling en Español:** GPT-4o ahora reconoce variaciones españolas ("ponle muebles", "pon muebles", "añade", etc.)
 - ⚠️ **PENDIENTE:** Configurar variables de entorno en Vercel (`REPLICATE_API_TOKEN` y `CLOUDINARY_URL`)
 
 **📦 Estado del Proyecto:**
