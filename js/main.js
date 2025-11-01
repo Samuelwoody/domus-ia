@@ -475,22 +475,23 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         // Verificar límites de mensajes
         
-        // 🔥 NUEVA LÓGICA: Enviar tanto archivo como URL de Cloudinary
-        // Vision API necesita la imagen en CADA mensaje
-        // Replicate puede buscar en historial
+        // 🔥 CRÍTICO: Enviar URL de Cloudinary como imageUrl (no en texto)
+        // Vision API necesita recibir imageUrl en el request body
         const hasCloudinaryUrl = !!this.currentUploadedImageUrl;
         const cloudinaryUrlToSend = hasCloudinaryUrl ? this.currentUploadedImageUrl : null;
         
-        // Siempre enviar el archivo si existe (para Vision API)
-        const fileToProcess = this.currentFile;
+        // IMPORTANTE: NO enviar archivo si ya tenemos URL de Cloudinary
+        // Vision API prefiere URLs sobre base64 (más eficiente)
+        const fileToProcess = hasCloudinaryUrl ? null : this.currentFile;
         const fileTypeToProcess = this.currentFileType;
-        const documentTextToProcess = this.currentDocumentText; // 🔥 GUARDAR TEXTO EXTRAÍDO
+        const documentTextToProcess = this.currentDocumentText;
         
         console.log('📤 Enviando mensaje:', {
             hasCloudinaryUrl: hasCloudinaryUrl,
-            cloudinaryUrl: this.currentUploadedImageUrl,
+            cloudinaryUrl: cloudinaryUrlToSend,
             willSendFile: !!fileToProcess,
-            fileType: fileTypeToProcess
+            fileType: fileTypeToProcess,
+            strategy: hasCloudinaryUrl ? 'URL de Cloudinary' : 'Base64 directo'
         });
         
         // Clear input and file
@@ -503,9 +504,10 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         
         // Add user message (con indicador de archivo si existe)
         let displayMessage = finalMessage;
-        if (fileToProcess) {
+        if (fileToProcess || hasCloudinaryUrl) {
             const fileIcon = fileTypeToProcess === 'image' ? '🖼️' : '📄';
-            displayMessage = `${fileIcon} ${finalMessage}\n<small class="text-gray-500">${fileToProcess.name}</small>`;
+            const fileName = fileToProcess ? fileToProcess.name : 'imagen-cloudinary.jpg';
+            displayMessage = `${fileIcon} ${finalMessage}\n<small class="text-gray-500">${fileName}</small>`;
         }
         this.addMessage('user', displayMessage);
         
@@ -685,18 +687,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     webSearch: 'auto'  // Búsqueda automática cuando sea necesario
                 };
                 
-                // Añadir imagen si existe
-                if (file && fileType === 'image') {
-                    console.log('👁️ Enviando imagen para análisis Vision...');
-                    const base64 = await this.fileToBase64(file);
-                    requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
-                }
-                
-                // 🔥 FIX: Si hay URL de Cloudinary, enviarla para Vision API
-                // Nota: Esto permite que GPT-4o vea la imagen subida a Cloudinary
+                // 🔥 PRIORIDAD 1: Si hay URL de Cloudinary, enviarla (más eficiente)
                 if (cloudinaryUrl) {
                     console.log('🌐 Enviando URL de Cloudinary para Vision API:', cloudinaryUrl);
                     requestBody.imageUrl = cloudinaryUrl;
+                }
+                // 🔥 PRIORIDAD 2: Si NO hay Cloudinary pero sí archivo, enviar base64
+                else if (file && fileType === 'image') {
+                    console.log('👁️ Enviando imagen base64 para análisis Vision...');
+                    const base64 = await this.fileToBase64(file);
+                    requestBody.imageFile = base64.split(',')[1]; // Quitar prefijo data:image...
                 }
                 
                 // Añadir documento si existe
