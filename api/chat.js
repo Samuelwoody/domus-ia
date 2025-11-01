@@ -20,10 +20,17 @@ async function uploadToImgBB(imageUrl, apiKey) {
 */
 
 // ============================================================================
-// 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
+// 🎨 REPLICATE UNIFIED API - FUNCIÓN GENÉRICA PARA TODOS LOS MODELOS
 // ============================================================================
 
-async function editImageWithReplicate(imageUrl, editInstructions) {
+/**
+ * Función genérica para llamar a CUALQUIER modelo de Replicate
+ * @param {string} modelVersion - Identificador del modelo (ej: "cjwbw/rembg")
+ * @param {object} inputs - Parámetros específicos del modelo
+ * @param {number} maxAttempts - Máximo de intentos de polling (default: 60)
+ * @returns {Promise} - Output del modelo
+ */
+async function callReplicateModel(modelVersion, inputs, maxAttempts = 60) {
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
   if (!REPLICATE_API_TOKEN) {
@@ -31,11 +38,9 @@ async function editImageWithReplicate(imageUrl, editInstructions) {
   }
 
   try {
-    console.log('🎨 Usando Nano Banana (Gemini 2.5 Flash) para edición conversacional');
-    console.log('📷 Imagen original:', imageUrl);
-    console.log('✍️ Instrucciones:', editInstructions);
+    console.log(`🎨 Llamando a Replicate modelo: ${modelVersion}`);
+    console.log('📥 Inputs:', JSON.stringify(inputs, null, 2));
     
-    // Nano Banana - Edición conversacional con Gemini 2.5 Flash
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -44,15 +49,8 @@ async function editImageWithReplicate(imageUrl, editInstructions) {
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        // Nano Banana (Gemini 2.5 Flash) - Edición conversacional de imágenes
-        // Version hash será verificado en deployment, usar latest para auto-update
-        version: "fal-ai/nano-banana",
-        input: {
-          image_url: imageUrl,  // Imagen a editar
-          prompt: editInstructions,  // Instrucciones en lenguaje natural (español OK)
-          output_format: "webp",
-          output_quality: 90
-        }
+        version: modelVersion,
+        input: inputs
       })
     });
 
@@ -65,17 +63,16 @@ async function editImageWithReplicate(imageUrl, editInstructions) {
     
     // Si la respuesta ya tiene el output (Prefer: wait)
     if (prediction.status === 'succeeded' && prediction.output) {
-      console.log('✅ Imagen editada con Nano Banana:', prediction.output);
-      return prediction.output; // URL de imagen editada
+      console.log('✅ Modelo completado:', prediction.output);
+      return prediction.output;
     }
     
     // Si no, hacer polling
-    console.log('⏳ Esperando procesamiento de Nano Banana...');
+    console.log('⏳ Esperando procesamiento...');
     let attempts = 0;
-    const maxAttempts = 60; // 60 segundos máximo
     
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos entre intentos
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
@@ -84,26 +81,147 @@ async function editImageWithReplicate(imageUrl, editInstructions) {
       });
       
       const statusData = await statusResponse.json();
-      console.log(`⏳ Estado Nano Banana: ${statusData.status} (intento ${attempts + 1}/${maxAttempts})`);
+      console.log(`⏳ Estado: ${statusData.status} (intento ${attempts + 1}/${maxAttempts})`);
       
       if (statusData.status === 'succeeded') {
-        console.log('✅ Imagen editada exitosamente:', statusData.output);
+        console.log('✅ Modelo completado exitosamente:', statusData.output);
         return statusData.output;
       }
       
       if (statusData.status === 'failed' || statusData.status === 'canceled') {
-        throw new Error(`Nano Banana failed: ${statusData.error || 'Unknown error'}`);
+        throw new Error(`Modelo falló: ${statusData.error || 'Unknown error'}`);
       }
       
       attempts++;
     }
     
-    throw new Error('Nano Banana timeout: La edición tardó demasiado (>60s)');
+    throw new Error(`Timeout: El modelo tardó demasiado (>${maxAttempts * 2}s)`);
     
   } catch (error) {
-    console.error('❌ Error en Nano Banana:', error);
+    console.error(`❌ Error en Replicate modelo ${modelVersion}:`, error);
     throw error;
   }
+}
+
+// ============================================================================
+// 🖼️ FUNCIONES ESPECIALIZADAS POR TAREA (usan callReplicateModel)
+// ============================================================================
+
+// 1️⃣ EDICIÓN DE IMÁGENES
+async function editImageWithReplicate(imageUrl, editInstructions) {
+  console.log('🎨 Nano Banana - Edición conversacional');
+  return await callReplicateModel("fal-ai/nano-banana", {
+    image_url: imageUrl,
+    prompt: editInstructions,
+    output_format: "webp",
+    output_quality: 90
+  });
+}
+
+// 2️⃣ REMOVE BACKGROUND (Quitar fondos)
+async function removeBackground(imageUrl) {
+  console.log('🖼️ RemBG - Quitando fondo de imagen');
+  return await callReplicateModel("cjwbw/rembg", {
+    image: imageUrl
+  });
+}
+
+// 3️⃣ UPSCALING (Aumentar resolución 4x)
+async function upscaleImage(imageUrl, scale = 4) {
+  console.log(`📈 Real-ESRGAN - Upscaling ${scale}x`);
+  return await callReplicateModel("nightmareai/real-esrgan", {
+    image: imageUrl,
+    scale: scale,
+    face_enhance: false
+  });
+}
+
+// 4️⃣ CARTELES "SE VENDE" con texto perfecto
+async function generateSaleSign(prompt) {
+  console.log('🎨 Ideogram v2 - Generando cartel con texto');
+  return await callReplicateModel("ideogram-ai/ideogram-v2", {
+    prompt: prompt,
+    aspect_ratio: "1:1",
+    magic_prompt_option: "on"
+  });
+}
+
+// 5️⃣ IMAGEN A VÍDEO (Foto estática → vídeo con movimiento)
+async function imageToVideo(imageUrl, motionLevel = 127) {
+  console.log('🎬 Stable Video Diffusion - Foto a vídeo');
+  return await callReplicateModel("stability-ai/stable-video-diffusion", {
+    image: imageUrl,
+    motion_bucket_id: motionLevel,
+    frames_per_second: 6,
+    num_frames: 25
+  });
+}
+
+// 6️⃣ GENERACIÓN DE VÍDEO desde texto
+async function generateVideo(prompt, duration = 5) {
+  console.log('🎬 Runway Gen-3 - Generando vídeo desde texto');
+  return await callReplicateModel("runwayml/gen-3-alpha", {
+    prompt: prompt,
+    duration: duration,
+    aspect_ratio: "16:9"
+  });
+}
+
+// 7️⃣ TEXTO A VOZ (Narración en español)
+async function textToSpeech(text, voicePreset = "v2/es_speaker_6") {
+  console.log('🎙️ Bark TTS - Generando narración en español');
+  return await callReplicateModel("suno-ai/bark", {
+    prompt: text + " [español]",
+    voice_preset: voicePreset
+  });
+}
+
+// 8️⃣ DESCRIPCIÓN AUTOMÁTICA de imágenes
+async function describeImage(imageUrl, question = "Describe this property in detail") {
+  console.log('📝 BLIP-2 - Analizando imagen');
+  return await callReplicateModel("salesforce/blip-2", {
+    image: imageUrl,
+    question: question
+  });
+}
+
+// 9️⃣ SKY REPLACEMENT (Cambiar cielo)
+async function replaceSky(imageUrl, skyType = "blue_sky_sunset") {
+  console.log('🌤️ Sky Replace - Cambiando cielo');
+  return await callReplicateModel("logerzhu/sky-replace", {
+    image: imageUrl,
+    sky_type: skyType
+  });
+}
+
+// 🔟 MEJORAR CALIDAD de fotos
+async function enhancePhoto(imageUrl) {
+  console.log('✨ GFPGAN - Mejorando calidad de foto');
+  return await callReplicateModel("tencentarc/gfpgan", {
+    img: imageUrl,
+    version: "v1.4",
+    scale: 2
+  });
+}
+
+// 1️⃣1️⃣ MÚSICA DE FONDO
+async function generateMusic(prompt, duration = 30) {
+  console.log('🎵 MusicGen - Generando música de fondo');
+  return await callReplicateModel("meta/musicgen", {
+    prompt: prompt,
+    duration: duration
+  });
+}
+
+// 1️⃣2️⃣ HOME STAGING PREMIUM (Interior AI v2)
+async function premiumStaging(imageUrl, roomType = "living_room", style = "modern") {
+  console.log('🏠 Interior AI v2 - Staging premium especializado');
+  return await callReplicateModel("interior-ai/v2", {
+    image: imageUrl,
+    room_type: roomType,
+    style: style,
+    mode: "virtual_staging"
+  });
 }
 
 // ============================================================================
@@ -445,6 +563,210 @@ export default async function handler(req, res) {
               }
             },
             required: ["image_url", "property_info"]
+          }
+        }
+      },
+      // ============================================================================
+      // 🆕 NUEVAS TOOLS REPLICATE - TODAS DISPONIBLES
+      // ============================================================================
+      {
+        type: "function",
+        function: {
+          name: "remove_background",
+          description: "Remove background from property photos. Use when user wants to: 'quita el fondo', 'remove background', 'sin fondo', 'fondo transparente', 'aislar edificio'. Perfect for: removing ugly skies, isolating buildings, creating marketing materials. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {
+              purpose: {
+                type: "string",
+                description: "Why removing background: 'replace_sky', 'isolate_building', 'marketing_material', 'other'"
+              }
+            },
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "upscale_image",
+          description: "Increase image resolution 4x using AI. Use when user wants to: 'mejora la resolución', 'aumenta calidad', 'upscale', 'foto más grande', 'mejor calidad'. Converts 512px → 2048px. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {
+              scale: {
+                type: "number",
+                enum: [2, 4],
+                description: "Scaling factor (2x or 4x)",
+                default: 4
+              }
+            },
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "generate_sale_sign",
+          description: "Generate professional 'SE VENDE' sign with perfect text. Use when user wants: 'cartel SE VENDE', 'sign for sale', 'imagen con precio', 'cartel profesional'. This model is SPECIALIZED in text rendering (best for readable text).",
+          parameters: {
+            type: "object",
+            properties: {
+              price: {
+                type: "string",
+                description: "Property price with currency. Ex: '350.000€', '$450,000'"
+              },
+              phone: {
+                type: "string",
+                description: "Contact phone number. Ex: '+34 123 456 789'"
+              },
+              style: {
+                type: "string",
+                enum: ["modern", "classic", "elegant", "bold"],
+                description: "Sign design style",
+                default: "modern"
+              }
+            },
+            required: ["price"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "image_to_video",
+          description: "Convert static photo into video with smooth camera movement (3-4 seconds). Use when user wants: 'convierte en vídeo', 'haz un vídeo', 'foto con movimiento', 'video tour', 'animación'. Perfect for: Instagram Reels, TikTok, virtual tours. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {
+              motion_level: {
+                type: "number",
+                description: "Amount of camera movement (1-255). Low=subtle, High=dramatic",
+                default: 127
+              }
+            },
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "generate_video_from_text",
+          description: "Generate professional video from text description (5-10 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...'. Perfect for: virtual tours, property presentations, social media content.",
+          parameters: {
+            type: "object",
+            properties: {
+              description: {
+                type: "string",
+                description: "Detailed description of the video scene. Ex: 'Smooth cinematic walkthrough of modern Spanish villa, moving through living room towards sea view window, golden hour lighting'"
+              },
+              duration: {
+                type: "number",
+                enum: [5, 10],
+                description: "Video duration in seconds",
+                default: 5
+              }
+            },
+            required: ["description"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "text_to_speech_spanish",
+          description: "Generate professional Spanish narration for property videos. Use when user wants: 'añade voz', 'narración en español', 'locución', 'texto a voz', 'voice over'. Perfect for: virtual tours, property presentations, automated descriptions.",
+          parameters: {
+            type: "object",
+            properties: {
+              text: {
+                type: "string",
+                description: "Text to convert to speech in Spanish. Ex: 'Bienvenido a esta espectacular villa mediterránea con vistas al mar'"
+              },
+              voice_style: {
+                type: "string",
+                enum: ["professional_male", "professional_female", "warm_male", "warm_female", "energetic"],
+                description: "Voice style and gender",
+                default: "professional_male"
+              }
+            },
+            required: ["text"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "describe_property_image",
+          description: "Automatically analyze and describe property image in detail. Use when user wants: 'describe esta imagen', 'qué ves aquí', 'analiza esta foto', 'características de la propiedad'. Returns detailed description of: room type, size, style, condition, features. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {
+              focus: {
+                type: "string",
+                enum: ["general", "condition", "features", "style", "size"],
+                description: "What aspect to focus on",
+                default: "general"
+              }
+            },
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "replace_sky",
+          description: "Replace ugly/gray sky with beautiful blue sky. Use when user wants: 'cambia el cielo', 'pon cielo azul', 'mejora el cielo', 'replace sky'. Perfect for: exterior photos with bad weather, professional listing photos. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {
+              sky_type: {
+                type: "string",
+                enum: ["blue_sky", "blue_sky_sunset", "dramatic_clouds", "golden_hour"],
+                description: "Type of sky to add",
+                default: "blue_sky"
+              }
+            },
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "enhance_photo_quality",
+          description: "Improve overall photo quality and fix imperfections. Use when user wants: 'mejora esta foto', 'arregla la imagen', 'enhance quality', 'foto más profesional'. Fixes: blur, noise, low resolution, poor lighting. AUTOMATIC: detects URL from context.",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "generate_background_music",
+          description: "Generate royalty-free background music for property videos. Use when user wants: 'añade música', 'música de fondo', 'background music', 'música para vídeo'.",
+          parameters: {
+            type: "object",
+            properties: {
+              style: {
+                type: "string",
+                enum: ["calm_ambient", "elegant_piano", "upbeat_modern", "luxury_orchestral"],
+                description: "Music style to generate",
+                default: "calm_ambient"
+              },
+              duration: {
+                type: "number",
+                description: "Duration in seconds (max 30)",
+                default: 30
+              }
+            },
+            required: []
           }
         }
       }
@@ -917,8 +1239,321 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           });
         }
       }
+      
+      // ============================================================================
+      // 🆕 HANDLERS PARA TODAS LAS NUEVAS TOOLS REPLICATE
+      // ============================================================================
+      
+      // FUNCIÓN AUXILIAR: Detectar URL de imagen automáticamente
+      function detectImageUrl(messages) {
+      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+        const msg = messages[i];
+        if (msg.role === 'user' && msg.content) {
+          const urlPatterns = [
+            /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,
+            /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i
+          ];
+          for (const pattern of urlPatterns) {
+            const match = msg.content.match(pattern);
+            if (match) return match[0];
+          }
+        }
+      }
+      return null;
     }
-
+    
+    // 1️⃣ REMOVE BACKGROUND
+    if (toolCall.function.name === 'remove_background') {
+      try {
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const result = await removeBackground(imageUrl);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ Fondo eliminado correctamente. Ahora puedes usarla para composiciones o reemplazar el cielo.',
+          imageUrl: result,
+          tool: 'remove_background'
+        });
+      } catch (error) {
+        console.error('❌ Error remove background:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude quitar el fondo. Intenta con otra imagen.'
+        });
+      }
+    }
+    
+    // 2️⃣ UPSCALE IMAGE
+    else if (toolCall.function.name === 'upscale_image') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const scale = functionArgs.scale || 4;
+        const result = await upscaleImage(imageUrl, scale);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Resolución aumentada ${scale}x. La imagen ahora tiene mucha mayor calidad y detalle.`,
+          imageUrl: result,
+          tool: 'upscale_image'
+        });
+      } catch (error) {
+        console.error('❌ Error upscale:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude mejorar la resolución. Intenta con otra imagen.'
+        });
+      }
+    }
+    
+    // 3️⃣ GENERATE SALE SIGN
+    else if (toolCall.function.name === 'generate_sale_sign') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const prompt = `Professional Spanish real estate 'SE VENDE' sign, modern design, ` +
+                      `price ${functionArgs.price}, ` +
+                      (functionArgs.phone ? `phone ${functionArgs.phone}, ` : '') +
+                      `${functionArgs.style || 'modern'} style, clean typography, high contrast, professional`;
+        
+        const result = await generateSaleSign(prompt);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Cartel "SE VENDE" generado con precio ${functionArgs.price}. Listo para imprimir o publicar en redes.`,
+          imageUrl: result,
+          tool: 'generate_sale_sign'
+        });
+      } catch (error) {
+        console.error('❌ Error sale sign:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar el cartel. Inténtalo de nuevo.'
+        });
+      }
+    }
+    
+    // 4️⃣ IMAGE TO VIDEO
+    else if (toolCall.function.name === 'image_to_video') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const motionLevel = functionArgs.motion_level || 127;
+        const result = await imageToVideo(imageUrl, motionLevel);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ ¡Vídeo generado! Tu foto ahora tiene movimiento de cámara suave. Perfecto para Instagram Reels o TikTok.',
+          videoUrl: result,
+          tool: 'image_to_video'
+        });
+      } catch (error) {
+        console.error('❌ Error image to video:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar el vídeo. Intenta con otra imagen más clara.'
+        });
+      }
+    }
+    
+    // 5️⃣ GENERATE VIDEO FROM TEXT
+    else if (toolCall.function.name === 'generate_video_from_text') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const duration = functionArgs.duration || 5;
+        const result = await generateVideo(functionArgs.description, duration);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Vídeo de ${duration} segundos generado. Tour virtual listo para usar en redes sociales.`,
+          videoUrl: result,
+          tool: 'generate_video_from_text'
+        });
+      } catch (error) {
+        console.error('❌ Error generate video:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar el vídeo. Intenta con una descripción más específica.'
+        });
+      }
+    }
+    
+    // 6️⃣ TEXT TO SPEECH SPANISH
+    else if (toolCall.function.name === 'text_to_speech_spanish') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const voiceMap = {
+          'professional_male': 'v2/es_speaker_6',
+          'professional_female': 'v2/es_speaker_9',
+          'warm_male': 'v2/es_speaker_0',
+          'warm_female': 'v2/es_speaker_1',
+          'energetic': 'v2/es_speaker_3'
+        };
+        const voicePreset = voiceMap[functionArgs.voice_style] || 'v2/es_speaker_6';
+        const result = await textToSpeech(functionArgs.text, voicePreset);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ Narración en español generada. Descarga el audio para añadirlo a tus vídeos.',
+          audioUrl: result,
+          tool: 'text_to_speech_spanish'
+        });
+      } catch (error) {
+        console.error('❌ Error text to speech:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar la narración. Inténtalo de nuevo.'
+        });
+      }
+    }
+    
+    // 7️⃣ DESCRIBE PROPERTY IMAGE
+    else if (toolCall.function.name === 'describe_property_image') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const questions = {
+          'general': 'Describe this property in detail including room type, size, style, condition, and notable features',
+          'condition': 'Describe the condition and state of maintenance of this property',
+          'features': 'List all notable features and amenities visible in this property',
+          'style': 'Describe the architectural and interior design style of this property',
+          'size': 'Estimate the approximate size and dimensions of this space'
+        };
+        const question = questions[functionArgs.focus] || questions['general'];
+        const result = await describeImage(imageUrl, question);
+        
+        return res.status(200).json({
+          success: true,
+          message: `📝 Análisis de la imagen:\n\n${result}\n\n¿Quieres que elabore más algún aspecto?`,
+          tool: 'describe_property_image'
+        });
+      } catch (error) {
+        console.error('❌ Error describe image:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude analizar la imagen. Intenta con otra más clara.'
+        });
+      }
+    }
+    
+    // 8️⃣ REPLACE SKY
+    else if (toolCall.function.name === 'replace_sky') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const skyType = functionArgs.sky_type || 'blue_sky';
+        const result = await replaceSky(imageUrl, skyType);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ Cielo reemplazado. Ahora la foto tiene un cielo azul perfecto para el anuncio.',
+          imageUrl: result,
+          tool: 'replace_sky'
+        });
+      } catch (error) {
+        console.error('❌ Error replace sky:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude cambiar el cielo. Asegúrate de que la foto sea exterior con cielo visible.'
+        });
+      }
+    }
+    
+    // 9️⃣ ENHANCE PHOTO QUALITY
+    else if (toolCall.function.name === 'enhance_photo_quality') {
+      try {
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
+          return res.status(200).json({
+            success: true,
+            message: '📸 Sube una imagen primero usando el botón 📷'
+          });
+        }
+        
+        const result = await enhancePhoto(imageUrl);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ Foto mejorada. La calidad general ha aumentado significativamente.',
+          imageUrl: result,
+          tool: 'enhance_photo_quality'
+        });
+      } catch (error) {
+        console.error('❌ Error enhance photo:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude mejorar la foto. Intenta con otra imagen.'
+        });
+      }
+    }
+    
+    // 🔟 GENERATE BACKGROUND MUSIC
+    else if (toolCall.function.name === 'generate_background_music') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const prompts = {
+          'calm_ambient': 'calm ambient atmospheric music for luxury real estate video, professional, elegant',
+          'elegant_piano': 'elegant soft piano music for real estate tour, sophisticated, peaceful',
+          'upbeat_modern': 'upbeat modern background music for property video, positive, energetic',
+          'luxury_orchestral': 'luxury orchestral music for high-end real estate, cinematic, grand'
+        };
+        const prompt = prompts[functionArgs.style] || prompts['calm_ambient'];
+        const duration = Math.min(functionArgs.duration || 30, 30);
+        const result = await generateMusic(prompt, duration);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Música de fondo generada (${duration}s). Descárgala y añádela a tus vídeos de propiedades.`,
+          audioUrl: result,
+          tool: 'generate_background_music'
+        });
+      } catch (error) {
+        console.error('❌ Error generate music:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar la música. Inténtalo de nuevo.'
+        });
+      }
+    }
+    
+    }
+    
     // ============================================================================
     // 💾 Guardar conversación en base de datos (no bloqueante)
     // ============================================================================
