@@ -381,6 +381,7 @@ export default async function handler(req, res) {
     // 👁️ Vision API - Procesar imágenes si existen
     // ============================================================================
     let processedMessages = [...messages];
+    let visionUsed = false;
     
     if (imageFile || imageUrl) {
       const lastMessageIndex = processedMessages.length - 1;
@@ -390,18 +391,27 @@ export default async function handler(req, res) {
       let imageUrlToUse;
       if (imageUrl) {
         imageUrlToUse = imageUrl;
+        console.log('📸 URL de Cloudinary recibida:', imageUrl);
       } else if (imageFile) {
         imageUrlToUse = `data:image/jpeg;base64,${imageFile}`;
+        console.log('📸 Imagen base64 recibida');
       }
       
       // Solo procesar si tenemos URL válida
       if (imageUrlToUse) {
+        // Limpiar el texto del mensaje quitando referencias a la imagen
+        let cleanedText = lastMsg.content;
+        if (typeof cleanedText === 'string') {
+          // Remover "[Imagen subida: URL]" del texto
+          cleanedText = cleanedText.replace(/\[Imagen subida:.*?\]/g, '').trim();
+        }
+        
         processedMessages[lastMessageIndex] = {
           role: lastMsg.role,
           content: [
             {
               type: 'text',
-              text: lastMsg.content
+              text: cleanedText || '¿Qué ves en esta imagen?'
             },
             {
               type: 'image_url',
@@ -413,7 +423,8 @@ export default async function handler(req, res) {
           ]
         };
         
-        console.log('👁️ Vision API activada - Analizando imagen');
+        visionUsed = true;
+        console.log('✅ Vision API activada - GPT-4o puede ver la imagen');
       }
     }
     
@@ -871,7 +882,7 @@ export default async function handler(req, res) {
             model: data.model,
             sofiaVersion: config.name,
             webSearchUsed: !!webSearchResults,
-            visionUsed: false,
+            visionUsed: visionUsed,
             documentUsed: !!documentText,
             sources: webSearchResults ? webSearchResults.results.map(r => ({
               title: r.title,
@@ -921,7 +932,7 @@ export default async function handler(req, res) {
             model: data.model,
             sofiaVersion: config.name,
             webSearchUsed: !!webSearchResults,
-            visionUsed: !!(imageFile || imageUrl),
+            visionUsed: visionUsed,
             documentUsed: !!documentText,
             sources: webSearchResults ? webSearchResults.results.map(r => ({
               title: r.title,
@@ -1577,7 +1588,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       model: data.model,
       sofiaVersion: config.name,
       webSearchUsed: !!webSearchResults,
-      visionUsed: !!(imageFile || imageUrl),
+      visionUsed: visionUsed, // ✅ Usar variable que confirma que Vision fue activada
       documentUsed: !!documentText,
       sources: webSearchResults ? webSearchResults.results.map(r => ({
         title: r.title,
