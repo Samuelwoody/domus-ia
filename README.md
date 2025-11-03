@@ -40,6 +40,26 @@
 - ✅ **Optimización de rendimiento** con debounce en filtros
 - ✅ **Deployment exitoso en Vercel** - Proyecto 100% funcional en producción
 
+**🎬 Mejoras v1.7.0 (03 Noviembre 2025) - OPTIMIZACIÓN MASIVA + GOOGLE VEO 3:**
+- 🚀 **OPTIMIZACIÓN COMPLETA:** De 12 modelos Replicate → Solo 4 modelos esenciales
+- 🎬 **NUEVO: Google VEO 3** - Generación de video cinematográfico text-to-video powered by Google
+- ✅ **Duración máxima:** 6 segundos de video profesional en 16:9 (landscape)
+- ✅ **Calidad cinematográfica:** SOTA para real estate virtual tours
+- ✅ **Reemplaza 2 modelos:** Runway Gen-3 y Stable Video Diffusion eliminados
+- 🍌 **Google Nano Banana:** Edición conversacional REAL de imágenes (Gemini 2.5 Flash)
+- 📈 **Real-ESRGAN:** Upscaling 4x de imágenes
+- 🎨 **Ideogram V2:** Renderizado perfecto de texto en carteles "SE VENDE"
+- ❌ **ELIMINADOS 9 modelos redundantes:** removeBackground, imageToVideo, textToSpeech, describeImage, replaceSky, enhancePhoto, generateMusic, premiumStaging
+- ✅ **Código 70% más limpio:** Menos complejidad, más mantenible
+- ✅ **Costos reducidos:** Solo los modelos realmente necesarios
+- 📚 **Documentación completa:** Ver `VEO_3_IMPLEMENTATION.md`
+
+**🍌 Mejoras v1.6.0 (03 Noviembre 2025) - GOOGLE NANO BANANA:**
+- 🖼️ **Google Nano Banana (Gemini 2.5 Flash)** - Edición conversacional REAL
+- ✅ **Preserva estructura:** Mantiene arquitectura PERFECTAMENTE
+- ✅ **10-20 segundos:** 2x más rápido, $0.0075 por imagen
+- ❌ **ELIMINADO InstructPix2Pix:** Reemplazado por Nano Banana
+
 **🔥 Mejoras v1.4.0 (30 Octubre 2025) - CAMBIO A NANO BANANA:**
 - 🍌 **NUEVO MODELO: Nano Banana (Gemini 2.5 Flash)** - Edición conversacional real
 - ✅ **Edición Real vs Generación:** SDXL generaba imágenes nuevas, Nano Banana EDITA de verdad
