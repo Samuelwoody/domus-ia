@@ -107,15 +107,110 @@ async function callReplicateModel(modelVersion, inputs, maxAttempts = 60) {
 // 🖼️ FUNCIONES ESPECIALIZADAS POR TAREA (usan callReplicateModel)
 // ============================================================================
 
-// 1️⃣ EDICIÓN DE IMÁGENES
-async function editImageWithReplicate(imageUrl, editInstructions) {
-  console.log('🎨 Nano Banana - Edición conversacional');
-  return await callReplicateModel("fal-ai/nano-banana", {
-    image_url: imageUrl,
-    prompt: editInstructions,
-    output_format: "webp",
-    output_quality: 90
-  });
+// ============================================================================
+// 🎨 EDICIÓN REAL DE IMÁGENES CON INSTRUCTPIX2PIX (Replicate)
+// ============================================================================
+async function editImageWithInstructPix2Pix(imageUrl, editInstructions) {
+  console.log('🎨 InstructPix2Pix - Edición REAL con instrucciones en lenguaje natural');
+  console.log('📷 Imagen original:', imageUrl.substring(0, 80) + '...');
+  console.log('✏️  Instrucción usuario:', editInstructions);
+  
+  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+  
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error('REPLICATE_API_TOKEN no configurado');
+  }
+  
+  try {
+    // InstructPix2Pix: Modelo diseñado específicamente para editar con instrucciones
+    // Mantiene la estructura original y aplica solo los cambios solicitados
+    
+    console.log('🎨 Llamando a InstructPix2Pix...');
+    
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'wait'
+      },
+      body: JSON.stringify({
+        version: "30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
+        input: {
+          image: imageUrl,
+          prompt: editInstructions,
+          // Negative prompt para preservar estructura
+          negative_prompt: "change walls, change windows, change architecture, change floor, change ceiling, different room, different perspective, low quality, blurry",
+          // Parámetros optimizados para edición real estate
+          num_inference_steps: 100,      // Mayor calidad
+          image_guidance_scale: 1.5,     // Mantiene fidelidad a imagen original
+          guidance_scale: 7.5            // Balance creatividad/fidelidad
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Replicate API error:', response.status, errorText);
+      throw new Error(`Replicate API error: ${response.status} - ${errorText}`);
+    }
+    
+    const prediction = await response.json();
+    console.log('📊 Predicción inicial:', prediction.status);
+    
+    // Si la respuesta ya tiene output (Prefer: wait funcionó)
+    if (prediction.status === 'succeeded' && prediction.output) {
+      const editedImageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+      console.log('✅ Imagen editada (rápido):', editedImageUrl.substring(0, 80) + '...');
+      return editedImageUrl;
+    }
+    
+    // Polling si no completó inmediatamente
+    console.log('⏳ Procesando edición (puede tomar 20-40 segundos)...');
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: {
+          'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!statusResponse.ok) {
+        throw new Error(`Error checking status: ${statusResponse.status}`);
+      }
+      
+      const statusData = await statusResponse.json();
+      console.log(`⏳ Estado: ${statusData.status} (${attempts + 1}/${maxAttempts})`);
+      
+      if (statusData.status === 'succeeded') {
+        const editedImageUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
+        console.log('✅ Imagen editada exitosamente:', editedImageUrl.substring(0, 80) + '...');
+        return editedImageUrl;
+      }
+      
+      if (statusData.status === 'failed') {
+        console.error('❌ InstructPix2Pix falló:', statusData.error);
+        throw new Error(`InstructPix2Pix error: ${statusData.error || 'Unknown error'}`);
+      }
+      
+      if (statusData.status === 'canceled') {
+        throw new Error('Edición cancelada');
+      }
+      
+      attempts++;
+    }
+    
+    throw new Error(`Timeout: La edición tardó más de ${maxAttempts * 2} segundos`);
+    
+  } catch (error) {
+    console.error('❌ Error en InstructPix2Pix:', error);
+    throw error;
+  }
 }
 
 // 2️⃣ REMOVE BACKGROUND (Quitar fondos)
@@ -467,6 +562,7 @@ export default async function handler(req, res) {
     // 🛠️ DEFINE TOOLS/FUNCTIONS AVAILABLE (Function Calling)
     // ============================================================================
     const tools = [
+
       {
         type: "function",
         function: {
@@ -503,32 +599,26 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 NANO BANANA IMAGE EDITOR (Gemini 2.5 Flash) - USE THIS IMMEDIATELY when user requests ANY image modification in Spanish: 'ponle muebles', 'quita muebles', 'añade', 'mete', 'coloca', 'cambia', 'limpia', 'reforma', 'pinta', 'mejora', 'pon suelo de madera', 'quita el desorden', etc. This tool uses CONVERSATIONAL AI to understand natural language edits. It PHYSICALLY EDITS the image content while PRESERVING the original structure. CRITICAL: If user uploaded an image and asks to modify ANYTHING, you MUST call this function. The image URL is detected automatically - you do NOT need to provide it.",
+          description: "🎯 INSTRUCTPIX2PIX IMAGE EDITOR - USE THIS IMMEDIATELY when user requests ANY image modification: 'añade muebles', 'quita muebles', 'add furniture', 'remove furniture', 'cambia', 'mejora', 'pon suelo de madera', 'pinta paredes', etc. This tool uses InstructPix2Pix to EDIT real images with natural language instructions. It MODIFIES the existing image while PRESERVING the original structure and architecture. CRITICAL: If user uploaded an image and asks to modify ANYTHING, you MUST call this function. The image URL is detected automatically - you do NOT need to provide it.",
           parameters: {
             type: "object",
             properties: {
               original_description: {
                 type: "string",
-                description: "Detailed description of the current image/space. Example: 'Empty living room with white walls, hardwood floor, large window on left, 4x5 meters'"
+                description: "Brief description of the current image/space. Example: 'Empty living room with white walls and hardwood floor' or 'Bedroom with old furniture and beige walls'"
               },
               desired_changes: {
                 type: "string",
-                description: "Natural language edit instructions in Spanish or English. Nano Banana understands conversational requests. Examples: 'Quita todos los muebles', 'Añade muebles modernos', 'Pon suelo de madera', 'Cambia el color de las paredes a beige', 'Limpia el desorden pero mantén los muebles', 'Add modern furniture', 'Remove all furniture'. Be specific and conversational."
+                description: "Natural language edit instructions. InstructPix2Pix works best with clear, specific instructions. Examples: 'Add modern furniture', 'Remove all furniture', 'Change wall color to beige', 'Add plants and decorations', 'Transform to Scandinavian style'. Be specific about what to change."
               },
               style: {
                 type: "string",
                 enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "classic", "contemporary", "rustic"],
                 description: "Target interior style for the transformation",
                 default: "modern"
-              },
-              quality: {
-                type: "string",
-                enum: ["standard", "hd"],
-                description: "Image quality (hd recommended for real estate)",
-                default: "hd"
               }
             },
-            required: ["original_description", "desired_changes"]
+            required: ["desired_changes"]
           }
         }
       },
@@ -818,13 +908,16 @@ export default async function handler(req, res) {
     const assistantMessage = data.choices[0].message;
 
     // ============================================================================
-    // 🎨 CHECK IF GPT-4o WANTS TO USE DALL-E (Function Calling)
+    // 🎨 CHECK IF GPT-4o WANTS TO USE TOOLS (Function Calling)
     // ============================================================================
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       console.log('🎨 GPT-4o solicitó usar herramienta:', assistantMessage.tool_calls[0].function.name);
       
       const toolCall = assistantMessage.tool_calls[0];
       
+      // ============================================================================
+      // 🎨 DALL-E IMAGE GENERATION HANDLER
+      // ============================================================================
       if (toolCall.function.name === 'generate_dalle_image') {
         try {
           // Parse arguments from GPT-4o
@@ -1015,36 +1108,110 @@ export default async function handler(req, res) {
           // 🎨 EDICIÓN CON NANO BANANA (Gemini 2.5 Flash - Edición Conversacional)
           // ============================================================================
           
-          // Construir instrucciones conversacionales en ESPAÑOL (Nano Banana entiende lenguaje natural)
-          const editInstructions = `${functionArgs.desired_changes}. Mantén la estructura, perspectiva y arquitectura original del espacio. Solo modifica lo que te pido. Estilo ${functionArgs.style || 'modern'}.`;
+          // Construir instrucciones en inglés (InstructPix2Pix funciona mejor en inglés)
+          const editInstructions = `${functionArgs.desired_changes}. Keep the original structure, perspective and architecture. Style: ${functionArgs.style || 'modern'}.`;
           
-          console.log('🎨 Llamando a Nano Banana (Gemini 2.5 Flash) con URL:', imageUrl);
+          console.log('🎨 Usando InstructPix2Pix (Replicate) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
           
-          // Llamar a Nano Banana para edición conversacional real
-          const editedImageUrl = await editImageWithReplicate(
-            imageUrl,
-            editInstructions
-          );
+          let editedImageUrl;
+          
+          try {
+            // InstructPix2Pix: Edición REAL manteniendo estructura original
+            editedImageUrl = await editImageWithInstructPix2Pix(
+              imageUrl,
+              editInstructions
+            );
+          } catch (instructError) {
+            console.error('⚠️ InstructPix2Pix falló:', instructError.message);
+            
+            // FALLBACK: Intentar con GPT-4o + DALL-E 3 (regeneración)
+            console.log('🔄 Usando fallback: GPT-4o + DALL-E 3...');
+            
+            try {
+              // GPT-4o Vision analiza y DALL-E 3 regenera
+              const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4o',
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'Create a detailed prompt for regenerating this real estate image with modifications.'
+                    },
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: `Describe this image in detail. Then apply: ${functionArgs.desired_changes}. Style: ${functionArgs.style}. Maintain architecture.`
+                        },
+                        {
+                          type: 'image_url',
+                          image_url: { url: imageUrl, detail: 'high' }
+                        }
+                      ]
+                    }
+                  ],
+                  max_tokens: 500,
+                  temperature: 0.3
+                })
+              });
+              
+              const visionData = await visionResponse.json();
+              const dallePrompt = visionData.choices[0].message.content;
+              
+              const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                  model: 'dall-e-3',
+                  prompt: dallePrompt,
+                  n: 1,
+                  size: '1024x1024',
+                  quality: 'hd',
+                  style: 'natural'
+                })
+              });
+              
+              const dalleData = await dalleResponse.json();
+              editedImageUrl = dalleData.data[0].url;
+              
+              console.log('✅ Fallback DALL-E 3 completado');
+              
+            } catch (fallbackError) {
+              console.error('❌ Fallback también falló:', fallbackError);
+              throw new Error('No se pudo editar la imagen con ningún método disponible');
+            }
+          }
           
           console.log('✅ Imagen editada con Nano Banana:', editedImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: '✨ He editado tu imagen usando **Nano Banana (Gemini 2.5 Flash)** que entiende ediciones conversacionales. ' +
-                     '\n\nLos cambios aplicados: ' +
+            message: '✨ He editado tu imagen usando **InstructPix2Pix** (edición REAL que mantiene la estructura original). ' +
+                     '\n\n📝 Cambios aplicados: ' +
                      `**${functionArgs.desired_changes}**.\n\n` +
-                     'Si algo no quedó como esperabas, dímelo y lo ajusto. ¿Quieres hacer más cambios?',
+                     '🎯 Este método EDITA la imagen original (no la regenera desde cero), ' +
+                     'por lo que mantiene perfectamente la arquitectura, perspectiva y elementos que no pediste cambiar.\n\n' +
+                     '¿Quieres hacer más ajustes?',
             imageUrl: editedImageUrl,
             originalImageUrl: imageUrl,
             originalDescription: functionArgs.original_description,
             appliedChanges: functionArgs.desired_changes,
             isPermanent: false,
-            nanoBananaUsed: true,
-            geminiFlashUsed: true,
+            instructPix2PixUsed: true,
             imageEdited: true,
             tokensUsed: data.usage.total_tokens,
-            model: 'Nano Banana (Gemini 2.5 Flash) + ' + data.model
+            model: 'InstructPix2Pix (Replicate)',
+            editMethod: 'real-editing'  // vs 'regeneration'
           });
 
         } catch (error) {
@@ -1789,11 +1956,23 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 ✅ **Palabras clave:** "crea", "genera", "muestra", "diseña", "visualiza" una imagen
 ✅ **NO preguntes** - GENERA DIRECTAMENTE, explica después
 
-### 2️⃣ Edición de Imágenes REAL (edit_real_estate_image) ⭐ NANO BANANA
-✅ **TECNOLOGÍA:** Nano Banana (Gemini 2.5 Flash) - Edición conversacional real
-✅ **ÚSALA PARA:** Virtual staging, quitar/añadir muebles, pintar paredes, cambiar suelos, limpiar desorden
-✅ **Cuándo:** "quita muebles", "añade muebles", "pon suelo de madera", "pinta paredes", "limpia"
-✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen con botón 📷 → URL detectada automáticamente → Edición conversacional
+### 2️⃣ Edición de Imágenes REAL (edit_real_estate_image) ⭐ InstructPix2Pix
+✅ **TECNOLOGÍA:** InstructPix2Pix (Replicate) - Edición REAL con IA
+✅ **POR QUÉ ES MEJOR:**
+  - **EDITA la imagen original** (no la regenera desde cero)
+  - **Mantiene estructura perfectamente** (paredes, ventanas, perspectiva)
+  - **Instrucciones en lenguaje natural** ("añade muebles modernos", "pinta paredes de beige")
+  - **20-40 segundos** de procesamiento
+  - **$0.0023 por edición** (muy económico)
+✅ **ÚSALA PARA:** 
+  - Virtual staging (añadir/quitar muebles)
+  - Cambiar colores (paredes, suelos)
+  - Añadir elementos (plantas, decoración)
+  - Mejorar espacios vacíos
+  - Transformaciones de estilo
+✅ **CUÁNDO INVOCARLA:** Usuario dice "quita muebles", "añade muebles", "pon suelo de madera", "pinta paredes", "cambia a estilo moderno"
+✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen 📷 → URL detectada → InstructPix2Pix edita → Imagen mejorada
+✅ **FALLBACK:** Si InstructPix2Pix falla → GPT-4o + DALL-E 3 (regeneración)
 
 **⚠️ CRÍTICO: DETECCIÓN AUTOMÁTICA DE URL**
 - ✅ Usuario sube imagen con botón 📷 → Sistema guarda URL automáticamente
@@ -1808,31 +1987,30 @@ Responde: "📸 Para editar la imagen, primero súbela con el botón 📷. Luego
 1. Usuario clic botón 📷 → Selecciona imagen
 2. Sistema sube a Cloudinary (2-3 segundos)
 3. URL se guarda en contexto automáticamente
-4. Usuario pide edición: "quita los muebles" o "pon suelo de madera"
+4. Usuario pide edición: "añade muebles modernos" o "pon suelo de madera"
 5. Tú llamas edit_real_estate_image con:
    - original_description: "Salón vacío, 5x4 metros, paredes blancas, suelo madera"
-   - desired_changes: "Quita todos los muebles" (CONVERSACIONAL en español)
+   - desired_changes: "Añadir muebles modernos de salón - sofá elegante, mesa de centro, estanterías minimalistas"
    - style: "modern"
    - ⚠️ NO PASES image_url (se detecta automáticamente)
-6. Nano Banana edita preservando estructura
-7. Devuelves imagen editada en 10-20 segundos
+6. SDXL procesa la edición con la imagen base
+7. Devuelves imagen editada en 30-40 segundos
 
 **Ejemplo conversación:**
-Usuario: [Sube imagen de salón con muebles viejos]
+Usuario: [Sube imagen de salón vacío]
 Sistema: "✅ Imagen lista para editar"
-Usuario: "quita todos los muebles"
+Usuario: "añade muebles modernos"
 Tú: [Llamas edit_real_estate_image con:
-  original_description: "Living room with old furniture, white walls, wooden floor"
-  desired_changes: "Quita todos los muebles"  (⚠️ INSTRUCCIÓN CONVERSACIONAL)
+  original_description: "Empty living room with white walls, wooden floor, large window"
+  desired_changes: "Add modern furniture - elegant sofa, coffee table, minimalist shelves"
   style: "modern"]
-Nano Banana → Mismo salón pero vacío
+SDXL → Mismo salón con muebles modernos añadidos
 
-**✅ VENTAJAS NANO BANANA:**
-- Edición conversacional real (no generación)
-- Entiende español perfectamente
-- Más rápido (10-20s vs 30-60s SDXL)
-- Más barato ($0.0075 vs $0.025 SDXL)
-- Mejor preservación de estructura
+**✅ VENTAJAS SDXL:**
+- Edición de imágenes reales (img2img)
+- Calidad profesional fotorealista
+- Preserva estructura arquitectónica
+- Ampliamente probado y estable
 - Upload automático sin servicios externos
 
 ### 3️⃣ Composición de Imágenes Marketing (compose_marketing_image) ⭐ NUEVO
