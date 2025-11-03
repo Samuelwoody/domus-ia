@@ -764,7 +764,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
                         // Si el backend ya generó/editó la imagen (DALL-E o Replicate), mostrarla
                         if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited)) {
-                            const imageSource = data.replicateUsed ? 'Replicate SDXL (edición real)' : 
+                            const imageSource = data.nanoBananaUsed ? 'Google Nano Banana (edición conversacional)' :
+                                              data.replicateUsed ? 'Replicate (edición)' : 
                                               data.dalleUsed ? 'DALL-E 3 (generación)' : 'IA';
                             
                             console.log(`✅ Backend usó ${imageSource} - Imagen lista:`, data.imageUrl);
@@ -1343,13 +1344,18 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         console.log('🖼️ Insertando imagen:', this.pendingImageUrl);
         
         // 🔥 Detectar si es Replicate (edición) o DALL-E (generación)
-        const isReplicate = this.pendingImageData?.replicateUsed || this.pendingImageData?.imageEdited;
-        const imageSource = isReplicate ? 'Replicate SDXL (edición)' : 'DALL-E 3 (generación)';
-        const altText = isReplicate ? 'Imagen editada con Replicate SDXL' : 'Imagen generada por DALL-E 3';
+        const isReplicate = this.pendingImageData?.replicateUsed || this.pendingImageData?.imageEdited || this.pendingImageData?.nanoBananaUsed;
+        const isNanoBanana = this.pendingImageData?.nanoBananaUsed;
+        const imageSource = isNanoBanana ? 'Google Nano Banana (Gemini 2.5 Flash)' :
+                          isReplicate ? 'Replicate (edición)' : 'DALL-E 3 (generación)';
+        const altText = isNanoBanana ? 'Imagen editada con Google Nano Banana (Gemini 2.5 Flash)' :
+                        isReplicate ? 'Imagen editada con Replicate' : 'Imagen generada por DALL-E 3';
         
-        // Badge de estructura preservada si es Replicate
-        const structureBadge = (isReplicate && this.pendingImageData?.structurePreserved) 
-            ? '<span style="font-size: 9px; color: #10b981; font-weight: 600;">✓ Estructura original preservada</span>'
+        // Badge de estructura preservada si es Nano Banana o Replicate
+        const structureBadge = ((isNanoBanana || isReplicate) && this.pendingImageData?.structurePreserved) 
+            ? '<span style="font-size: 9px; color: #10b981; font-weight: 600;">✓ Estructura original preservada (Gemini 2.5 Flash)</span>'
+            : isNanoBanana 
+            ? '<span style="font-size: 9px; color: #10b981; font-weight: 600;">🍌 Editado con Google Nano Banana</span>'
             : '';
         
         console.log(`📦 Tipo de imagen: ${imageSource}`, {
