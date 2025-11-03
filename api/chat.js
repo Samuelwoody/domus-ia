@@ -128,7 +128,7 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
     
     console.log('🍌 Llamando a google/nano-banana...');
     
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    const response = await fetch('https://api.replicate.com/v1/models/google/nano-banana/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${REPLICATE_API_TOKEN}`,
@@ -136,8 +136,6 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        // Usar el modelo ID completo de Google Nano Banana
-        model: "google/nano-banana",
         input: {
           image: imageUrl,
           prompt: editInstructions,
@@ -219,7 +217,7 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
   try {
     console.log('🎬 Calling google/veo-3...');
     
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    const response = await fetch('https://api.replicate.com/v1/models/google/veo-3/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${REPLICATE_API_TOKEN}`,
@@ -227,7 +225,6 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        model: "google/veo-3",
         input: {
           prompt: prompt,
           duration: duration,
