@@ -136,8 +136,9 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        // Usar el modelo ID completo de Google Nano Banana
-        model: "google/nano-banana",
+        // Usar version (hash) del modelo google/nano-banana
+        // Obtener latest version de: https://replicate.com/google/nano-banana
+        version: "google/nano-banana:latest",
         input: {
           image: imageUrl,
           prompt: editInstructions,
@@ -227,7 +228,9 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        model: "google/veo-3",
+        // Usar version (hash) del modelo google/veo-3
+        // Obtener latest version de: https://replicate.com/google/veo-3
+        version: "google/veo-3:latest",
         input: {
           prompt: prompt,
           duration: duration,
