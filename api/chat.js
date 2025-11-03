@@ -201,15 +201,97 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
   }
 }
 
-// 2️⃣ REMOVE BACKGROUND (Quitar fondos)
-async function removeBackground(imageUrl) {
-  console.log('🖼️ RemBG - Quitando fondo de imagen');
-  return await callReplicateModel("cjwbw/rembg", {
-    image: imageUrl
-  });
+// ============================================================================
+// 🎬 GOOGLE VEO 3 - VIDEO GENERATION
+// ============================================================================
+async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9") {
+  console.log('🎬 Google VEO 3 - Text-to-video generation');
+  console.log('📝 Prompt:', prompt);
+  console.log('⏱️ Duration:', duration, 'seconds');
+  console.log('📐 Aspect ratio:', aspectRatio);
+  
+  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+  
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error('REPLICATE_API_TOKEN no configurado');
+  }
+  
+  try {
+    console.log('🎬 Calling google/veo-3...');
+    
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'wait'
+      },
+      body: JSON.stringify({
+        model: "google/veo-3",
+        input: {
+          prompt: prompt,
+          duration: duration,
+          aspect_ratio: aspectRatio,
+          output_quality: 90
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Replicate API error:', response.status, errorText);
+      throw new Error(`VEO 3 API error: ${response.status} - ${errorText}`);
+    }
+    
+    let prediction = await response.json();
+    console.log('📊 VEO 3 prediction ID:', prediction.id);
+    console.log('📊 Status inicial:', prediction.status);
+    
+    // Polling para esperar el resultado (video generation takes longer)
+    let attempts = 0;
+    const maxAttempts = 120; // 2 minutes max for video generation
+    
+    while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(
+        `https://api.replicate.com/v1/predictions/${prediction.id}`,
+        {
+          headers: {
+            'Authorization': `Token ${REPLICATE_API_TOKEN}`
+          }
+        }
+      );
+      
+      if (!statusResponse.ok) {
+        throw new Error(`Error checking status: ${statusResponse.status}`);
+      }
+      
+      prediction = await statusResponse.json();
+      console.log(`⏳ Status: ${prediction.status} (${attempts + 1}/${maxAttempts})`);
+      attempts++;
+    }
+    
+    if (prediction.status === 'failed') {
+      throw new Error(`VEO 3 falló: ${prediction.error || 'Unknown error'}`);
+    }
+    
+    if (attempts >= maxAttempts) {
+      throw new Error(`Timeout: VEO 3 tardó más de ${maxAttempts} segundos`);
+    }
+    
+    const videoUrl = prediction.output;
+    console.log('✅ Video generado con VEO 3:', videoUrl);
+    
+    return videoUrl;
+    
+  } catch (error) {
+    console.error('❌ Error en VEO 3:', error);
+    throw error;
+  }
 }
 
-// 3️⃣ UPSCALING (Aumentar resolución 4x)
+// 2️⃣ UPSCALING (Aumentar resolución 4x)
 async function upscaleImage(imageUrl, scale = 4) {
   console.log(`📈 Real-ESRGAN - Upscaling ${scale}x`);
   return await callReplicateModel("nightmareai/real-esrgan", {
@@ -219,7 +301,7 @@ async function upscaleImage(imageUrl, scale = 4) {
   });
 }
 
-// 4️⃣ CARTELES "SE VENDE" con texto perfecto
+// 3️⃣ CARTELES "SE VENDE" con texto perfecto
 async function generateSaleSign(prompt) {
   console.log('🎨 Ideogram v2 - Generando cartel con texto');
   return await callReplicateModel("ideogram-ai/ideogram-v2", {
@@ -229,83 +311,14 @@ async function generateSaleSign(prompt) {
   });
 }
 
-// 5️⃣ IMAGEN A VÍDEO (Foto estática → vídeo con movimiento)
-async function imageToVideo(imageUrl, motionLevel = 127) {
-  console.log('🎬 Stable Video Diffusion - Foto a vídeo');
-  return await callReplicateModel("stability-ai/stable-video-diffusion", {
-    image: imageUrl,
-    motion_bucket_id: motionLevel,
-    frames_per_second: 6,
-    num_frames: 25
-  });
-}
-
-// 6️⃣ GENERACIÓN DE VÍDEO desde texto
-async function generateVideo(prompt, duration = 5) {
-  console.log('🎬 Runway Gen-3 - Generando vídeo desde texto');
-  return await callReplicateModel("runwayml/gen-3-alpha", {
-    prompt: prompt,
-    duration: duration,
-    aspect_ratio: "16:9"
-  });
-}
-
-// 7️⃣ TEXTO A VOZ (Narración en español)
-async function textToSpeech(text, voicePreset = "v2/es_speaker_6") {
-  console.log('🎙️ Bark TTS - Generando narración en español');
-  return await callReplicateModel("suno-ai/bark", {
-    prompt: text + " [español]",
-    voice_preset: voicePreset
-  });
-}
-
-// 8️⃣ DESCRIPCIÓN AUTOMÁTICA de imágenes
-async function describeImage(imageUrl, question = "Describe this property in detail") {
-  console.log('📝 BLIP-2 - Analizando imagen');
-  return await callReplicateModel("salesforce/blip-2", {
-    image: imageUrl,
-    question: question
-  });
-}
-
-// 9️⃣ SKY REPLACEMENT (Cambiar cielo)
-async function replaceSky(imageUrl, skyType = "blue_sky_sunset") {
-  console.log('🌤️ Sky Replace - Cambiando cielo');
-  return await callReplicateModel("logerzhu/sky-replace", {
-    image: imageUrl,
-    sky_type: skyType
-  });
-}
-
-// 🔟 MEJORAR CALIDAD de fotos
-async function enhancePhoto(imageUrl) {
-  console.log('✨ GFPGAN - Mejorando calidad de foto');
-  return await callReplicateModel("tencentarc/gfpgan", {
-    img: imageUrl,
-    version: "v1.4",
-    scale: 2
-  });
-}
-
-// 1️⃣1️⃣ MÚSICA DE FONDO
-async function generateMusic(prompt, duration = 30) {
-  console.log('🎵 MusicGen - Generando música de fondo');
-  return await callReplicateModel("meta/musicgen", {
-    prompt: prompt,
-    duration: duration
-  });
-}
-
-// 1️⃣2️⃣ HOME STAGING PREMIUM (Interior AI v2)
-async function premiumStaging(imageUrl, roomType = "living_room", style = "modern") {
-  console.log('🏠 Interior AI v2 - Staging premium especializado');
-  return await callReplicateModel("interior-ai/v2", {
-    image: imageUrl,
-    room_type: roomType,
-    style: style,
-    mode: "virtual_staging"
-  });
-}
+// ============================================================================
+// ✅ SOLO 4 MODELOS REPLICATE ESENCIALES PARA SOFÍA IA
+// ============================================================================
+// 1. Google Nano Banana (Gemini 2.5 Flash) - Image editing
+// 2. Google VEO 3 - Video generation  
+// 3. Real-ESRGAN - Image upscaling
+// 4. Ideogram V2 - Text rendering on images
+// ============================================================================
 
 // ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
@@ -724,38 +737,20 @@ export default async function handler(req, res) {
       {
         type: "function",
         function: {
-          name: "image_to_video",
-          description: "Convert static photo into video with smooth camera movement (3-4 seconds). Use when user wants: 'convierte en vídeo', 'haz un vídeo', 'foto con movimiento', 'video tour', 'animación'. Perfect for: Instagram Reels, TikTok, virtual tours. AUTOMATIC: detects URL from context.",
-          parameters: {
-            type: "object",
-            properties: {
-              motion_level: {
-                type: "number",
-                description: "Amount of camera movement (1-255). Low=subtle, High=dramatic",
-                default: 127
-              }
-            },
-            required: []
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
           name: "generate_video_from_text",
-          description: "Generate professional video from text description (5-10 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...'. Perfect for: virtual tours, property presentations, social media content.",
+          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description (up to 6 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
           parameters: {
             type: "object",
             properties: {
               description: {
                 type: "string",
-                description: "Detailed description of the video scene. Ex: 'Smooth cinematic walkthrough of modern Spanish villa, moving through living room towards sea view window, golden hour lighting'"
+                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
               },
               duration: {
                 type: "number",
-                enum: [5, 10],
-                description: "Video duration in seconds",
-                default: 5
+                enum: [2, 4, 6],
+                description: "Video duration in seconds (maximum 6 seconds for best quality)",
+                default: 6
               }
             },
             required: ["description"]
@@ -765,97 +760,17 @@ export default async function handler(req, res) {
       {
         type: "function",
         function: {
-          name: "text_to_speech_spanish",
-          description: "Generate professional Spanish narration for property videos. Use when user wants: 'añade voz', 'narración en español', 'locución', 'texto a voz', 'voice over'. Perfect for: virtual tours, property presentations, automated descriptions.",
+          name: "web_search",
+          description: "Search the web for current real estate information, prices, legislation, news. Use when user asks about: actualidad, precios actuales, mercado, noticias, información reciente. Returns verified sources from Tavily API.",
           parameters: {
             type: "object",
             properties: {
-              text: {
+              query: {
                 type: "string",
-                description: "Text to convert to speech in Spanish. Ex: 'Bienvenido a esta espectacular villa mediterránea con vistas al mar'"
-              },
-              voice_style: {
-                type: "string",
-                enum: ["professional_male", "professional_female", "warm_male", "warm_female", "energetic"],
-                description: "Voice style and gender",
-                default: "professional_male"
+                description: "Search query. Ex: 'precios vivienda Madrid 2025', 'legislación inmobiliaria España actualizada'"
               }
             },
-            required: ["text"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "describe_property_image",
-          description: "Automatically analyze and describe property image in detail. Use when user wants: 'describe esta imagen', 'qué ves aquí', 'analiza esta foto', 'características de la propiedad'. Returns detailed description of: room type, size, style, condition, features. AUTOMATIC: detects URL from context.",
-          parameters: {
-            type: "object",
-            properties: {
-              focus: {
-                type: "string",
-                enum: ["general", "condition", "features", "style", "size"],
-                description: "What aspect to focus on",
-                default: "general"
-              }
-            },
-            required: []
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "replace_sky",
-          description: "Replace ugly/gray sky with beautiful blue sky. Use when user wants: 'cambia el cielo', 'pon cielo azul', 'mejora el cielo', 'replace sky'. Perfect for: exterior photos with bad weather, professional listing photos. AUTOMATIC: detects URL from context.",
-          parameters: {
-            type: "object",
-            properties: {
-              sky_type: {
-                type: "string",
-                enum: ["blue_sky", "blue_sky_sunset", "dramatic_clouds", "golden_hour"],
-                description: "Type of sky to add",
-                default: "blue_sky"
-              }
-            },
-            required: []
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "enhance_photo_quality",
-          description: "Improve overall photo quality and fix imperfections. Use when user wants: 'mejora esta foto', 'arregla la imagen', 'enhance quality', 'foto más profesional'. Fixes: blur, noise, low resolution, poor lighting. AUTOMATIC: detects URL from context.",
-          parameters: {
-            type: "object",
-            properties: {},
-            required: []
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "generate_background_music",
-          description: "Generate royalty-free background music for property videos. Use when user wants: 'añade música', 'música de fondo', 'background music', 'música para vídeo'.",
-          parameters: {
-            type: "object",
-            properties: {
-              style: {
-                type: "string",
-                enum: ["calm_ambient", "elegant_piano", "upbeat_modern", "luxury_orchestral"],
-                description: "Music style to generate",
-                default: "calm_ambient"
-              },
-              duration: {
-                type: "number",
-                description: "Duration in seconds (max 30)",
-                default: 30
-              }
-            },
-            required: []
+            required: ["query"]
           }
         }
       }
@@ -1443,206 +1358,25 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       }
     }
     
-    // 4️⃣ IMAGE TO VIDEO
-    else if (toolCall.function.name === 'image_to_video') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
-          return res.status(200).json({
-            success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
-          });
-        }
-        
-        const motionLevel = functionArgs.motion_level || 127;
-        const result = await imageToVideo(imageUrl, motionLevel);
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ ¡Vídeo generado! Tu foto ahora tiene movimiento de cámara suave. Perfecto para Instagram Reels o TikTok.',
-          videoUrl: result,
-          tool: 'image_to_video'
-        });
-      } catch (error) {
-        console.error('❌ Error image to video:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude generar el vídeo. Intenta con otra imagen más clara.'
-        });
-      }
-    }
-    
-    // 5️⃣ GENERATE VIDEO FROM TEXT
+    // 3️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
     else if (toolCall.function.name === 'generate_video_from_text') {
       try {
         const functionArgs = JSON.parse(toolCall.function.arguments);
-        const duration = functionArgs.duration || 5;
-        const result = await generateVideo(functionArgs.description, duration);
+        const duration = functionArgs.duration || 6;
+        const result = await generateVideoWithVeo3(functionArgs.description, duration, "16:9");
         
         return res.status(200).json({
           success: true,
-          message: `✅ Vídeo de ${duration} segundos generado. Tour virtual listo para usar en redes sociales.`,
+          message: `✅ Vídeo de ${duration} segundos generado con **Google VEO 3**. Tour virtual cinematográfico listo para usar en redes sociales.`,
           videoUrl: result,
-          tool: 'generate_video_from_text'
+          tool: 'generate_video_from_text',
+          model: 'Google VEO 3'
         });
       } catch (error) {
-        console.error('❌ Error generate video:', error);
+        console.error('❌ Error generate video VEO 3:', error);
         return res.status(200).json({
           success: true,
-          message: '⚠️ No pude generar el vídeo. Intenta con una descripción más específica.'
-        });
-      }
-    }
-    
-    // 6️⃣ TEXT TO SPEECH SPANISH
-    else if (toolCall.function.name === 'text_to_speech_spanish') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const voiceMap = {
-          'professional_male': 'v2/es_speaker_6',
-          'professional_female': 'v2/es_speaker_9',
-          'warm_male': 'v2/es_speaker_0',
-          'warm_female': 'v2/es_speaker_1',
-          'energetic': 'v2/es_speaker_3'
-        };
-        const voicePreset = voiceMap[functionArgs.voice_style] || 'v2/es_speaker_6';
-        const result = await textToSpeech(functionArgs.text, voicePreset);
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ Narración en español generada. Descarga el audio para añadirlo a tus vídeos.',
-          audioUrl: result,
-          tool: 'text_to_speech_spanish'
-        });
-      } catch (error) {
-        console.error('❌ Error text to speech:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude generar la narración. Inténtalo de nuevo.'
-        });
-      }
-    }
-    
-    // 7️⃣ DESCRIBE PROPERTY IMAGE
-    else if (toolCall.function.name === 'describe_property_image') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
-          return res.status(200).json({
-            success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
-          });
-        }
-        
-        const questions = {
-          'general': 'Describe this property in detail including room type, size, style, condition, and notable features',
-          'condition': 'Describe the condition and state of maintenance of this property',
-          'features': 'List all notable features and amenities visible in this property',
-          'style': 'Describe the architectural and interior design style of this property',
-          'size': 'Estimate the approximate size and dimensions of this space'
-        };
-        const question = questions[functionArgs.focus] || questions['general'];
-        const result = await describeImage(imageUrl, question);
-        
-        return res.status(200).json({
-          success: true,
-          message: `📝 Análisis de la imagen:\n\n${result}\n\n¿Quieres que elabore más algún aspecto?`,
-          tool: 'describe_property_image'
-        });
-      } catch (error) {
-        console.error('❌ Error describe image:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude analizar la imagen. Intenta con otra más clara.'
-        });
-      }
-    }
-    
-    // 8️⃣ REPLACE SKY
-    else if (toolCall.function.name === 'replace_sky') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
-          return res.status(200).json({
-            success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
-          });
-        }
-        
-        const skyType = functionArgs.sky_type || 'blue_sky';
-        const result = await replaceSky(imageUrl, skyType);
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ Cielo reemplazado. Ahora la foto tiene un cielo azul perfecto para el anuncio.',
-          imageUrl: result,
-          tool: 'replace_sky'
-        });
-      } catch (error) {
-        console.error('❌ Error replace sky:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude cambiar el cielo. Asegúrate de que la foto sea exterior con cielo visible.'
-        });
-      }
-    }
-    
-    // 9️⃣ ENHANCE PHOTO QUALITY
-    else if (toolCall.function.name === 'enhance_photo_quality') {
-      try {
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
-          return res.status(200).json({
-            success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
-          });
-        }
-        
-        const result = await enhancePhoto(imageUrl);
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ Foto mejorada. La calidad general ha aumentado significativamente.',
-          imageUrl: result,
-          tool: 'enhance_photo_quality'
-        });
-      } catch (error) {
-        console.error('❌ Error enhance photo:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude mejorar la foto. Intenta con otra imagen.'
-        });
-      }
-    }
-    
-    // 🔟 GENERATE BACKGROUND MUSIC
-    else if (toolCall.function.name === 'generate_background_music') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const prompts = {
-          'calm_ambient': 'calm ambient atmospheric music for luxury real estate video, professional, elegant',
-          'elegant_piano': 'elegant soft piano music for real estate tour, sophisticated, peaceful',
-          'upbeat_modern': 'upbeat modern background music for property video, positive, energetic',
-          'luxury_orchestral': 'luxury orchestral music for high-end real estate, cinematic, grand'
-        };
-        const prompt = prompts[functionArgs.style] || prompts['calm_ambient'];
-        const duration = Math.min(functionArgs.duration || 30, 30);
-        const result = await generateMusic(prompt, duration);
-        
-        return res.status(200).json({
-          success: true,
-          message: `✅ Música de fondo generada (${duration}s). Descárgala y añádela a tus vídeos de propiedades.`,
-          audioUrl: result,
-          tool: 'generate_background_music'
-        });
-      } catch (error) {
-        console.error('❌ Error generate music:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude generar la música. Inténtalo de nuevo.'
+          message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
         });
       }
     }
