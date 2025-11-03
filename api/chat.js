@@ -139,8 +139,7 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
         input: {
           image: imageUrl,
           prompt: editInstructions,
-          output_format: "webp",
-          output_quality: 90
+          output_format: "png"
         }
       })
     });
@@ -228,8 +227,7 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
         input: {
           prompt: prompt,
           duration: duration,
-          aspect_ratio: aspectRatio,
-          output_quality: 90
+          aspect_ratio: aspectRatio
         }
       })
     });
