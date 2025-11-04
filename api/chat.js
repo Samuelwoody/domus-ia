@@ -2225,8 +2225,6 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       }
     }
     
-    } // Cierre del if (assistantMessage.tool_calls)
-    
     // ============================================================================
     // 💾 Guardar conversación en base de datos (no bloqueante)
     // ============================================================================
