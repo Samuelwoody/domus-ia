@@ -111,7 +111,7 @@ async function callReplicateModel(modelVersion, inputs, maxAttempts = 60) {
 // 🍌 EDICIÓN REAL DE IMÁGENES CON GOOGLE NANO BANANA (Gemini 2.5 Flash)
 // ============================================================================
 async function editImageWithNanoBanana(imageUrl, editInstructions) {
-  console.log('🍌 Nano Banana (Google/Gemini 2.5 Flash) - Edición conversacional REAL');
+  console.log('🍌 Nano Banana (Google/Gemini 2.5 Flash) - Recreación mejorada con IA');
   console.log('📷 Imagen original:', imageUrl.substring(0, 80) + '...');
   console.log('✏️  Instrucción usuario:', editInstructions);
   
@@ -137,13 +137,9 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
       },
       body: JSON.stringify({
         input: {
-          image: imageUrl,
+          image_input: [imageUrl],  // ✅ Parámetro correcto según docs oficiales (acepta array)
           prompt: editInstructions,
-          output_format: "png",
-          // Parámetros críticos para edición REAL (no regeneración)
-          guidance_scale: 7.5,        // Control moderado del prompt (default: 7.5)
-          num_inference_steps: 28,    // Pasos de inferencia para calidad óptima
-          negative_prompt: "completely different image, new scene, different architecture, different perspective, different camera angle, reimagined, regenerated, new composition"
+          output_format: "png"       // ✅ SÍ es válido según ejemplo oficial de Replicate
         }
       })
     });
@@ -599,7 +595,7 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🍌 GOOGLE NANO BANANA (Gemini 2.5 Flash) IMAGE EDITOR - USE THIS IMMEDIATELY when user requests ANY image modification: 'añade muebles', 'quita muebles', 'add furniture', 'remove furniture', 'cambia', 'mejora', 'pon suelo de madera', 'pinta paredes', etc. This tool uses Google Nano Banana powered by Gemini 2.5 Flash to EDIT real images with conversational natural language instructions in Spanish or English. It MODIFIES the existing image while PERFECTLY PRESERVING the original structure, architecture, and perspective. CRITICAL: If user uploaded an image and asks to modify ANYTHING, you MUST call this function. The image URL is detected automatically - you do NOT need to provide it.",
+          description: "🍌 GOOGLE NANO BANANA (Gemini 2.5 Flash) AI IMAGE RECREATION - USE THIS when user requests image modifications: 'añade muebles', 'quita muebles', 'add furniture', 'remove furniture', 'cambia', 'mejora', 'pon suelo de madera', 'pinta paredes', etc. This tool uses Google Nano Banana powered by Gemini 2.5 Flash to CREATE AN IMPROVED VERSION of the image with conversational natural language instructions in Spanish or English. IMPORTANT: This is AI recreation (generates new image based on original + changes), NOT pixel-perfect editing. The result maintains the style and context but may have variations in details. Good for: creative improvements, styling changes, virtual staging. CRITICAL: If user uploaded an image and asks to modify ANYTHING, you MUST call this function. The image URL is detected automatically - you do NOT need to provide it.",
           parameters: {
             type: "object",
             properties: {
@@ -1010,10 +1006,9 @@ export default async function handler(req, res) {
           // 🎨 EDICIÓN CON NANO BANANA (Gemini 2.5 Flash - Edición Conversacional)
           // ============================================================================
           
-          // Construir instrucciones EXPLÍCITAS según documentación oficial de Nano Banana
-          // Formato recomendado: "In this image, [specific edit instruction]"
-          // Esto ayuda al modelo a entender que debe EDITAR, no GENERAR
-          const editInstructions = `In this image, ${functionArgs.desired_changes}. Keep everything else exactly as it is: same composition, camera angle, perspective, lighting, and architecture. Only modify the specific elements mentioned. Style: ${functionArgs.style || 'modern'}. Professional real estate photography.`;
+          // Construir instrucciones optimizadas para Nano Banana
+          // Según ejemplos oficiales, funciona mejor con instrucciones naturales y directas
+          const editInstructions = `${functionArgs.desired_changes}. Keep the same room layout, perspective, and architectural features. Make the scene natural and realistic. Style: ${functionArgs.style || 'modern'}. Professional real estate photography.`;
           
           console.log('🍌 Usando Google Nano Banana (Gemini 2.5 Flash) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
@@ -1028,12 +1023,13 @@ export default async function handler(req, res) {
 
           return res.status(200).json({
             success: true,
-            message: '✨ He editado tu imagen usando **Google Nano Banana** (Gemini 2.5 Flash - Edición conversacional REAL). ' +
+            message: '✨ He recreado tu imagen usando **Google Nano Banana** (Gemini 2.5 Flash). ' +
                      '\n\n📝 Cambios aplicados: ' +
                      `**${functionArgs.desired_changes}**.\n\n` +
-                     '🍌 Este modelo de Google EDITA la imagen original con IA de última generación, ' +
-                     'manteniendo perfectamente la arquitectura, perspectiva y elementos que no pediste cambiar.\n\n' +
-                     '🚀 Rápido (10-20s), preciso y con comprensión de lenguaje natural.\n\n' +
+                     '🍌 Este modelo de Google crea una **versión mejorada** de tu imagen original incorporando los cambios solicitados. ' +
+                     'La nueva imagen mantiene el estilo y contexto de la original, pero puede tener variaciones en los detalles.\n\n' +
+                     '⚡ Rápido (10-20s) y con comprensión de lenguaje natural.\n\n' +
+                     '💡 **Nota:** Si necesitas que la imagen sea EXACTAMENTE igual excepto por un cambio específico, dímelo y puedo usar un modelo de edición más preciso.\n\n' +
                      '¿Quieres hacer más ajustes?',
             imageUrl: editedImageUrl,
             originalImageUrl: imageUrl,
@@ -1044,7 +1040,7 @@ export default async function handler(req, res) {
             imageEdited: true,
             tokensUsed: data.usage.total_tokens,
             model: 'Google Nano Banana (Gemini 2.5 Flash)',
-            editMethod: 'real-editing'  // vs 'regeneration'
+            editMethod: 'ai-recreation'  // vs 'pixel-editing'
           });
 
         } catch (error) {
@@ -1608,23 +1604,29 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 ✅ **Palabras clave:** "crea", "genera", "muestra", "diseña", "visualiza" una imagen
 ✅ **NO preguntes** - GENERA DIRECTAMENTE, explica después
 
-### 2️⃣ Edición de Imágenes REAL (edit_real_estate_image) ⭐ Google Nano Banana
-✅ **TECNOLOGÍA:** Google Nano Banana (Gemini 2.5 Flash) - Edición conversacional REAL
-✅ **POR QUÉ ES EL MEJOR:**
-  - **EDITA la imagen original** (no la regenera desde cero)
-  - **Mantiene estructura PERFECTAMENTE** (paredes, ventanas, perspectiva, arquitectura)
-  - **Instrucciones conversacionales** en español o inglés ("añade muebles modernos", "quita muebles", "pinta paredes de beige")
-  - **10-20 segundos** de procesamiento (más rápido que alternativas)
-  - **$0.0075 por edición** (muy económico)
+### 2️⃣ Recreación de Imágenes con IA (edit_real_estate_image) ⭐ Google Nano Banana
+✅ **TECNOLOGÍA:** Google Nano Banana (Gemini 2.5 Flash) - Recreación inteligente con IA
+✅ **QUÉ HACE:**
+  - **Crea una NUEVA VERSIÓN mejorada** de la imagen original basada en tus instrucciones
+  - **Mantiene el estilo y contexto** de la original, pero puede variar en detalles
+  - **Comprende instrucciones conversacionales** en español o inglés ("añade muebles modernos", "quita muebles", "pinta paredes de beige")
+  - **10-20 segundos** de procesamiento (rápido)
+  - **$0.0075 por imagen** (muy económico)
   - **Comprensión avanzada** de lenguaje natural gracias a Gemini 2.5 Flash
+  
+⚠️ **IMPORTANTE - EXPECTATIVAS REALISTAS:**
+  - ✅ **BUENO PARA:** Cambios creativos, mejoras estéticas, virtual staging, transformaciones de estilo
+  - ⚠️ **LIMITACIONES:** NO es edición pixel-perfect. La imagen resultante puede tener variaciones en arquitectura, perspectiva y detalles
+  - 💡 **ALTERNATIVA:** Si necesitas preservación EXACTA de estructura, dímelo y usaré un modelo de edición más preciso
+
 ✅ **ÚSALA PARA:** 
   - Virtual staging (añadir/quitar muebles)
-  - Cambiar colores (paredes, suelos)
-  - Añadir elementos (plantas, decoración)
-  - Mejorar espacios vacíos
-  - Transformaciones de estilo
-✅ **CUÁNDO INVOCARLA:** Usuario dice "quita muebles", "añade muebles", "pon suelo de madera", "pinta paredes", "cambia a estilo moderno"
-✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen 📷 → URL detectada → Nano Banana edita → Imagen mejorada
+  - Cambios de estilo (moderno, minimalista, escandinavo)
+  - Mejoras creativas de espacios
+  - Transformaciones visuales
+  
+✅ **CUÁNDO INVOCARLA:** Usuario dice "añade muebles", "mejora la imagen", "cambia el estilo", "haz que se vea moderno"
+✅ **FLUJO AUTOMÁTICO:** Usuario sube imagen 📷 → URL detectada → Nano Banana recrea → Imagen mejorada
 
 **⚠️ CRÍTICO: DETECCIÓN AUTOMÁTICA DE URL**
 - ✅ Usuario sube imagen con botón 📷 → Sistema guarda URL automáticamente
@@ -1633,39 +1635,42 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 - ✅ NO necesitas pasar image_url como parámetro
 
 **Si usuario NO ha subido imagen:**
-Responde: "📸 Para editar la imagen, primero súbela con el botón 📷. Luego dime qué cambios quieres hacer."
+Responde: "📸 Para mejorar la imagen, primero súbela con el botón 📷. Luego dime qué cambios quieres hacer."
 
 **Proceso completo (100% AUTOMÁTICO):**
 1. Usuario clic botón 📷 → Selecciona imagen
 2. Sistema sube a Cloudinary (2-3 segundos)
 3. URL se guarda en contexto automáticamente
-4. Usuario pide edición: "añade muebles modernos" o "pon suelo de madera"
+4. Usuario pide mejora: "añade muebles modernos" o "mejora el espacio"
 5. Tú llamas edit_real_estate_image con:
-   - original_description: "Salón vacío, 5x4 metros, paredes blancas, suelo madera"
-   - desired_changes: "Añadir muebles modernos de salón - sofá elegante, mesa de centro, estanterías minimalistas"
+   - original_description: "Empty living room, white walls, wooden floor"
+   - desired_changes: "Add modern furniture - elegant sofa, coffee table, minimalist shelves"
    - style: "modern"
    - ⚠️ NO PASES image_url (se detecta automáticamente)
-6. Nano Banana procesa la edición con Gemini 2.5 Flash
-7. Devuelves imagen editada en 10-20 segundos
+6. Nano Banana crea versión mejorada con Gemini 2.5 Flash
+7. Devuelves imagen mejorada en 10-20 segundos
 
 **Ejemplo conversación:**
 Usuario: [Sube imagen de salón vacío]
-Sistema: "✅ Imagen lista para editar"
+Sistema: "✅ Imagen lista"
 Usuario: "añade muebles modernos"
 Tú: [Llamas edit_real_estate_image con:
-  original_description: "Empty living room with white walls, wooden floor, large window"
+  original_description: "Empty living room with white walls, wooden floor"
   desired_changes: "Add modern furniture - elegant sofa, coffee table, minimalist shelves"
   style: "modern"]
-Nano Banana → Mismo salón con muebles modernos añadidos perfectamente
+Nano Banana → Nueva versión del salón con muebles modernos, manteniendo estilo general
+
+**⚠️ GESTIÓN DE EXPECTATIVAS:**
+Siempre menciona al usuario que es una "recreación mejorada" no una "edición exacta". Ofrece modelo de edición precisa si necesitan preservación perfecta.
 
 **✅ VENTAJAS NANO BANANA:**
-- Edición conversacional real (no regeneración)
+- Recreación rápida y de alta calidad
 - Powered by Gemini 2.5 Flash (SOTA)
-- Calidad profesional fotorealista
-- Preserva estructura arquitectónica perfectamente
+- Resultados fotorealistas profesionales
 - Comprende español e inglés naturalmente
-- Más rápido (10-20s) que otras alternativas
-- Económico ($0.0075 por edición)
+- Muy rápido (10-20s)
+- Económico ($0.0075 por imagen)
+- Excelente para mejoras creativas
 
 ### 3️⃣ Composición de Imágenes Marketing (compose_marketing_image) ⭐ NUEVO
 ✅ **ÚSALA PARA:** Crear portadas publicitarias profesionales
