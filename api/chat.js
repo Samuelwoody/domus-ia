@@ -2000,233 +2000,233 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       // 🆕 HANDLERS PARA TODAS LAS NUEVAS TOOLS REPLICATE
       // ============================================================================
     
-    // 1️⃣ REMOVE BACKGROUND
-    else if (toolCall.function.name === 'remove_background') {
-      try {
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
+      // 1️⃣ REMOVE BACKGROUND
+      else if (toolCall.function.name === 'remove_background') {
+        try {
+          const imageUrl = detectImageUrl(messages);
+          if (!imageUrl) {
+            return res.status(200).json({
+              success: true,
+              message: '📸 Sube una imagen primero usando el botón 📷'
+            });
+          }
+          
+          const result = await removeBackground(imageUrl);
+          
           return res.status(200).json({
             success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
+            message: '✅ Fondo eliminado correctamente. Ahora puedes usarla para composiciones o reemplazar el cielo.',
+            imageUrl: result,
+            tool: 'remove_background'
           });
-        }
-        
-        const result = await removeBackground(imageUrl);
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ Fondo eliminado correctamente. Ahora puedes usarla para composiciones o reemplazar el cielo.',
-          imageUrl: result,
-          tool: 'remove_background'
-        });
-      } catch (error) {
-        console.error('❌ Error remove background:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude quitar el fondo. Intenta con otra imagen.'
-        });
-      }
-    }
-    
-    // 2️⃣ UPSCALE IMAGE
-    else if (toolCall.function.name === 'upscale_image') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const imageUrl = detectImageUrl(messages);
-        if (!imageUrl) {
+        } catch (error) {
+          console.error('❌ Error remove background:', error);
           return res.status(200).json({
             success: true,
-            message: '📸 Sube una imagen primero usando el botón 📷'
+            message: '⚠️ No pude quitar el fondo. Intenta con otra imagen.'
           });
         }
-        
-        const scale = functionArgs.scale || 4;
-        const result = await upscaleImage(imageUrl, scale);
-        
-        return res.status(200).json({
-          success: true,
-          message: `✅ Resolución aumentada ${scale}x. La imagen ahora tiene mucha mayor calidad y detalle.`,
-          imageUrl: result,
-          tool: 'upscale_image'
-        });
-      } catch (error) {
-        console.error('❌ Error upscale:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude mejorar la resolución. Intenta con otra imagen.'
-        });
       }
-    }
-    
-    // 3️⃣ GENERATE SALE SIGN
-    else if (toolCall.function.name === 'generate_sale_sign') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const prompt = `Professional Spanish real estate 'SE VENDE' sign, modern design, ` +
-                      `price ${functionArgs.price}, ` +
-                      (functionArgs.phone ? `phone ${functionArgs.phone}, ` : '') +
-                      `${functionArgs.style || 'modern'} style, clean typography, high contrast, professional`;
-        
-        const result = await generateSaleSign(prompt);
-        
-        return res.status(200).json({
-          success: true,
-          message: `✅ Cartel "SE VENDE" generado con precio ${functionArgs.price}. Listo para imprimir o publicar en redes.`,
-          imageUrl: result,
-          tool: 'generate_sale_sign'
-        });
-      } catch (error) {
-        console.error('❌ Error sale sign:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude generar el cartel. Inténtalo de nuevo.'
-        });
+      
+      // 2️⃣ UPSCALE IMAGE
+      else if (toolCall.function.name === 'upscale_image') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          const imageUrl = detectImageUrl(messages);
+          if (!imageUrl) {
+            return res.status(200).json({
+              success: true,
+              message: '📸 Sube una imagen primero usando el botón 📷'
+            });
+          }
+          
+          const scale = functionArgs.scale || 4;
+          const result = await upscaleImage(imageUrl, scale);
+          
+          return res.status(200).json({
+            success: true,
+            message: `✅ Resolución aumentada ${scale}x. La imagen ahora tiene mucha mayor calidad y detalle.`,
+            imageUrl: result,
+            tool: 'upscale_image'
+          });
+        } catch (error) {
+          console.error('❌ Error upscale:', error);
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude mejorar la resolución. Intenta con otra imagen.'
+          });
+        }
       }
-    }
-    
-    // 3️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
-    else if (toolCall.function.name === 'generate_video_from_text') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        const result = await generateVideoWithVeo3(functionArgs.description);
-        
-        return res.status(200).json({
-          success: true,
-          message: `✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.`,
-          videoUrl: result,
-          tool: 'generate_video_from_text',
-          model: 'Google VEO 3'
-        });
-      } catch (error) {
-        console.error('❌ Error generate video VEO 3:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
-        });
+      
+      // 3️⃣ GENERATE SALE SIGN
+      else if (toolCall.function.name === 'generate_sale_sign') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          const prompt = `Professional Spanish real estate 'SE VENDE' sign, modern design, ` +
+                        `price ${functionArgs.price}, ` +
+                        (functionArgs.phone ? `phone ${functionArgs.phone}, ` : '') +
+                        `${functionArgs.style || 'modern'} style, clean typography, high contrast, professional`;
+          
+          const result = await generateSaleSign(prompt);
+          
+          return res.status(200).json({
+            success: true,
+            message: `✅ Cartel "SE VENDE" generado con precio ${functionArgs.price}. Listo para imprimir o publicar en redes.`,
+            imageUrl: result,
+            tool: 'generate_sale_sign'
+          });
+        } catch (error) {
+          console.error('❌ Error sale sign:', error);
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude generar el cartel. Inténtalo de nuevo.'
+          });
+        }
       }
-    }
-    
-    // 4️⃣ EXTRACT PROPERTY DATA (Vision + Tavily)
-    else if (toolCall.function.name === 'extract_property_data') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        console.log('🔍 Extrayendo datos de inmueble...');
-        
-        // Detectar si hay imagen en el contexto
-        let imageContent = null;
-        if (functionArgs.source_type === 'image') {
-          // Buscar imagen en los mensajes procesados
-          for (let i = processedMessages.length - 1; i >= Math.max(0, processedMessages.length - 3); i--) {
-            const msg = processedMessages[i];
-            if (msg.role === 'user' && Array.isArray(msg.content)) {
-              const imageObj = msg.content.find(c => c.type === 'image_url');
-              if (imageObj) {
-                imageContent = imageObj.image_url.url;
-                break;
+      
+      // 4️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
+      else if (toolCall.function.name === 'generate_video_from_text') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          const result = await generateVideoWithVeo3(functionArgs.description);
+          
+          return res.status(200).json({
+            success: true,
+            message: `✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.`,
+            videoUrl: result,
+            tool: 'generate_video_from_text',
+            model: 'Google VEO 3'
+          });
+        } catch (error) {
+          console.error('❌ Error generate video VEO 3:', error);
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
+          });
+        }
+      }
+      
+      // 5️⃣ EXTRACT PROPERTY DATA (Vision + Tavily)
+      else if (toolCall.function.name === 'extract_property_data') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('🔍 Extrayendo datos de inmueble...');
+          
+          // Detectar si hay imagen en el contexto
+          let imageContent = null;
+          if (functionArgs.source_type === 'image') {
+            // Buscar imagen en los mensajes procesados
+            for (let i = processedMessages.length - 1; i >= Math.max(0, processedMessages.length - 3); i--) {
+              const msg = processedMessages[i];
+              if (msg.role === 'user' && Array.isArray(msg.content)) {
+                const imageObj = msg.content.find(c => c.type === 'image_url');
+                if (imageObj) {
+                  imageContent = imageObj.image_url.url;
+                  break;
+                }
               }
             }
           }
-        }
-        
-        const extractionResult = await extractPropertyData(
-          functionArgs.source_type,
-          imageContent,
-          functionArgs.listing_url,
-          TAVILY_API_KEY,
-          OPENAI_API_KEY
-        );
-        
-        if (extractionResult.success) {
+          
+          const extractionResult = await extractPropertyData(
+            functionArgs.source_type,
+            imageContent,
+            functionArgs.listing_url,
+            TAVILY_API_KEY,
+            OPENAI_API_KEY
+          );
+          
+          if (extractionResult.success) {
+            return res.status(200).json({
+              success: true,
+              message: '✅ Datos del inmueble extraídos correctamente. Ahora puedo guardarlos en el CRM o generar un informe de valoración.',
+              extractedData: extractionResult.data,
+              rawExtraction: extractionResult.raw_extraction || extractionResult.raw_content,
+              source: extractionResult.source,
+              tool: 'extract_property_data'
+            });
+          } else {
+            return res.status(200).json({
+              success: true,
+              message: '⚠️ No pude extraer todos los datos. ¿Puedes proporcionarme la información manualmente?',
+              error: extractionResult.error
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error extract property data:', error);
           return res.status(200).json({
             success: true,
-            message: '✅ Datos del inmueble extraídos correctamente. Ahora puedo guardarlos en el CRM o generar un informe de valoración.',
-            extractedData: extractionResult.data,
-            rawExtraction: extractionResult.raw_extraction || extractionResult.raw_content,
-            source: extractionResult.source,
-            tool: 'extract_property_data'
-          });
-        } else {
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude extraer todos los datos. ¿Puedes proporcionarme la información manualmente?',
-            error: extractionResult.error
+            message: '⚠️ Error extrayendo datos del inmueble. Prueba a proporcionarme la información directamente.'
           });
         }
-      } catch (error) {
-        console.error('❌ Error extract property data:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ Error extrayendo datos del inmueble. Prueba a proporcionarme la información directamente.'
-        });
       }
-    }
-    
-    // 5️⃣ SEARCH MARKET COMPARABLES (Tavily)
-    else if (toolCall.function.name === 'search_market_comparables') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        console.log('🔎 Buscando comparables en mercado...');
-        
-        if (!TAVILY_API_KEY) {
+      
+      // 6️⃣ SEARCH MARKET COMPARABLES (Tavily)
+      else if (toolCall.function.name === 'search_market_comparables') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('🔎 Buscando comparables en mercado...');
+          
+          if (!TAVILY_API_KEY) {
+            return res.status(200).json({
+              success: true,
+              message: '⚠️ La búsqueda de comparables requiere configurar TAVILY_API_KEY. Puedo generar el informe con datos estimados.'
+            });
+          }
+          
+          const comparablesResult = await searchMarketComparables(functionArgs, TAVILY_API_KEY);
+          
           return res.status(200).json({
             success: true,
-            message: '⚠️ La búsqueda de comparables requiere configurar TAVILY_API_KEY. Puedo generar el informe con datos estimados.'
+            message: `✅ Encontré ${comparablesResult.comparables.length} inmuebles comparables en ${functionArgs.city}. ${comparablesResult.summary}`,
+            comparables: comparablesResult.comparables,
+            summary: comparablesResult.summary,
+            query: comparablesResult.query,
+            tool: 'search_market_comparables'
+          });
+        } catch (error) {
+          console.error('❌ Error searching comparables:', error);
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude buscar comparables en este momento. Puedo generar el informe con estimación manual.'
           });
         }
-        
-        const comparablesResult = await searchMarketComparables(functionArgs, TAVILY_API_KEY);
-        
-        return res.status(200).json({
-          success: true,
-          message: `✅ Encontré ${comparablesResult.comparables.length} inmuebles comparables en ${functionArgs.city}. ${comparablesResult.summary}`,
-          comparables: comparablesResult.comparables,
-          summary: comparablesResult.summary,
-          query: comparablesResult.query,
-          tool: 'search_market_comparables'
-        });
-      } catch (error) {
-        console.error('❌ Error searching comparables:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ No pude buscar comparables en este momento. Puedo generar el informe con estimación manual.'
-        });
       }
-    }
-    
-    // 6️⃣ GENERATE VALUATION REPORT (HTML profesional)
-    else if (toolCall.function.name === 'generate_valuation_report') {
-      try {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        console.log('📊 Generando informe de valoración...');
-        
-        // Generar HTML del informe
-        const reportHTML = generateValuationReportHTML(functionArgs);
-        
-        // Generar ID único para el informe
-        const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // TODO: Guardar en base de datos (tabla documents)
-        // Por ahora devolvemos el HTML para preview
-        
-        return res.status(200).json({
-          success: true,
-          message: '✅ Informe de valoración generado. Revisa los datos y dime si quieres cambiar algo antes de publicar.',
-          reportHTML: reportHTML,
-          reportData: functionArgs,
-          reportId: reportId,
-          previewMode: true,
-          tool: 'generate_valuation_report',
-          action: 'show_preview'
-        });
-      } catch (error) {
-        console.error('❌ Error generating valuation report:', error);
-        return res.status(200).json({
-          success: true,
-          message: '⚠️ Error generando el informe. Verifica que todos los datos sean correctos.'
-        });
-      }
-    } // Cierre del último else if (generate_valuation_report)
-    
+      
+      // 7️⃣ GENERATE VALUATION REPORT (HTML profesional)
+      else if (toolCall.function.name === 'generate_valuation_report') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('📊 Generando informe de valoración...');
+          
+          // Generar HTML del informe
+          const reportHTML = generateValuationReportHTML(functionArgs);
+          
+          // Generar ID único para el informe
+          const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          // TODO: Guardar en base de datos (tabla documents)
+          // Por ahora devolvemos el HTML para preview
+          
+          return res.status(200).json({
+            success: true,
+            message: '✅ Informe de valoración generado. Revisa los datos y dime si quieres cambiar algo antes de publicar.',
+            reportHTML: reportHTML,
+            reportData: functionArgs,
+            reportId: reportId,
+            previewMode: true,
+            tool: 'generate_valuation_report',
+            action: 'show_preview'
+          });
+        } catch (error) {
+          console.error('❌ Error generating valuation report:', error);
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ Error generando el informe. Verifica que todos los datos sean correctos.'
+          });
+        }
+      } // Cierre del último handler (generate_valuation_report)
+      
     } // Cierre del if (assistantMessage.tool_calls)
     
     // ============================================================================
