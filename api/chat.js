@@ -1804,7 +1804,7 @@ export default async function handler(req, res) {
       // ============================================================================
       // 🖼️ COMPOSE MARKETING IMAGE (usando Cloudinary Transformations)
       // ============================================================================
-      if (toolCall.function.name === 'compose_marketing_image') {
+      else if (toolCall.function.name === 'compose_marketing_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('🎨 Componiendo imagen de marketing:', functionArgs);
