@@ -199,6 +199,28 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
 }
 
 // ============================================================================
+// 🗑️ REMOVE BACKGROUND - Using Replicate rembg model
+// ============================================================================
+async function removeBackground(imageUrl) {
+  console.log('🗑️ Removing background from image...');
+  
+  try {
+    const output = await callReplicateModel(
+      'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003', // cjwbw/rembg
+      {
+        image: imageUrl
+      }
+    );
+    
+    console.log('✅ Background removed successfully');
+    return output;
+  } catch (error) {
+    console.error('❌ Error removing background:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // 🎬 GOOGLE VEO 3 - VIDEO GENERATION
 // ============================================================================
 async function generateVideoWithVeo3(prompt) {
@@ -1953,45 +1975,6 @@ export default async function handler(req, res) {
                      (functionArgs.property_info?.rooms ? `🛏️ ${functionArgs.property_info.rooms}\n` : ''),
             fallbackMode: true,
             errorDetails: error.message
-          });
-          
-          // Fallback legacy: HTML template (por si acaso)
-          const htmlTemplateLegacy = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><style>
-.property-card {
-  position: relative;
-  width: ${functionArgs.format === 'story' ? '1080px' : '1200px'};
-  height: ${functionArgs.format === 'story' ? '1920px' : '1200px'};
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 40px;
-}
-.price { font-size: 72px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-.details { font-size: 36px; color: white; margin-top: 20px; }
-.location { font-size: 28px; color: white; opacity: 0.9; }
-${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px; width: 150px; }' : ''}
-</style></head><body>
-<div class="property-card">
-  ${functionArgs.include_logo ? '<div class="logo">🏢 MontCastell-AI</div>' : ''}
-  <div class="price">${functionArgs.property_info.price}</div>
-  <div class="details">${functionArgs.property_info.size || ''} • ${functionArgs.property_info.rooms || ''}</div>
-  <div class="location">${functionArgs.property_info.location}</div>
-</div>
-</body></html>`;
-          
-          return res.status(200).json({
-            success: true,
-            message: 'No pude generar la imagen automáticamente, pero te doy un template HTML listo para usar. Puedes:\n\n' +
-                     '1. Copiar el código HTML y abrirlo en navegador\n' +
-                     '2. Capturar pantalla del resultado\n' +
-                     '3. O usar Canva/Photoshop para crear la composición',
-            htmlTemplate: htmlTemplateLegacy,
-            marketingComposed: false,
-            fallbackMode: true
           });
         }
       }
