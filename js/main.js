@@ -778,6 +778,28 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                             });
                         }
                         
+                        // 📊 NUEVA LÓGICA: Preview de Informes
+                        // Si el backend generó un informe con preview, mostrarlo
+                        if (data.previewMode && data.reportHTML && data.action === 'show_preview') {
+                            console.log('📊 Informe con preview detectado');
+                            
+                            // Esperar a que el mensaje se renderice completamente
+                            await this.typeMessage('sofia', finalMessage);
+                            
+                            // Mostrar preview del informe
+                            if (window.reportsManager) {
+                                window.reportsManager.showPreview({
+                                    reportHTML: data.reportHTML,
+                                    reportData: data.reportData,
+                                    reportId: data.reportId
+                                });
+                            } else {
+                                console.error('❌ ReportsManager no está disponible');
+                            }
+                            
+                            return; // No continuar con el resto del flujo
+                        }
+                        
                         // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
                         // Si el backend ya generó/editó la imagen (DALL-E o Replicate), mostrarla
                         if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited)) {
