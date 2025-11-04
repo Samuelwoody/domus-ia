@@ -1809,7 +1809,6 @@ export default async function handler(req, res) {
             isPermanent: false,
             nanoBananaUsed: true,
             imageEdited: true,
-            tokensUsed: data.usage.total_tokens,
             model: 'Google Nano Banana (Gemini 2.5 Flash)',
             editMethod: 'ai-recreation'  // vs 'pixel-editing'
           });
@@ -1954,9 +1953,7 @@ export default async function handler(req, res) {
             propertyInfo: property_info,
             isPermanent: true, // Cloudinary URLs son permanentes
             cloudinaryUsed: true,
-            marketingComposed: true,
-            tokensUsed: data.usage.total_tokens,
-            model: data.model
+            marketingComposed: true
           });
 
         } catch (error) {
