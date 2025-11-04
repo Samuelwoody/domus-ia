@@ -1533,6 +1533,28 @@ export default async function handler(req, res) {
     const assistantMessage = data.choices[0].message;
 
     // ============================================================================
+    // 🔧 FUNCIÓN AUXILIAR: Detectar URL de imagen automáticamente
+    // ============================================================================
+    function detectImageUrl(messages) {
+      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+        const msg = messages[i];
+        if (msg.role === 'user' && msg.content) {
+          const urlPatterns = [
+            /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,
+            /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i
+          ];
+          for (const pattern of urlPatterns) {
+            const match = msg.content.match(pattern);
+            if (match) return match[0];
+          }
+        }
+      }
+      return null;
+    }
+
+    // ============================================================================
     // 🎨 CHECK IF GPT-4o WANTS TO USE TOOLS (Function Calling)
     // ============================================================================
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -1977,26 +1999,6 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       // ============================================================================
       // 🆕 HANDLERS PARA TODAS LAS NUEVAS TOOLS REPLICATE
       // ============================================================================
-      
-      // FUNCIÓN AUXILIAR: Detectar URL de imagen automáticamente
-      function detectImageUrl(messages) {
-      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
-        const msg = messages[i];
-        if (msg.role === 'user' && msg.content) {
-          const urlPatterns = [
-            /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,
-            /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,
-            /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,
-            /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i
-          ];
-          for (const pattern of urlPatterns) {
-            const match = msg.content.match(pattern);
-            if (match) return match[0];
-          }
-        }
-      }
-      return null;
-    }
     
     // 1️⃣ REMOVE BACKGROUND
     else if (toolCall.function.name === 'remove_background') {
