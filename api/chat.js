@@ -1989,7 +1989,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
                      '1. Copiar el código HTML y abrirlo en navegador\n' +
                      '2. Capturar pantalla del resultado\n' +
                      '3. O usar Canva/Photoshop para crear la composición',
-            htmlTemplate: htmlTemplate,
+            htmlTemplate: htmlTemplateLegacy,
             marketingComposed: false,
             fallbackMode: true
           });
