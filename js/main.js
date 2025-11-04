@@ -502,14 +502,31 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         // La URL permanece disponible para mensajes subsecuentes ("añade muebles", etc.)
         // El backend la encontrará en el historial de conversación
         
-        // Add user message (con indicador de archivo si existe)
+        // Add user message (con imagen si existe)
         let displayMessage = finalMessage;
-        if (fileToProcess || hasCloudinaryUrl) {
-            const fileIcon = fileTypeToProcess === 'image' ? '🖼️' : '📄';
-            const fileName = fileToProcess ? fileToProcess.name : 'imagen-cloudinary.jpg';
-            displayMessage = `${fileIcon} ${finalMessage}\n<small class="text-gray-500">${fileName}</small>`;
+        let imageUrlForDisplay = null;
+        
+        if (fileTypeToProcess === 'image') {
+            // Si hay URL de Cloudinary, usarla; si no, crear URL temporal del archivo
+            if (hasCloudinaryUrl) {
+                imageUrlForDisplay = cloudinaryUrlToSend;
+            } else if (fileToProcess) {
+                // Crear URL temporal del blob para mostrar
+                imageUrlForDisplay = URL.createObjectURL(fileToProcess);
+            }
         }
-        this.addMessage('user', displayMessage);
+        
+        // Agregar mensaje con imagen si existe
+        if (imageUrlForDisplay) {
+            this.addMessageWithImage('user', displayMessage, imageUrlForDisplay);
+        } else if (fileToProcess && fileTypeToProcess === 'document') {
+            // Documentos: mostrar icono como antes
+            const fileName = fileToProcess.name;
+            displayMessage = `📄 ${finalMessage}\n<small class="text-gray-500">${fileName}</small>`;
+            this.addMessage('user', displayMessage);
+        } else {
+            this.addMessage('user', displayMessage);
+        }
         
         // Update message count
         this.dailyMessageCount++;
@@ -1228,6 +1245,38 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         if (sender === 'assistant' && typeof voiceReader !== 'undefined' && voiceReader) {
             voiceReader.readSofiaMessage(content);
         }
+    }
+    
+    addMessageWithImage(sender, content, imageUrl) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4 chat-message ${sender}`;
+        
+        const timestamp = new Date().toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        
+        if (sender === 'user') {
+            messageDiv.innerHTML = `
+                <div class="flex space-x-3 justify-end max-w-4xl">
+                    <div class="message-bubble user p-3">
+                        <div class="flex items-center space-x-2 mb-1 justify-end">
+                            <span class="text-xs text-white/80">${timestamp}</span>
+                            <span class="font-semibold text-sm text-white">Tú</span>
+                        </div>
+                        <img src="${imageUrl}" alt="Imagen enviada" class="max-w-xs rounded-lg mb-2 shadow-md" style="max-height: 300px; object-fit: contain;">
+                        <p class="text-sm text-white leading-relaxed">${content}</p>
+                    </div>
+                    <div class="message-avatar user">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                </div>
+            `;
+        }
+        
+        messagesContainer.appendChild(messageDiv);
+        this.scrollToBottom();
     }
     
     formatMessageContent(content) {
