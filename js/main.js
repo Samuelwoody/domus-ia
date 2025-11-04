@@ -502,31 +502,14 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         // La URL permanece disponible para mensajes subsecuentes ("añade muebles", etc.)
         // El backend la encontrará en el historial de conversación
         
-        // Add user message (con imagen si existe)
+        // Add user message (con indicador de archivo si existe)
         let displayMessage = finalMessage;
-        let imageUrlForDisplay = null;
-        
-        if (fileTypeToProcess === 'image') {
-            // Si hay URL de Cloudinary, usarla; si no, crear URL temporal del archivo
-            if (hasCloudinaryUrl) {
-                imageUrlForDisplay = cloudinaryUrlToSend;
-            } else if (fileToProcess) {
-                // Crear URL temporal del blob para mostrar
-                imageUrlForDisplay = URL.createObjectURL(fileToProcess);
-            }
+        if (fileToProcess || hasCloudinaryUrl) {
+            const fileIcon = fileTypeToProcess === 'image' ? '🖼️' : '📄';
+            const fileName = fileToProcess ? fileToProcess.name : 'imagen-cloudinary.jpg';
+            displayMessage = `${fileIcon} ${finalMessage}\n<small class="text-gray-500">${fileName}</small>`;
         }
-        
-        // Agregar mensaje con imagen si existe
-        if (imageUrlForDisplay) {
-            this.addMessageWithImage('user', displayMessage, imageUrlForDisplay);
-        } else if (fileToProcess && fileTypeToProcess === 'document') {
-            // Documentos: mostrar icono como antes
-            const fileName = fileToProcess.name;
-            displayMessage = `📄 ${finalMessage}\n<small class="text-gray-500">${fileName}</small>`;
-            this.addMessage('user', displayMessage);
-        } else {
-            this.addMessage('user', displayMessage);
-        }
+        this.addMessage('user', displayMessage);
         
         // Update message count
         this.dailyMessageCount++;
@@ -778,28 +761,6 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                             });
                         }
                         
-                        // 📊 NUEVA LÓGICA: Preview de Informes
-                        // Si el backend generó un informe con preview, mostrarlo
-                        if (data.previewMode && data.reportHTML && data.action === 'show_preview') {
-                            console.log('📊 Informe con preview detectado');
-                            
-                            // Esperar a que el mensaje se renderice completamente
-                            await this.typeMessage('sofia', finalMessage);
-                            
-                            // Mostrar preview del informe
-                            if (window.reportsManager) {
-                                window.reportsManager.showPreview({
-                                    reportHTML: data.reportHTML,
-                                    reportData: data.reportData,
-                                    reportId: data.reportId
-                                });
-                            } else {
-                                console.error('❌ ReportsManager no está disponible');
-                            }
-                            
-                            return; // No continuar con el resto del flujo
-                        }
-                        
                         // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
                         // Si el backend ya generó/editó la imagen (DALL-E o Replicate), mostrarla
                         if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited)) {
@@ -817,6 +778,16 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                             // Guardar referencia a imageUrl para usarla después del efecto typing
                             this.pendingImageUrl = data.imageUrl;
                             this.pendingImageData = data;
+                        }
+                        
+                        // 🎬 NUEVA LÓGICA: Video generado con VEO 3
+                        if (data.videoUrl) {
+                            console.log('✅ Backend generó video con VEO 3:', data.videoUrl);
+                            console.log('🎬 URL del video:', data.videoUrl);
+                            
+                            // Guardar referencia a videoUrl para usarla después del efecto typing
+                            this.pendingVideoUrl = data.videoUrl;
+                            this.pendingVideoData = data;
                         }
                         
                         // 🎨 FALLBACK: Detección manual (por si Function Calling falla)
@@ -1269,38 +1240,6 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         }
     }
     
-    addMessageWithImage(sender, content, imageUrl) {
-        const messagesContainer = document.getElementById('chatMessages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4 chat-message ${sender}`;
-        
-        const timestamp = new Date().toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        
-        if (sender === 'user') {
-            messageDiv.innerHTML = `
-                <div class="flex space-x-3 justify-end max-w-4xl">
-                    <div class="message-bubble user p-3">
-                        <div class="flex items-center space-x-2 mb-1 justify-end">
-                            <span class="text-xs text-white/80">${timestamp}</span>
-                            <span class="font-semibold text-sm text-white">Tú</span>
-                        </div>
-                        <img src="${imageUrl}" alt="Imagen enviada" class="max-w-xs rounded-lg mb-2 shadow-md" style="max-height: 300px; object-fit: contain;">
-                        <p class="text-sm text-white leading-relaxed">${content}</p>
-                    </div>
-                    <div class="message-avatar user">
-                        <i class="fas fa-user text-sm"></i>
-                    </div>
-                </div>
-            `;
-        }
-        
-        messagesContainer.appendChild(messageDiv);
-        this.scrollToBottom();
-    }
-    
     formatMessageContent(content) {
         if (!content) return '';
         
@@ -1382,6 +1321,14 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         }, 100);
                     }
                     
+                    // 🎬 INSERTAR VIDEO VEO 3 SI HAY UNO PENDIENTE
+                    if (this.pendingVideoUrl) {
+                        console.log('🎬 Insertando video VEO 3...');
+                        setTimeout(() => {
+                            this.insertPendingVideo(element);
+                        }, 100);
+                    }
+                    
                     console.log('✅ TypeMessage completado');
                     resolve();
                     return;
@@ -1407,6 +1354,58 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             console.log('⌨️ Comenzando escritura de', textContent.length, 'caracteres');
             typeChar();
         });
+    }
+    
+    insertPendingVideo(contentElement) {
+        if (!this.pendingVideoUrl) return;
+        
+        console.log('🎬 Insertando video:', this.pendingVideoUrl);
+        
+        const duration = this.pendingVideoData?.duration || 6;
+        const model = this.pendingVideoData?.model || 'Google VEO 3';
+        
+        // Crear HTML del reproductor de video con controles completos
+        const videoHtml = `
+            <div class="generated-video-container" style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(184, 134, 11, 0.02)); border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                <video controls playsinline webkit-playsinline style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: block; background: #000;" 
+                       onloadeddata="console.log('✅ Video cargado correctamente'); this.style.opacity='1';" 
+                       onerror="console.error('❌ Error al cargar video:', this.src);">
+                    <source src="${this.pendingVideoUrl}" type="video/mp4">
+                    Tu navegador no soporta la reproducción de video HTML5.
+                </video>
+                
+                <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="window.downloadVideo('${this.pendingVideoUrl}')" 
+                            style="padding: 8px 16px; background: linear-gradient(135deg, #d4af37 0%, #aa8929 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: transform 0.2s;" 
+                            onmouseover="this.style.transform='scale(1.05)'" 
+                            onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-download"></i> Descargar
+                    </button>
+                    
+                    <button onclick="window.shareVideo('${this.pendingVideoUrl}')" 
+                            style="padding: 8px 16px; background: rgba(212, 175, 55, 0.1); color: #d4af37; border: 1px solid #d4af37; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" 
+                            onmouseover="this.style.background='rgba(212, 175, 55, 0.2)'" 
+                            onmouseout="this.style.background='rgba(212, 175, 55, 0.1)'">
+                        <i class="fas fa-share-alt"></i> Compartir URL
+                    </button>
+                </div>
+                
+                <p style="font-size: 10px; color: #9ca3af; margin-top: 8px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🎬 Generado con ${model}</span>
+                    <span style="color: #6b7280;">•</span>
+                    <span style="font-size: 9px; color: #10b981; font-weight: 600;">✓ ${duration} segundos</span>
+                </p>
+            </div>
+        `;
+        
+        contentElement.insertAdjacentHTML('beforeend', videoHtml);
+        this.scrollToBottom();
+        
+        console.log('✅ Video insertado en el DOM');
+        
+        // Limpiar pendiente
+        this.pendingVideoUrl = null;
+        this.pendingVideoData = null;
     }
     
     insertPendingImage(contentElement) {
@@ -2922,6 +2921,53 @@ window.diagnosticoChat = function() {
     }
     
     console.log('=== FIN DIAGNÓSTICO ===');
+};
+
+// ===== VIDEO ACTIONS =====
+/**
+ * Descargar video VEO 3
+ */
+window.downloadVideo = function(videoUrl) {
+    console.log('📥 Descargando video:', videoUrl);
+    
+    // Crear elemento <a> temporal para forzar descarga
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    a.download = 'video-veo3-' + Date.now() + '.mp4';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    console.log('✅ Descarga de video iniciada');
+};
+
+/**
+ * Compartir URL del video
+ */
+window.shareVideo = function(videoUrl) {
+    console.log('🔗 Compartiendo URL del video:', videoUrl);
+    
+    // Copiar URL al portapapeles
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(videoUrl)
+            .then(() => {
+                // Mostrar notificación de éxito
+                if (window.Toast) {
+                    window.Toast.show('✅ URL copiada al portapapeles', 'success');
+                } else {
+                    alert('✅ URL del video copiada al portapapeles');
+                }
+                console.log('✅ URL copiada al portapapeles');
+            })
+            .catch(err => {
+                console.error('❌ Error al copiar:', err);
+                // Fallback: mostrar prompt
+                prompt('Copia esta URL del video:', videoUrl);
+            });
+    } else {
+        // Fallback para navegadores antiguos
+        prompt('Copia esta URL del video:', videoUrl);
+    }
 };
 
 // ===== DALL-E IMAGE ACTIONS =====
