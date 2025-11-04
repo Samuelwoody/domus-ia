@@ -1779,7 +1779,7 @@ export default async function handler(req, res) {
           
           // Construir instrucciones optimizadas para Nano Banana
           // Según ejemplos oficiales, funciona mejor con instrucciones naturales y directas
-          const editInstructions = `${functionArgs.desired_changes}. Keep the same room layout, perspective, and architectural features. Make the scene natural and realistic. Style: ${functionArgs.style || 'modern'}. Professional real estate photography.`;
+          const editInstructions = functionArgs.desired_changes + '. Keep the same room layout, perspective, and architectural features. Make the scene natural and realistic. Style: ' + (functionArgs.style || 'modern') + '. Professional real estate photography.';
           
           console.log('🍌 Usando Google Nano Banana (Gemini 2.5 Flash) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
@@ -1796,7 +1796,7 @@ export default async function handler(req, res) {
             success: true,
             message: '✨ He recreado tu imagen usando **Google Nano Banana** (Gemini 2.5 Flash). ' +
                      '\n\n📝 Cambios aplicados: ' +
-                     `**${functionArgs.desired_changes}**.\n\n` +
+                     '**' + functionArgs.desired_changes + '**.\n\n' +
                      '🍌 Este modelo de Google crea una **versión mejorada** de tu imagen original incorporando los cambios solicitados. ' +
                      'La nueva imagen mantiene el estilo y contexto de la original, pero puede tener variaciones en los detalles.\n\n' +
                      '⚡ Rápido (10-20s) y con comprensión de lenguaje natural.\n\n' +
@@ -1826,8 +1826,8 @@ export default async function handler(req, res) {
           // Añadir detalles si functionArgs está disponible
           if (functionArgs) {
             errorMessage += '**Cambios solicitados:**\n' +
-                           `• ${functionArgs.desired_changes}\n\n` +
-                           `**Estilo:** ${functionArgs.style || 'moderno'}\n\n`;
+                           '• ' + functionArgs.desired_changes + '\n\n' +
+                           '**Estilo:** ' + (functionArgs.style || 'moderno') + '\n\n';
           }
           
           errorMessage += '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
@@ -1917,37 +1917,49 @@ export default async function handler(req, res) {
           const dimensions = formatConfig[format || 'square'];
           
           // Construir transformaciones de Cloudinary
-          const transformations = [
-            // Redimensionar imagen base
-            `c_fill,w_${dimensions.width},h_${dimensions.height},g_auto`,
-            // Oscurecer ligeramente para que texto resalte
-            'e_brightness:-15',
-            // Añadir título si existe
-            property_info.title ? `l_text:Arial_70_bold:${encodeURIComponent(property_info.title)},co_${selectedColor},g_north,y_80` : null,
-            // Añadir precio (texto grande)
-            `l_text:Arial_90_bold:${encodeURIComponent(property_info.price)},co_${selectedColor},g_center,y_-100`,
-            // Añadir detalles (m², habitaciones)
-            property_info.size || property_info.rooms ? 
-              `l_text:Arial_50:${encodeURIComponent((property_info.size || '') + ' • ' + (property_info.rooms || ''))},co_${selectedColor},g_center,y_20` : null,
-            // Añadir ubicación
-            `l_text:Arial_45:${encodeURIComponent(property_info.location)},co_${selectedColor},g_south,y_60`,
-            // Logo/watermark si se solicita
-            include_logo ? `l_text:Arial_35:Domus-IA,co_${selectedColor},g_north_west,x_40,y_40,o_80` : null
-          ].filter(Boolean); // Remover nulls
+          const transformations = [];
+          
+          // Redimensionar imagen base
+          transformations.push('c_fill,w_' + dimensions.width + ',h_' + dimensions.height + ',g_auto');
+          
+          // Oscurecer ligeramente para que texto resalte
+          transformations.push('e_brightness:-15');
+          
+          // Añadir título si existe
+          if (property_info.title) {
+            transformations.push('l_text:Arial_70_bold:' + encodeURIComponent(property_info.title) + ',co_' + selectedColor + ',g_north,y_80');
+          }
+          
+          // Añadir precio (texto grande)
+          transformations.push('l_text:Arial_90_bold:' + encodeURIComponent(property_info.price) + ',co_' + selectedColor + ',g_center,y_-100');
+          
+          // Añadir detalles (m², habitaciones)
+          if (property_info.size || property_info.rooms) {
+            const details = (property_info.size || '') + ' • ' + (property_info.rooms || '');
+            transformations.push('l_text:Arial_50:' + encodeURIComponent(details) + ',co_' + selectedColor + ',g_center,y_20');
+          }
+          
+          // Añadir ubicación
+          transformations.push('l_text:Arial_45:' + encodeURIComponent(property_info.location) + ',co_' + selectedColor + ',g_south,y_60');
+          
+          // Logo/watermark si se solicita
+          if (include_logo) {
+            transformations.push('l_text:Arial_35:Domus-IA,co_' + selectedColor + ',g_north_west,x_40,y_40,o_80');
+          }
           
           // Construir URL final con transformaciones
-          const marketingImageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${transformations.join('/')}/${pathWithPublicId}`;
+          const marketingImageUrl = 'https://res.cloudinary.com/' + cloudName + '/image/upload/' + transformations.join('/') + '/' + pathWithPublicId;
           
           console.log('✅ Imagen de marketing compuesta con Cloudinary:', marketingImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: `📸 ¡Imagen publicitaria lista! He añadido a tu foto real:\n\n` +
-                     `💰 Precio: **${property_info.price}**\n` +
-                     (property_info.size ? `📐 Superficie: ${property_info.size}\n` : '') +
-                     (property_info.rooms ? `🛏️ Habitaciones: ${property_info.rooms}\n` : '') +
-                     `📍 Ubicación: ${property_info.location}\n\n` +
-                     `✨ Formato ${format} optimizado para redes sociales. ¡Lista para publicar!`,
+            message: '📸 ¡Imagen publicitaria lista! He añadido a tu foto real:\n\n' +
+                     '💰 Precio: **' + property_info.price + '**\n' +
+                     (property_info.size ? '📐 Superficie: ' + property_info.size + '\n' : '') +
+                     (property_info.rooms ? '🛏️ Habitaciones: ' + property_info.rooms + '\n' : '') +
+                     '📍 Ubicación: ' + property_info.location + '\n\n' +
+                     '✨ Formato ' + format + ' optimizado para redes sociales. ¡Lista para publicar!',
             imageUrl: marketingImageUrl,
             format: format,
             propertyInfo: property_info,
@@ -2025,7 +2037,7 @@ export default async function handler(req, res) {
           
           return res.status(200).json({
             success: true,
-            message: `✅ Resolución aumentada ${scale}x. La imagen ahora tiene mucha mayor calidad y detalle.`,
+            message: '✅ Resolución aumentada ' + scale + 'x. La imagen ahora tiene mucha mayor calidad y detalle.',
             imageUrl: result,
             tool: 'upscale_image'
           });
@@ -2042,16 +2054,16 @@ export default async function handler(req, res) {
       else if (toolCall.function.name === 'generate_sale_sign') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
-          const prompt = `Professional Spanish real estate 'SE VENDE' sign, modern design, ` +
-                        `price ${functionArgs.price}, ` +
-                        (functionArgs.phone ? `phone ${functionArgs.phone}, ` : '') +
-                        `${functionArgs.style || 'modern'} style, clean typography, high contrast, professional`;
+          const prompt = 'Professional Spanish real estate \'SE VENDE\' sign, modern design, ' +
+                        'price ' + functionArgs.price + ', ' +
+                        (functionArgs.phone ? 'phone ' + functionArgs.phone + ', ' : '') +
+                        (functionArgs.style || 'modern') + ' style, clean typography, high contrast, professional';
           
           const result = await generateSaleSign(prompt);
           
           return res.status(200).json({
             success: true,
-            message: `✅ Cartel "SE VENDE" generado con precio ${functionArgs.price}. Listo para imprimir o publicar en redes.`,
+            message: '✅ Cartel "SE VENDE" generado con precio ' + functionArgs.price + '. Listo para imprimir o publicar en redes.',
             imageUrl: result,
             tool: 'generate_sale_sign'
           });
@@ -2072,7 +2084,7 @@ export default async function handler(req, res) {
           
           return res.status(200).json({
             success: true,
-            message: `✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.`,
+            message: '✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.',
             videoUrl: result,
             tool: 'generate_video_from_text',
             model: 'Google VEO 3'
@@ -2158,7 +2170,7 @@ export default async function handler(req, res) {
           
           return res.status(200).json({
             success: true,
-            message: `✅ Encontré ${comparablesResult.comparables.length} inmuebles comparables en ${functionArgs.city}. ${comparablesResult.summary}`,
+            message: '✅ Encontré ' + comparablesResult.comparables.length + ' inmuebles comparables en ' + functionArgs.city + '. ' + comparablesResult.summary,
             comparables: comparablesResult.comparables,
             summary: comparablesResult.summary,
             query: comparablesResult.query,
