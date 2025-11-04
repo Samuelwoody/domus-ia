@@ -199,33 +199,13 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
 }
 
 // ============================================================================
-// 🗑️ REMOVE BACKGROUND - Using Replicate rembg model
-// ============================================================================
-async function removeBackground(imageUrl) {
-  console.log('🗑️ Removing background from image...');
-  
-  try {
-    const output = await callReplicateModel(
-      'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003', // cjwbw/rembg
-      {
-        image: imageUrl
-      }
-    );
-    
-    console.log('✅ Background removed successfully');
-    return output;
-  } catch (error) {
-    console.error('❌ Error removing background:', error);
-    throw error;
-  }
-}
-
-// ============================================================================
 // 🎬 GOOGLE VEO 3 - VIDEO GENERATION
 // ============================================================================
-async function generateVideoWithVeo3(prompt) {
+async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9") {
   console.log('🎬 Google VEO 3 - Text-to-video generation');
   console.log('📝 Prompt:', prompt);
+  console.log('⏱️ Duration:', duration, 'seconds');
+  console.log('📐 Aspect ratio:', aspectRatio);
   
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
@@ -245,7 +225,9 @@ async function generateVideoWithVeo3(prompt) {
       },
       body: JSON.stringify({
         input: {
-          prompt: prompt
+          prompt: prompt,
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
       })
     });
@@ -332,599 +314,6 @@ async function generateSaleSign(prompt) {
 // 3. Real-ESRGAN - Image upscaling
 // 4. Ideogram V2 - Text rendering on images
 // ============================================================================
-
-// ============================================================================
-// 📊 PROPERTY DATA EXTRACTION & VALUATION REPORTS
-// ============================================================================
-
-/**
- * Extrae datos de inmueble desde imagen (Vision) o URL (Tavily)
- */
-async function extractPropertyData(sourceType, imageContent, listingUrl, tavilyApiKey, openaiApiKey) {
-  console.log('🔍 Extrayendo datos de inmueble:', sourceType);
-  
-  if (sourceType === 'image' && imageContent) {
-    // Usar GPT-4o Vision para analizar pantallazo
-    console.log('👁️ Usando GPT-4o Vision para analizar imagen...');
-    
-    try {
-      const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Eres un experto extrayendo datos de anuncios inmobiliarios. Analiza esta imagen (pantallazo de un anuncio) y extrae TODA la información visible en formato JSON estructurado. Incluye: dirección, ciudad, barrio, precio, m², habitaciones, baños, descripción, características (ascensor, garaje, terraza...). Si algo no está visible, usa null.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageContent,
-                  detail: 'high'
-                }
-              }
-            ]
-          }],
-          max_tokens: 2000,
-          temperature: 0.3
-        })
-      });
-      
-      if (!visionResponse.ok) {
-        throw new Error('Vision API error: ' + visionResponse.status);
-      }
-      
-      const visionData = await visionResponse.json();
-      const extractedText = visionData.choices[0].message.content;
-      
-      console.log('✅ Datos extraídos con Vision:', extractedText);
-      
-      // Parsear el JSON extraído
-      try {
-        const jsonMatch = extractedText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const propertyData = JSON.parse(jsonMatch[0]);
-          return {
-            success: true,
-            source: 'vision',
-            data: propertyData,
-            raw_extraction: extractedText
-          };
-        }
-      } catch (parseError) {
-        console.warn('⚠️ No se pudo parsear JSON, devolviendo texto plano');
-        return {
-          success: true,
-          source: 'vision',
-          data: null,
-          raw_extraction: extractedText
-        };
-      }
-      
-    } catch (error) {
-      console.error('❌ Error en Vision extraction:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-  
-  if (sourceType === 'url' && listingUrl && tavilyApiKey) {
-    // Usar Tavily para buscar y extraer datos de URL
-    console.log('🌐 Usando Tavily para extraer datos de URL...');
-    
-    try {
-      const searchResponse = await fetch('https://api.tavily.com/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          api_key: tavilyApiKey,
-          query: `información completa inmueble ${listingUrl}`,
-          search_depth: 'advanced',
-          include_answer: true,
-          include_raw_content: true,
-          max_results: 3
-        })
-      });
-      
-      if (!searchResponse.ok) {
-        throw new Error('Tavily API error: ' + searchResponse.status);
-      }
-      
-      const searchData = await searchResponse.json();
-      
-      console.log('✅ Datos obtenidos de Tavily');
-      
-      return {
-        success: true,
-        source: 'tavily',
-        data: searchData.answer || null,
-        raw_content: searchData.results || []
-      };
-      
-    } catch (error) {
-      console.error('❌ Error en Tavily extraction:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-  
-  return {
-    success: false,
-    error: 'No valid source provided (image or url required)'
-  };
-}
-
-/**
- * Busca inmuebles comparables en el mercado usando Tavily
- */
-async function searchMarketComparables(searchParams, tavilyApiKey) {
-  console.log('🔎 Buscando comparables en mercado:', searchParams);
-  
-  if (!tavilyApiKey) {
-    throw new Error('TAVILY_API_KEY no configurado');
-  }
-  
-  const { city, neighborhood, property_type, operation_type, size_m2_min, size_m2_max, rooms, max_results = 5 } = searchParams;
-  
-  // Construir query optimizada para portales inmobiliarios
-  let query = `${property_type} en ${operation_type} ${city}`;
-  if (neighborhood) query += ` ${neighborhood}`;
-  if (size_m2_min && size_m2_max) query += ` entre ${size_m2_min}m² y ${size_m2_max}m²`;
-  if (rooms) query += ` ${rooms} habitaciones`;
-  query += ` precio inmuebles 2025`;
-  
-  console.log('📝 Query Tavily:', query);
-  
-  try {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        api_key: tavilyApiKey,
-        query: query,
-        search_depth: 'advanced',
-        include_answer: true,
-        include_raw_content: false,
-        max_results: max_results * 2 // Pedimos más para filtrar después
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Tavily API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    console.log('✅ Comparables encontrados:', data.results.length);
-    
-    return {
-      success: true,
-      query: query,
-      summary: data.answer || '',
-      comparables: data.results.slice(0, max_results).map(r => ({
-        title: r.title,
-        url: r.url,
-        content: r.content,
-        score: r.score
-      }))
-    };
-    
-  } catch (error) {
-    console.error('❌ Error buscando comparables:', error);
-    throw error;
-  }
-}
-
-/**
- * Genera HTML profesional del informe de valoración
- */
-function generateValuationReportHTML(reportData) {
-  const { property_data, valuation_data, comparables, branding } = reportData;
-  
-  // Formatear números
-  const formatPrice = (price) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price);
-  const formatNumber = (num) => new Intl.NumberFormat('es-ES').format(num);
-  
-  // Calcular fecha
-  const today = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-  
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Informe de Valoración - ${property_data.address}</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
-      line-height: 1.6;
-      color: #333;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-      color: white;
-      padding: 40px;
-      text-align: center;
-    }
-    .header h1 {
-      font-size: 32px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .header p {
-      font-size: 16px;
-      opacity: 0.9;
-    }
-    .content {
-      padding: 40px;
-    }
-    .section {
-      margin-bottom: 40px;
-    }
-    .section h2 {
-      font-size: 24px;
-      color: #1e3a8a;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 3px solid #3b82f6;
-    }
-    .property-info {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 24px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .info-icon {
-      font-size: 24px;
-    }
-    .info-text strong {
-      display: block;
-      color: #64748b;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .info-text span {
-      display: block;
-      color: #1e293b;
-      font-size: 18px;
-      font-weight: 600;
-    }
-    .valuation-result {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      border-radius: 12px;
-      padding: 32px;
-      text-align: center;
-      margin: 30px 0;
-    }
-    .valuation-result h3 {
-      font-size: 20px;
-      margin-bottom: 16px;
-      opacity: 0.95;
-    }
-    .price-range {
-      font-size: 42px;
-      font-weight: 700;
-      margin: 16px 0;
-    }
-    .price-detail {
-      font-size: 18px;
-      opacity: 0.9;
-    }
-    .price-per-m2 {
-      font-size: 24px;
-      font-weight: 600;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 2px solid rgba(255,255,255,0.3);
-    }
-    .chart-container {
-      position: relative;
-      height: 400px;
-      margin: 30px 0;
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 20px;
-    }
-    .comparables-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-    .comparables-table th {
-      background: #1e3a8a;
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-weight: 600;
-    }
-    .comparables-table td {
-      padding: 12px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .comparables-table tr:hover {
-      background: #f8fafc;
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .badge-alta { background: #dcfce7; color: #166534; }
-    .badge-media { background: #fef3c7; color: #92400e; }
-    .badge-baja { background: #fee2e2; color: #991b1b; }
-    .footer {
-      background: #f8fafc;
-      padding: 30px 40px;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-    .footer p {
-      color: #64748b;
-      font-size: 14px;
-      margin: 5px 0;
-    }
-    .footer strong {
-      color: #1e3a8a;
-      font-size: 16px;
-    }
-    .cta-button {
-      display: inline-block;
-      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-      color: white;
-      padding: 14px 32px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      margin-top: 20px;
-      transition: transform 0.2s;
-    }
-    .cta-button:hover {
-      transform: translateY(-2px);
-    }
-    @media print {
-      body { background: white; padding: 0; }
-      .cta-button { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📊 Informe de Valoración Inmobiliaria</h1>
-      <p>${today}</p>
-    </div>
-    
-    <div class="content">
-      <!-- DATOS DEL INMUEBLE -->
-      <div class="section">
-        <h2>📍 Datos del Inmueble</h2>
-        <div class="property-info">
-          <div class="info-item">
-            <div class="info-icon">🏠</div>
-            <div class="info-text">
-              <strong>Dirección</strong>
-              <span>${property_data.address}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">🌆</div>
-            <div class="info-text">
-              <strong>Ciudad</strong>
-              <span>${property_data.city}${property_data.neighborhood ? ' - ' + property_data.neighborhood : ''}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">📐</div>
-            <div class="info-text">
-              <strong>Superficie</strong>
-              <span>${formatNumber(property_data.size_m2)} m²</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">🛏️</div>
-            <div class="info-text">
-              <strong>Habitaciones</strong>
-              <span>${property_data.rooms || 'N/A'}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">🚿</div>
-            <div class="info-text">
-              <strong>Baños</strong>
-              <span>${property_data.bathrooms || 'N/A'}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">📅</div>
-            <div class="info-text">
-              <strong>Año</strong>
-              <span>${property_data.year_built || 'N/A'}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">⭐</div>
-            <div class="info-text">
-              <strong>Estado</strong>
-              <span>${property_data.condition || 'N/A'}</span>
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon">🏷️</div>
-            <div class="info-text">
-              <strong>Tipo</strong>
-              <span>${property_data.property_type || 'Piso'}</span>
-            </div>
-          </div>
-        </div>
-        ${property_data.description ? `<p style="margin-top: 20px; color: #64748b; line-height: 1.8;">${property_data.description}</p>` : ''}
-      </div>
-      
-      <!-- VALORACIÓN -->
-      <div class="section">
-        <h2>💰 Valoración Estimada</h2>
-        <div class="valuation-result">
-          <h3>Rango de Valoración</h3>
-          <div class="price-range">
-            ${formatPrice(valuation_data.min_price)} - ${formatPrice(valuation_data.max_price)}
-          </div>
-          <div class="price-detail">
-            Precio medio recomendado: <strong>${formatPrice(valuation_data.avg_price)}</strong>
-          </div>
-          <div class="price-per-m2">
-            ${formatPrice(valuation_data.price_per_m2)} /m²
-          </div>
-          <div style="margin-top: 20px;">
-            <span class="badge badge-${valuation_data.confidence_level || 'media'}">
-              Confianza: ${valuation_data.confidence_level || 'Media'}
-            </span>
-            ${valuation_data.market_trend ? `<span class="badge badge-${valuation_data.market_trend === 'alza' ? 'alta' : valuation_data.market_trend === 'baja' ? 'baja' : 'media'}" style="margin-left: 10px;">
-              Mercado: ${valuation_data.market_trend}
-            </span>` : ''}
-          </div>
-        </div>
-      </div>
-      
-      <!-- COMPARABLES -->
-      ${comparables && comparables.length > 0 ? `
-      <div class="section">
-        <h2>📊 Inmuebles Comparables</h2>
-        <div class="chart-container">
-          <canvas id="comparablesChart"></canvas>
-        </div>
-        <table class="comparables-table">
-          <thead>
-            <tr>
-              <th>Dirección</th>
-              <th>Precio</th>
-              <th>m²</th>
-              <th>€/m²</th>
-              <th>Hab.</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${comparables.map(c => `
-              <tr>
-                <td>${c.address || 'N/A'}</td>
-                <td><strong>${c.price ? formatPrice(c.price) : 'N/A'}</strong></td>
-                <td>${c.size_m2 ? formatNumber(c.size_m2) + ' m²' : 'N/A'}</td>
-                <td>${c.price_per_m2 ? formatPrice(c.price_per_m2) : 'N/A'}</td>
-                <td>${c.rooms || 'N/A'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      ` : ''}
-    </div>
-    
-    <div class="footer">
-      <strong>${branding?.agency_name || 'Domus-IA España'}</strong>
-      ${branding?.agent_name ? `<p>Asesor: ${branding.agent_name}</p>` : ''}
-      ${branding?.agent_phone ? `<p>📞 ${branding.agent_phone}</p>` : ''}
-      ${branding?.agent_email ? `<p>✉️ ${branding.agent_email}</p>` : ''}
-      <p style="margin-top: 15px; font-size: 12px;">
-        Informe generado por Sofía IA - ${today}
-      </p>
-      <a href="#" class="cta-button">📞 Contactar Agente</a>
-    </div>
-  </div>
-  
-  ${comparables && comparables.length > 0 ? `
-  <script>
-    // Gráfico de comparables
-    const ctx = document.getElementById('comparablesChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(comparables.map(c => c.address || 'N/A'))},
-        datasets: [{
-          label: 'Precio €/m²',
-          data: ${JSON.stringify(comparables.map(c => c.price_per_m2 || 0))},
-          backgroundColor: 'rgba(59, 130, 246, 0.7)',
-          borderColor: 'rgba(30, 58, 138, 1)',
-          borderWidth: 2
-        }, {
-          label: 'Inmueble valorado',
-          data: [${valuation_data.price_per_m2}, 0, 0, 0, 0].slice(0, ${comparables.length}),
-          backgroundColor: 'rgba(16, 185, 129, 0.7)',
-          borderColor: 'rgba(5, 150, 105, 1)',
-          borderWidth: 2,
-          type: 'line'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top'
-          },
-          title: {
-            display: true,
-            text: 'Comparativa de Precios por m²',
-            font: { size: 16, weight: 'bold' }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
-              }
-            }
-          }
-        }
-      }
-    });
-  </script>
-  ` : ''}
-</body>
-</html>`;
-  
-  return html;
-}
 
 // ============================================================================
 // 🌐 TAVILY WEB SEARCH INTEGRATION
@@ -1344,160 +733,22 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "generate_video_from_text",
-          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description. Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
+          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description (up to 6 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
           parameters: {
             type: "object",
             properties: {
               description: {
                 type: "string",
-                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style, mood. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
+                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
+              },
+              duration: {
+                type: "number",
+                enum: [2, 4, 6],
+                description: "Video duration in seconds (maximum 6 seconds for best quality)",
+                default: 6
               }
             },
             required: ["description"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "extract_property_data",
-          description: "🔍 EXTRAE DATOS DE INMUEBLE - Extrae información estructurada de un inmueble desde una imagen (pantallazo de anuncio) o URL. Use cuando usuario: sube pantallazo de Idealista/Fotocasa, pega enlace de anuncio, dice 'analiza este anuncio'. GPT-4o Vision analiza pantallazos automáticamente. Para URLs usa Tavily Search.",
-          parameters: {
-            type: "object",
-            properties: {
-              source_type: {
-                type: "string",
-                enum: ["image", "url"],
-                description: "Tipo de fuente: 'image' si usuario subió pantallazo (GPT-4o Vision), 'url' si pegó enlace (Tavily Search + scraping)"
-              },
-              listing_url: {
-                type: "string",
-                description: "URL del anuncio original (si disponible). Ej: 'https://www.idealista.com/inmueble/12345/'"
-              },
-              extraction_context: {
-                type: "string",
-                description: "Contexto adicional del usuario. Ej: 'Es un piso en Madrid Centro' o 'Busco comparables para este inmueble'"
-              }
-            },
-            required: ["source_type"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "search_market_comparables",
-          description: "🔎 BUSCA COMPARABLES EN TIEMPO REAL - Busca inmuebles similares en el mercado actual usando Tavily Search en portales inmobiliarios. Use cuando usuario pide: 'busca comparables', 'inmuebles similares en la zona', 'precios de mercado', 'valoración'. Devuelve datos REALES y ACTUALES.",
-          parameters: {
-            type: "object",
-            properties: {
-              city: {
-                type: "string",
-                description: "Ciudad donde buscar. Ej: 'Madrid', 'Barcelona', 'Valencia'"
-              },
-              neighborhood: {
-                type: "string",
-                description: "Barrio específico (opcional pero recomendado). Ej: 'Salamanca', 'Chamberí', 'Eixample'"
-              },
-              property_type: {
-                type: "string",
-                enum: ["piso", "casa", "chalet", "duplex", "atico", "estudio"],
-                description: "Tipo de inmueble a buscar"
-              },
-              operation_type: {
-                type: "string",
-                enum: ["venta", "alquiler"],
-                description: "Tipo de operación: venta o alquiler",
-                default: "venta"
-              },
-              size_m2_min: {
-                type: "number",
-                description: "Superficie mínima en m². Ej: 80"
-              },
-              size_m2_max: {
-                type: "number",
-                description: "Superficie máxima en m². Ej: 120"
-              },
-              rooms: {
-                type: "number",
-                description: "Número de habitaciones (aproximado). Ej: 3"
-              },
-              max_results: {
-                type: "number",
-                description: "Máximo de resultados a devolver (1-10)",
-                default: 5
-              }
-            },
-            required: ["city", "property_type", "operation_type"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "generate_valuation_report",
-          description: "📊 GENERA INFORME DE VALORACIÓN PROFESIONAL - Crea un informe HTML completo con datos del inmueble, comparables del mercado, gráficos Chart.js, análisis de precio/m² y recomendaciones. Use cuando usuario pide: 'genera informe de valoración', 'quiero un informe profesional', 'necesito valorar este inmueble'. El informe es EDITABLE conversacionalmente antes de publicar.",
-          parameters: {
-            type: "object",
-            properties: {
-              property_data: {
-                type: "object",
-                properties: {
-                  address: { type: "string", description: "Dirección completa" },
-                  city: { type: "string", description: "Ciudad" },
-                  neighborhood: { type: "string", description: "Barrio" },
-                  postal_code: { type: "string", description: "Código postal" },
-                  property_type: { type: "string", description: "Tipo: piso, casa, chalet..." },
-                  size_m2: { type: "number", description: "Superficie en m²" },
-                  rooms: { type: "number", description: "Habitaciones" },
-                  bathrooms: { type: "number", description: "Baños" },
-                  year_built: { type: "number", description: "Año construcción" },
-                  condition: { type: "string", description: "Estado: excelente, bueno, regular, reforma" },
-                  features: { type: "array", description: "Características: [ascensor, garaje, terraza, piscina...]" },
-                  description: { type: "string", description: "Descripción detallada del inmueble" }
-                },
-                required: ["address", "city", "size_m2"]
-              },
-              valuation_data: {
-                type: "object",
-                properties: {
-                  min_price: { type: "number", description: "Precio mínimo estimado (€)" },
-                  avg_price: { type: "number", description: "Precio medio estimado (€)" },
-                  max_price: { type: "number", description: "Precio máximo estimado (€)" },
-                  price_per_m2: { type: "number", description: "Precio por m² (€/m²)" },
-                  market_trend: { type: "string", enum: ["alza", "estable", "baja"], description: "Tendencia del mercado" },
-                  confidence_level: { type: "string", enum: ["alta", "media", "baja"], description: "Nivel de confianza de la valoración" }
-                },
-                required: ["min_price", "avg_price", "max_price", "price_per_m2"]
-              },
-              comparables: {
-                type: "array",
-                description: "Array de inmuebles comparables (máx 5). Datos de search_market_comparables",
-                items: {
-                  type: "object",
-                  properties: {
-                    address: { type: "string" },
-                    price: { type: "number" },
-                    size_m2: { type: "number" },
-                    price_per_m2: { type: "number" },
-                    rooms: { type: "number" },
-                    distance_km: { type: "number", description: "Distancia al inmueble valorado" },
-                    listing_url: { type: "string" }
-                  }
-                }
-              },
-              branding: {
-                type: "object",
-                properties: {
-                  agency_name: { type: "string", description: "Nombre agencia", default: "Domus-IA" },
-                  agent_name: { type: "string", description: "Nombre del agente" },
-                  agent_phone: { type: "string", description: "Teléfono agente" },
-                  agent_email: { type: "string", description: "Email agente" },
-                  logo_url: { type: "string", description: "URL del logo (opcional)" }
-                }
-              }
-            },
-            required: ["property_data", "valuation_data", "comparables"]
           }
         }
       },
@@ -1553,28 +804,6 @@ export default async function handler(req, res) {
 
     const data = await openaiResponse.json();
     const assistantMessage = data.choices[0].message;
-
-    // ============================================================================
-    // 🔧 FUNCIÓN AUXILIAR: Detectar URL de imagen automáticamente
-    // ============================================================================
-    function detectImageUrl(messages) {
-      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
-        const msg = messages[i];
-        if (msg.role === 'user' && msg.content) {
-          const urlPatterns = [
-            /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,
-            /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,
-            /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,
-            /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i
-          ];
-          for (const pattern of urlPatterns) {
-            const match = msg.content.match(pattern);
-            if (match) return match[0];
-          }
-        }
-      }
-      return null;
-    }
 
     // ============================================================================
     // 🎨 CHECK IF GPT-4o WANTS TO USE TOOLS (Function Calling)
@@ -1779,7 +1008,7 @@ export default async function handler(req, res) {
           
           // Construir instrucciones optimizadas para Nano Banana
           // Según ejemplos oficiales, funciona mejor con instrucciones naturales y directas
-          const editInstructions = functionArgs.desired_changes + '. Keep the same room layout, perspective, and architectural features. Make the scene natural and realistic. Style: ' + (functionArgs.style || 'modern') + '. Professional real estate photography.';
+          const editInstructions = `${functionArgs.desired_changes}. Keep the same room layout, perspective, and architectural features. Make the scene natural and realistic. Style: ${functionArgs.style || 'modern'}. Professional real estate photography.`;
           
           console.log('🍌 Usando Google Nano Banana (Gemini 2.5 Flash) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
@@ -1796,7 +1025,7 @@ export default async function handler(req, res) {
             success: true,
             message: '✨ He recreado tu imagen usando **Google Nano Banana** (Gemini 2.5 Flash). ' +
                      '\n\n📝 Cambios aplicados: ' +
-                     '**' + functionArgs.desired_changes + '**.\n\n' +
+                     `**${functionArgs.desired_changes}**.\n\n` +
                      '🍌 Este modelo de Google crea una **versión mejorada** de tu imagen original incorporando los cambios solicitados. ' +
                      'La nueva imagen mantiene el estilo y contexto de la original, pero puede tener variaciones en los detalles.\n\n' +
                      '⚡ Rápido (10-20s) y con comprensión de lenguaje natural.\n\n' +
@@ -1809,6 +1038,7 @@ export default async function handler(req, res) {
             isPermanent: false,
             nanoBananaUsed: true,
             imageEdited: true,
+            tokensUsed: data.usage.total_tokens,
             model: 'Google Nano Banana (Gemini 2.5 Flash)',
             editMethod: 'ai-recreation'  // vs 'pixel-editing'
           });
@@ -1826,8 +1056,8 @@ export default async function handler(req, res) {
           // Añadir detalles si functionArgs está disponible
           if (functionArgs) {
             errorMessage += '**Cambios solicitados:**\n' +
-                           '• ' + functionArgs.desired_changes + '\n\n' +
-                           '**Estilo:** ' + (functionArgs.style || 'moderno') + '\n\n';
+                           `• ${functionArgs.desired_changes}\n\n` +
+                           `**Estilo:** ${functionArgs.style || 'moderno'}\n\n`;
           }
           
           errorMessage += '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
@@ -1847,7 +1077,7 @@ export default async function handler(req, res) {
       // ============================================================================
       // 🖼️ COMPOSE MARKETING IMAGE (usando Cloudinary Transformations)
       // ============================================================================
-      else if (toolCall.function.name === 'compose_marketing_image') {
+      if (toolCall.function.name === 'compose_marketing_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('🎨 Componiendo imagen de marketing:', functionArgs);
@@ -1917,55 +1147,45 @@ export default async function handler(req, res) {
           const dimensions = formatConfig[format || 'square'];
           
           // Construir transformaciones de Cloudinary
-          const transformations = [];
-          
-          // Redimensionar imagen base
-          transformations.push('c_fill,w_' + dimensions.width + ',h_' + dimensions.height + ',g_auto');
-          
-          // Oscurecer ligeramente para que texto resalte
-          transformations.push('e_brightness:-15');
-          
-          // Añadir título si existe
-          if (property_info.title) {
-            transformations.push('l_text:Arial_70_bold:' + encodeURIComponent(property_info.title) + ',co_' + selectedColor + ',g_north,y_80');
-          }
-          
-          // Añadir precio (texto grande)
-          transformations.push('l_text:Arial_90_bold:' + encodeURIComponent(property_info.price) + ',co_' + selectedColor + ',g_center,y_-100');
-          
-          // Añadir detalles (m², habitaciones)
-          if (property_info.size || property_info.rooms) {
-            const details = (property_info.size || '') + ' • ' + (property_info.rooms || '');
-            transformations.push('l_text:Arial_50:' + encodeURIComponent(details) + ',co_' + selectedColor + ',g_center,y_20');
-          }
-          
-          // Añadir ubicación
-          transformations.push('l_text:Arial_45:' + encodeURIComponent(property_info.location) + ',co_' + selectedColor + ',g_south,y_60');
-          
-          // Logo/watermark si se solicita
-          if (include_logo) {
-            transformations.push('l_text:Arial_35:Domus-IA,co_' + selectedColor + ',g_north_west,x_40,y_40,o_80');
-          }
+          const transformations = [
+            // Redimensionar imagen base
+            `c_fill,w_${dimensions.width},h_${dimensions.height},g_auto`,
+            // Oscurecer ligeramente para que texto resalte
+            'e_brightness:-15',
+            // Añadir título si existe
+            property_info.title ? `l_text:Arial_70_bold:${encodeURIComponent(property_info.title)},co_${selectedColor},g_north,y_80` : null,
+            // Añadir precio (texto grande)
+            `l_text:Arial_90_bold:${encodeURIComponent(property_info.price)},co_${selectedColor},g_center,y_-100`,
+            // Añadir detalles (m², habitaciones)
+            property_info.size || property_info.rooms ? 
+              `l_text:Arial_50:${encodeURIComponent((property_info.size || '') + ' • ' + (property_info.rooms || ''))},co_${selectedColor},g_center,y_20` : null,
+            // Añadir ubicación
+            `l_text:Arial_45:${encodeURIComponent(property_info.location)},co_${selectedColor},g_south,y_60`,
+            // Logo/watermark si se solicita
+            include_logo ? `l_text:Arial_35:Domus-IA,co_${selectedColor},g_north_west,x_40,y_40,o_80` : null
+          ].filter(Boolean); // Remover nulls
           
           // Construir URL final con transformaciones
-          const marketingImageUrl = 'https://res.cloudinary.com/' + cloudName + '/image/upload/' + transformations.join('/') + '/' + pathWithPublicId;
+          const marketingImageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${transformations.join('/')}/${pathWithPublicId}`;
           
           console.log('✅ Imagen de marketing compuesta con Cloudinary:', marketingImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: '📸 ¡Imagen publicitaria lista! He añadido a tu foto real:\n\n' +
-                     '💰 Precio: **' + property_info.price + '**\n' +
-                     (property_info.size ? '📐 Superficie: ' + property_info.size + '\n' : '') +
-                     (property_info.rooms ? '🛏️ Habitaciones: ' + property_info.rooms + '\n' : '') +
-                     '📍 Ubicación: ' + property_info.location + '\n\n' +
-                     '✨ Formato ' + format + ' optimizado para redes sociales. ¡Lista para publicar!',
+            message: `📸 ¡Imagen publicitaria lista! He añadido a tu foto real:\n\n` +
+                     `💰 Precio: **${property_info.price}**\n` +
+                     (property_info.size ? `📐 Superficie: ${property_info.size}\n` : '') +
+                     (property_info.rooms ? `🛏️ Habitaciones: ${property_info.rooms}\n` : '') +
+                     `📍 Ubicación: ${property_info.location}\n\n` +
+                     `✨ Formato ${format} optimizado para redes sociales. ¡Lista para publicar!`,
             imageUrl: marketingImageUrl,
             format: format,
             propertyInfo: property_info,
             isPermanent: true, // Cloudinary URLs son permanentes
             cloudinaryUsed: true,
-            marketingComposed: true
+            marketingComposed: true,
+            tokensUsed: data.usage.total_tokens,
+            model: data.model
           });
 
         } catch (error) {
@@ -1974,16 +1194,55 @@ export default async function handler(req, res) {
           return res.status(200).json({
             success: true,
             message: '⚠️ No pude crear la imagen publicitaria automáticamente.\n\n' +
-                     'Puedes crear tu imagen publicitaria manualmente con:\n\n' +
-                     '📱 **Canva** (gratis): canva.com\n' +
-                     '🎨 **Adobe Express** (gratis): adobe.com/express\n\n' +
-                     'Datos para incluir:\n' +
-                     '💰 ' + (functionArgs.property_info?.price || 'Precio') + '\n' +
-                     '📍 ' + (functionArgs.property_info?.location || 'Ubicación') + '\n' +
-                     (functionArgs.property_info?.size ? '📐 ' + functionArgs.property_info.size + '\n' : '') +
-                     (functionArgs.property_info?.rooms ? '🛏️ ' + functionArgs.property_info.rooms + '\n' : ''),
+                     `Puedes crear tu imagen publicitaria manualmente con:\n\n` +
+                     `📱 **Canva** (gratis): canva.com\n` +
+                     `🎨 **Adobe Express** (gratis): adobe.com/express\n\n` +
+                     `Datos para incluir:\n` +
+                     `💰 ${functionArgs.property_info?.price || 'Precio'}\n` +
+                     `📍 ${functionArgs.property_info?.location || 'Ubicación'}\n` +
+                     (functionArgs.property_info?.size ? `📐 ${functionArgs.property_info.size}\n` : '') +
+                     (functionArgs.property_info?.rooms ? `🛏️ ${functionArgs.property_info.rooms}\n` : ''),
             fallbackMode: true,
             errorDetails: error.message
+          });
+          
+          // Fallback legacy: HTML template (por si acaso)
+          const htmlTemplateLegacy = `
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+.property-card {
+  position: relative;
+  width: ${functionArgs.format === 'story' ? '1080px' : '1200px'};
+  height: ${functionArgs.format === 'story' ? '1920px' : '1200px'};
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+}
+.price { font-size: 72px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+.details { font-size: 36px; color: white; margin-top: 20px; }
+.location { font-size: 28px; color: white; opacity: 0.9; }
+${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px; width: 150px; }' : ''}
+</style></head><body>
+<div class="property-card">
+  ${functionArgs.include_logo ? '<div class="logo">🏢 MontCastell-AI</div>' : ''}
+  <div class="price">${functionArgs.property_info.price}</div>
+  <div class="details">${functionArgs.property_info.size || ''} • ${functionArgs.property_info.rooms || ''}</div>
+  <div class="location">${functionArgs.property_info.location}</div>
+</div>
+</body></html>`;
+          
+          return res.status(200).json({
+            success: true,
+            message: 'No pude generar la imagen automáticamente, pero te doy un template HTML listo para usar. Puedes:\n\n' +
+                     '1. Copiar el código HTML y abrirlo en navegador\n' +
+                     '2. Capturar pantalla del resultado\n' +
+                     '3. O usar Canva/Photoshop para crear la composición',
+            htmlTemplate: htmlTemplate,
+            marketingComposed: false,
+            fallbackMode: true
           });
         }
       }
@@ -1991,235 +1250,135 @@ export default async function handler(req, res) {
       // ============================================================================
       // 🆕 HANDLERS PARA TODAS LAS NUEVAS TOOLS REPLICATE
       // ============================================================================
+      
+      // FUNCIÓN AUXILIAR: Detectar URL de imagen automáticamente
+      function detectImageUrl(messages) {
+      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+        const msg = messages[i];
+        if (msg.role === 'user' && msg.content) {
+          const urlPatterns = [
+            /https:\/\/res\.cloudinary\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.imgur\.com\/[^\s"'<>\[\]]+/,
+            /https:\/\/i\.ibb\.co\/[^\s"'<>\[\]]+/,
+            /https?:\/\/[^\s"'<>\[\]]+\.(jpg|jpeg|png|webp)/i
+          ];
+          for (const pattern of urlPatterns) {
+            const match = msg.content.match(pattern);
+            if (match) return match[0];
+          }
+        }
+      }
+      return null;
+    }
     
-      // 1️⃣ REMOVE BACKGROUND
-      else if (toolCall.function.name === 'remove_background') {
-        try {
-          const imageUrl = detectImageUrl(messages);
-          if (!imageUrl) {
-            return res.status(200).json({
-              success: true,
-              message: '📸 Sube una imagen primero usando el botón 📷'
-            });
-          }
-          
-          const result = await removeBackground(imageUrl);
-          
+    // 1️⃣ REMOVE BACKGROUND
+    if (toolCall.function.name === 'remove_background') {
+      try {
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
           return res.status(200).json({
             success: true,
-            message: '✅ Fondo eliminado correctamente. Ahora puedes usarla para composiciones o reemplazar el cielo.',
-            imageUrl: result,
-            tool: 'remove_background'
-          });
-        } catch (error) {
-          console.error('❌ Error remove background:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude quitar el fondo. Intenta con otra imagen.'
+            message: '📸 Sube una imagen primero usando el botón 📷'
           });
         }
+        
+        const result = await removeBackground(imageUrl);
+        
+        return res.status(200).json({
+          success: true,
+          message: '✅ Fondo eliminado correctamente. Ahora puedes usarla para composiciones o reemplazar el cielo.',
+          imageUrl: result,
+          tool: 'remove_background'
+        });
+      } catch (error) {
+        console.error('❌ Error remove background:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude quitar el fondo. Intenta con otra imagen.'
+        });
       }
-      
-      // 2️⃣ UPSCALE IMAGE
-      else if (toolCall.function.name === 'upscale_image') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          const imageUrl = detectImageUrl(messages);
-          if (!imageUrl) {
-            return res.status(200).json({
-              success: true,
-              message: '📸 Sube una imagen primero usando el botón 📷'
-            });
-          }
-          
-          const scale = functionArgs.scale || 4;
-          const result = await upscaleImage(imageUrl, scale);
-          
+    }
+    
+    // 2️⃣ UPSCALE IMAGE
+    else if (toolCall.function.name === 'upscale_image') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const imageUrl = detectImageUrl(messages);
+        if (!imageUrl) {
           return res.status(200).json({
             success: true,
-            message: '✅ Resolución aumentada ' + scale + 'x. La imagen ahora tiene mucha mayor calidad y detalle.',
-            imageUrl: result,
-            tool: 'upscale_image'
-          });
-        } catch (error) {
-          console.error('❌ Error upscale:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude mejorar la resolución. Intenta con otra imagen.'
+            message: '📸 Sube una imagen primero usando el botón 📷'
           });
         }
+        
+        const scale = functionArgs.scale || 4;
+        const result = await upscaleImage(imageUrl, scale);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Resolución aumentada ${scale}x. La imagen ahora tiene mucha mayor calidad y detalle.`,
+          imageUrl: result,
+          tool: 'upscale_image'
+        });
+      } catch (error) {
+        console.error('❌ Error upscale:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude mejorar la resolución. Intenta con otra imagen.'
+        });
       }
-      
-      // 3️⃣ GENERATE SALE SIGN
-      else if (toolCall.function.name === 'generate_sale_sign') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          const prompt = 'Professional Spanish real estate \'SE VENDE\' sign, modern design, ' +
-                        'price ' + functionArgs.price + ', ' +
-                        (functionArgs.phone ? 'phone ' + functionArgs.phone + ', ' : '') +
-                        (functionArgs.style || 'modern') + ' style, clean typography, high contrast, professional';
-          
-          const result = await generateSaleSign(prompt);
-          
-          return res.status(200).json({
-            success: true,
-            message: '✅ Cartel "SE VENDE" generado con precio ' + functionArgs.price + '. Listo para imprimir o publicar en redes.',
-            imageUrl: result,
-            tool: 'generate_sale_sign'
-          });
-        } catch (error) {
-          console.error('❌ Error sale sign:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude generar el cartel. Inténtalo de nuevo.'
-          });
-        }
+    }
+    
+    // 3️⃣ GENERATE SALE SIGN
+    else if (toolCall.function.name === 'generate_sale_sign') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const prompt = `Professional Spanish real estate 'SE VENDE' sign, modern design, ` +
+                      `price ${functionArgs.price}, ` +
+                      (functionArgs.phone ? `phone ${functionArgs.phone}, ` : '') +
+                      `${functionArgs.style || 'modern'} style, clean typography, high contrast, professional`;
+        
+        const result = await generateSaleSign(prompt);
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Cartel "SE VENDE" generado con precio ${functionArgs.price}. Listo para imprimir o publicar en redes.`,
+          imageUrl: result,
+          tool: 'generate_sale_sign'
+        });
+      } catch (error) {
+        console.error('❌ Error sale sign:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar el cartel. Inténtalo de nuevo.'
+        });
       }
-      
-      // 4️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
-      else if (toolCall.function.name === 'generate_video_from_text') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          const result = await generateVideoWithVeo3(functionArgs.description);
-          
-          return res.status(200).json({
-            success: true,
-            message: '✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.',
-            videoUrl: result,
-            tool: 'generate_video_from_text',
-            model: 'Google VEO 3'
-          });
-        } catch (error) {
-          console.error('❌ Error generate video VEO 3:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
-          });
-        }
+    }
+    
+    // 3️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
+    else if (toolCall.function.name === 'generate_video_from_text') {
+      try {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const duration = functionArgs.duration || 6;
+        const result = await generateVideoWithVeo3(functionArgs.description, duration, "16:9");
+        
+        return res.status(200).json({
+          success: true,
+          message: `✅ Vídeo de ${duration} segundos generado con **Google VEO 3**. Tour virtual cinematográfico listo para usar en redes sociales.`,
+          videoUrl: result,
+          tool: 'generate_video_from_text',
+          model: 'Google VEO 3'
+        });
+      } catch (error) {
+        console.error('❌ Error generate video VEO 3:', error);
+        return res.status(200).json({
+          success: true,
+          message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
+        });
       }
-      
-      // 5️⃣ EXTRACT PROPERTY DATA (Vision + Tavily)
-      else if (toolCall.function.name === 'extract_property_data') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log('🔍 Extrayendo datos de inmueble...');
-          
-          // Detectar si hay imagen en el contexto
-          let imageContent = null;
-          if (functionArgs.source_type === 'image') {
-            // Buscar imagen en los mensajes procesados
-            for (let i = processedMessages.length - 1; i >= Math.max(0, processedMessages.length - 3); i--) {
-              const msg = processedMessages[i];
-              if (msg.role === 'user' && Array.isArray(msg.content)) {
-                const imageObj = msg.content.find(c => c.type === 'image_url');
-                if (imageObj) {
-                  imageContent = imageObj.image_url.url;
-                  break;
-                }
-              }
-            }
-          }
-          
-          const extractionResult = await extractPropertyData(
-            functionArgs.source_type,
-            imageContent,
-            functionArgs.listing_url,
-            TAVILY_API_KEY,
-            OPENAI_API_KEY
-          );
-          
-          if (extractionResult.success) {
-            return res.status(200).json({
-              success: true,
-              message: '✅ Datos del inmueble extraídos correctamente. Ahora puedo guardarlos en el CRM o generar un informe de valoración.',
-              extractedData: extractionResult.data,
-              rawExtraction: extractionResult.raw_extraction || extractionResult.raw_content,
-              source: extractionResult.source,
-              tool: 'extract_property_data'
-            });
-          } else {
-            return res.status(200).json({
-              success: true,
-              message: '⚠️ No pude extraer todos los datos. ¿Puedes proporcionarme la información manualmente?',
-              error: extractionResult.error
-            });
-          }
-        } catch (error) {
-          console.error('❌ Error extract property data:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ Error extrayendo datos del inmueble. Prueba a proporcionarme la información directamente.'
-          });
-        }
-      }
-      
-      // 6️⃣ SEARCH MARKET COMPARABLES (Tavily)
-      else if (toolCall.function.name === 'search_market_comparables') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log('🔎 Buscando comparables en mercado...');
-          
-          if (!TAVILY_API_KEY) {
-            return res.status(200).json({
-              success: true,
-              message: '⚠️ La búsqueda de comparables requiere configurar TAVILY_API_KEY. Puedo generar el informe con datos estimados.'
-            });
-          }
-          
-          const comparablesResult = await searchMarketComparables(functionArgs, TAVILY_API_KEY);
-          
-          return res.status(200).json({
-            success: true,
-            message: '✅ Encontré ' + comparablesResult.comparables.length + ' inmuebles comparables en ' + functionArgs.city + '. ' + comparablesResult.summary,
-            comparables: comparablesResult.comparables,
-            summary: comparablesResult.summary,
-            query: comparablesResult.query,
-            tool: 'search_market_comparables'
-          });
-        } catch (error) {
-          console.error('❌ Error searching comparables:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ No pude buscar comparables en este momento. Puedo generar el informe con estimación manual.'
-          });
-        }
-      }
-      
-      // 7️⃣ GENERATE VALUATION REPORT (HTML profesional)
-      else if (toolCall.function.name === 'generate_valuation_report') {
-        try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log('📊 Generando informe de valoración...');
-          
-          // Generar HTML del informe
-          const reportHTML = generateValuationReportHTML(functionArgs);
-          
-          // Generar ID único para el informe
-          const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          
-          // TODO: Guardar en base de datos (tabla documents)
-          // Por ahora devolvemos el HTML para preview
-          
-          return res.status(200).json({
-            success: true,
-            message: '✅ Informe de valoración generado. Revisa los datos y dime si quieres cambiar algo antes de publicar.',
-            reportHTML: reportHTML,
-            reportData: functionArgs,
-            reportId: reportId,
-            previewMode: true,
-            tool: 'generate_valuation_report',
-            action: 'show_preview'
-          });
-        } catch (error) {
-          console.error('❌ Error generating valuation report:', error);
-          return res.status(200).json({
-            success: true,
-            message: '⚠️ Error generando el informe. Verifica que todos los datos sean correctos.'
-          });
-        }
-      } // Cierre del último handler (generate_valuation_report)
-      
-    } // Cierre del if (assistantMessage.tool_calls)
+    }
+    
+    }
     
     // ============================================================================
     // 💾 Guardar conversación en base de datos (no bloqueante)
@@ -2540,68 +1699,23 @@ Tú: [Llamas a compose_marketing_image con todos los datos]
 
 Cuando el usuario pulse uno de estos botones, aquí está lo que debes hacer:
 
-### 1️⃣ **"Informe de valoración"** 📊 SISTEMA AUTOMATIZADO CON IA
-**Objetivo:** Generar informe profesional HTML con datos REALES del mercado en tiempo real.
-
-**FLUJO COMPLETO (usa las 3 tools):**
-
-**PASO 1: Obtener datos del inmueble**
-- Si usuario **sube pantallazo** → Llama `extract_property_data(source_type: "image")`
-  - GPT-4o Vision analiza y extrae: dirección, precio, m², habitaciones, baños, descripción
-- Si usuario **pega URL** → Llama `extract_property_data(source_type: "url", listing_url: "...")`
-  - Tavily extrae datos del anuncio
-- Si usuario **proporciona datos manualmente** → Recopila conversacionalmente (dirección, m², habitaciones, etc.)
-
-**PASO 2: Buscar comparables en mercado**
-→ Llama `search_market_comparables({city, neighborhood, property_type, operation_type, size_m2_min, size_m2_max, rooms})`
-  - Tavily busca inmuebles similares en portales (Idealista, Fotocasa)
-  - Obtienes 5 inmuebles comparables con precios REALES
-  - Calculas: precio/m² medio, rango de valoración, tendencia
-
-**PASO 3: Calcular valoración**
-Con los datos de comparables:
-- min_price: Precio mínimo razonable
-- avg_price: Precio medio recomendado  
-- max_price: Precio máximo optimista
-- price_per_m2: Precio por m² de la zona
-- market_trend: "alza" | "estable" | "baja"
-- confidence_level: "alta" | "media" | "baja"
-
-**PASO 4: Generar informe HTML**
-→ Llama `generate_valuation_report({property_data, valuation_data, comparables, branding})`
-  - Sistema genera HTML profesional con:
-    ✅ Header con degradado azul
-    ✅ Datos del inmueble en grid
-    ✅ Rango de valoración destacado
-    ✅ Gráfico Chart.js de comparables
-    ✅ Tabla de inmuebles similares
-    ✅ Branding personalizado
-
-**PASO 5: Preview y edición**
-- Usuario ve preview del informe
-- Preguntas: "¿Quieres cambiar algo antes de publicar?"
-- Si usuario pide cambios: "Cambia el precio medio a X€" → Regeneras
-- Si usuario confirma: "Publícalo" → Sistema guarda y genera URL única
-
-**⚠️ REGLAS DE ORO:**
-✅ **SIEMPRE usa las 3 tools** (extract, search, generate) - NO hagas el proceso manual
-✅ **SIEMPRE busca comparables REALES** en Tavily antes de generar informe
-✅ **SÉ CONVERSACIONAL** en la edición: "Actualizo el precio a 360.000€, ¿te parece?"
-✅ **EXPLICA los datos**: "He encontrado 5 pisos similares con precios entre..."
+### 1️⃣ **"Informe de valoración"**
+**Objetivo:** Valoración con rango, €/m², comparables y gráficos.
+**Proceso:**
+1. Pedir: dirección/RC, m² construidos/útiles, parcela, estado y extras
+2. Obtener datos (si disponibles): Catastro, evolución zona, comparables
+3. Emitir estimación inicial + supuestos; hacer 1 pregunta compuesta (3-5 datos faltantes)
+4. Refinar rango (min/medio/max), €/m² y factores determinantes
+5. Entregar informe web: HTML con 2 gráficos (evolución €/m² y barras comparables), tabla de comparables, imágenes de zona, enlaces Catastro/portal y botón WhatsApp
+6. **Fallback:** Si no hay publicación externa, incluir el HTML completo en la respuesta para copiar/usar
 
 ### 2️⃣ **"Informe de ajuste de precio"**
 **Objetivo:** Demostrar con datos si el precio anunciado está alto y proponer ajuste.
-
-**Usa las mismas tools que informe de valoración:**
-1. `extract_property_data` → Obtén datos del inmueble + precio actual
-2. `search_market_comparables` → Busca inmuebles similares en el mercado
-3. Compara precio actual vs precio medio de mercado
-4. Calcula sobreprecio (%) y días en mercado
-5. `generate_valuation_report` adaptado para ajuste:
-   - Destaca la diferencia: "Tu precio: 380K€ vs Mercado: 350K€ (+8.6%)"
-   - Propone rango recomendado: "Te recomiendo ajustar a 340-360K€"
-   - Gráfico comparativo con precio actual vs comparables
-   - Conclusión diplomática: "Un pequeño ajuste aumentará visitas y ofertas"
+**Proceso:**
+1. Pedir: precio actual, fecha publicación, visitas, ubicación
+2. Comparar con ventas recientes y activos similares
+3. Calcular sobreprecio (%) y proponer rango recomendado
+4. Entregar informe web (o HTML incrustado) con gráficos + comparables y conclusión diplomática
 
 ### 3️⃣ **"Home Staging Virtual"**
 **Objetivo:** Editar imágenes con Nano Banana (Gemini 2.5 Flash) - Edición conversacional real.
