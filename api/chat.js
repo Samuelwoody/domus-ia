@@ -139,7 +139,11 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
         input: {
           image: imageUrl,
           prompt: editInstructions,
-          output_format: "png"
+          output_format: "png",
+          // Parámetros críticos para edición REAL (no regeneración)
+          guidance_scale: 7.5,        // Control moderado del prompt (default: 7.5)
+          num_inference_steps: 28,    // Pasos de inferencia para calidad óptima
+          negative_prompt: "completely different image, new scene, different architecture, different perspective, different camera angle, reimagined, regenerated, new composition"
         }
       })
     });
@@ -1006,9 +1010,10 @@ export default async function handler(req, res) {
           // 🎨 EDICIÓN CON NANO BANANA (Gemini 2.5 Flash - Edición Conversacional)
           // ============================================================================
           
-          // Construir instrucciones EXPLÍCITAS para que Nano Banana preserve la imagen original
-          // Según docs oficiales, necesita contexto muy específico para edición vs generación
-          const editInstructions = `Edit this exact image by making ONLY the following changes: ${functionArgs.desired_changes}. IMPORTANT: Keep the exact same composition, camera angle, perspective, lighting, and architecture. Do NOT regenerate the image - only modify what was specifically requested. Preserve all other elements exactly as they are in the original. Style: ${functionArgs.style || 'modern'}. Photo-realistic real estate photography.`;
+          // Construir instrucciones EXPLÍCITAS según documentación oficial de Nano Banana
+          // Formato recomendado: "In this image, [specific edit instruction]"
+          // Esto ayuda al modelo a entender que debe EDITAR, no GENERAR
+          const editInstructions = `In this image, ${functionArgs.desired_changes}. Keep everything else exactly as it is: same composition, camera angle, perspective, lighting, and architecture. Only modify the specific elements mentioned. Style: ${functionArgs.style || 'modern'}. Professional real estate photography.`;
           
           console.log('🍌 Usando Google Nano Banana (Gemini 2.5 Flash) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
