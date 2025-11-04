@@ -1006,8 +1006,9 @@ export default async function handler(req, res) {
           // 🎨 EDICIÓN CON NANO BANANA (Gemini 2.5 Flash - Edición Conversacional)
           // ============================================================================
           
-          // Construir instrucciones en inglés (InstructPix2Pix funciona mejor en inglés)
-          const editInstructions = `${functionArgs.desired_changes}. Keep the original structure, perspective and architecture. Style: ${functionArgs.style || 'modern'}.`;
+          // Construir instrucciones EXPLÍCITAS para que Nano Banana preserve la imagen original
+          // Según docs oficiales, necesita contexto muy específico para edición vs generación
+          const editInstructions = `Edit this exact image by making ONLY the following changes: ${functionArgs.desired_changes}. IMPORTANT: Keep the exact same composition, camera angle, perspective, lighting, and architecture. Do NOT regenerate the image - only modify what was specifically requested. Preserve all other elements exactly as they are in the original. Style: ${functionArgs.style || 'modern'}. Photo-realistic real estate photography.`;
           
           console.log('🍌 Usando Google Nano Banana (Gemini 2.5 Flash) para edición REAL');
           console.log('📝 Instrucciones:', editInstructions);
