@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Valoración - Domus-IA España</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23C0C0C0'/%3E%3Cstop offset='100%25' style='stop-color:%231e3a8a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 75V45l25-20 25 20v30H60V55H40v20H25z' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- Meta tags -->
+    <meta name="description" content="Informe de valoración inmobiliaria profesional generado por Domus-IA España">
+    <meta property="og:title" content="Informe de Valoración - Domus-IA">
+    <meta property="og:description" content="Informe de valoración inmobiliaria profesional con datos del mercado en tiempo real">
+    <meta property="og:type" content="website">
+    
+    <!-- Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        /* Loading State */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #1e3a8a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 16px;
+        }
+        
+        /* Report Container */
+        #reportContainer {
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        /* Error State */
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+        
+        .error-message {
+            font-size: 16px;
+            color: #64748b;
+            max-width: 500px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .error-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .error-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        .report-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            z-index: 1000;
+        }
+        
+        .report-footer a {
+            color: #1e3a8a;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .report-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-container">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando informe...</p>
+    </div>
+    
+    <!-- Report Container -->
+    <div id="reportContainer"></div>
+    
+    <!-- Footer -->
+    <div class="report-footer" style="display: none;" id="reportFooter">
+        Generado por <a href="/" target="_blank">Domus-IA España</a> | 
+        <a href="https://www.montcastell-ai.com" target="_blank">MontCastell-AI</a>
+    </div>
+    
+    <!-- Script -->
+    <script>
+        // Obtener ID del informe desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+        
+        console.log('📊 Cargando informe:', reportId);
+        
+        if (!reportId) {
+            showError('ID de informe no proporcionado', 'Por favor, verifica que el enlace sea correcto.');
+        } else {
+            loadReport(reportId);
+        }
+        
+        /**
+         * Carga el informe desde la API
+         */
+        async function loadReport(id) {
+            try {
+                const response = await fetch(`/api/reports?id=${encodeURIComponent(id)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.html) {
+                    // Ocultar loading
+                    document.getElementById('loadingState').style.display = 'none';
+                    
+                    // Mostrar informe
+                    document.getElementById('reportContainer').innerHTML = data.html;
+                    
+                    // Mostrar footer
+                    document.getElementById('reportFooter').style.display = 'block';
+                    
+                    // Actualizar título de la página
+                    const h1 = document.querySelector('h1');
+                    if (h1) {
+                        document.title = h1.textContent + ' - Domus-IA';
+                    }
+                    
+                    console.log('✅ Informe cargado correctamente');
+                    
+                    // TODO: Incrementar views_count en base de datos
+                    
+                } else {
+                    throw new Error(data.error || 'Informe no encontrado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando informe:', error);
+                showError(
+                    'Error cargando el informe',
+                    error.message || 'No se pudo cargar el informe. Por favor, intenta de nuevo más tarde.'
+                );
+            }
+        }
+        
+        /**
+         * Muestra estado de error
+         */
+        function showError(title, message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('reportContainer').innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <h1 class="error-title">${title}</h1>
+                    <p class="error-message">${message}</p>
+                    <a href="/" class="error-button">Volver a Domus-IA</a>
+                </div>
+            `;
+        }
+        
+        // Print functionality
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>
