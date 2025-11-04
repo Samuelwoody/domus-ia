@@ -1962,14 +1962,14 @@ export default async function handler(req, res) {
           return res.status(200).json({
             success: true,
             message: '⚠️ No pude crear la imagen publicitaria automáticamente.\n\n' +
-                     `Puedes crear tu imagen publicitaria manualmente con:\n\n` +
-                     `📱 **Canva** (gratis): canva.com\n` +
-                     `🎨 **Adobe Express** (gratis): adobe.com/express\n\n` +
-                     `Datos para incluir:\n` +
-                     `💰 ${functionArgs.property_info?.price || 'Precio'}\n` +
-                     `📍 ${functionArgs.property_info?.location || 'Ubicación'}\n` +
-                     (functionArgs.property_info?.size ? `📐 ${functionArgs.property_info.size}\n` : '') +
-                     (functionArgs.property_info?.rooms ? `🛏️ ${functionArgs.property_info.rooms}\n` : ''),
+                     'Puedes crear tu imagen publicitaria manualmente con:\n\n' +
+                     '📱 **Canva** (gratis): canva.com\n' +
+                     '🎨 **Adobe Express** (gratis): adobe.com/express\n\n' +
+                     'Datos para incluir:\n' +
+                     '💰 ' + (functionArgs.property_info?.price || 'Precio') + '\n' +
+                     '📍 ' + (functionArgs.property_info?.location || 'Ubicación') + '\n' +
+                     (functionArgs.property_info?.size ? '📐 ' + functionArgs.property_info.size + '\n' : '') +
+                     (functionArgs.property_info?.rooms ? '🛏️ ' + functionArgs.property_info.rooms + '\n' : ''),
             fallbackMode: true,
             errorDetails: error.message
           });
