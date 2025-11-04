@@ -2225,7 +2225,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           message: '⚠️ Error generando el informe. Verifica que todos los datos sean correctos.'
         });
       }
-    }
+    } // Cierre del último else if (generate_valuation_report)
     
     } // Cierre del if (assistantMessage.tool_calls)
     
