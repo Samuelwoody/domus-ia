@@ -317,19 +317,22 @@ Una vez desplegado, verifica que funcione:
 
 ## 🚀 RESUMEN EJECUTIVO
 
-### ✅ **12 Funcionalidades FUNCIONANDO al 100%**
+### ✅ **15 Funcionalidades FUNCIONANDO al 100%**
 1. **Chat IA con GPT-4o** - Conversación inteligente con Sofía
-2. **Generación de imágenes DALL-E 3** - Marketing visual profesional
-3. **🆕 Edición REAL de imágenes (Replicate SDXL)** - Virtual staging preservando estructura original
-4. **🆕 Análisis de Visión (Caso C)** - Descripción, lectura de documentos y análisis sin editar
-5. **Lectura de voz (TTS)** - Text-to-Speech con Web Speech API
-6. **Búsqueda web Tavily** - Información en tiempo real
-7. **Autenticación completa** - Registro/Login con validación CIF/NIF
-8. **Email capture** - Captación automática al mensaje 3
-9. **Detección de propiedades** - IA identifica propiedades en chat
-10. **Panel CRM completo** - Gestión visual de propiedades
-11. **Dashboard con estadísticas** - Métricas en tiempo real
-12. **Filtros y CRUD** - Búsqueda avanzada y edición
+2. **Generación de imágenes DALL-E 3** - Crear imágenes desde cero
+3. **🍌 Recreación inteligente con IA (Nano Banana)** - Virtual staging con Gemini 2.5 Flash
+4. **🎬 Generación de video (VEO 3)** - Tours virtuales cinematográficos
+5. **📈 Upscaling 4x de imágenes** - Real-ESRGAN para calidad HD
+6. **🎨 Carteles "SE VENDE"** - Ideogram V2 con texto perfecto
+7. **👁️ Análisis de Visión** - GPT-4o Vision para análisis y lectura de documentos
+8. **🔍 Búsqueda web Tavily** - Información en tiempo real
+9. **📊 Informes de valoración** - Con datos reales del mercado (Tavily)
+10. **🔊 Lectura de voz (TTS)** - Text-to-Speech con Web Speech API
+11. **🔐 Autenticación completa** - Registro/Login con validación CIF/NIF
+12. **📧 Email capture** - Captación automática al mensaje 3
+13. **🏠 Detección de propiedades** - IA identifica propiedades en chat
+14. **🗂️ Panel CRM completo** - Gestión visual de propiedades
+15. **📊 Dashboard con estadísticas** - Métricas en tiempo real + Filtros y CRUD
 
 ### ⚠️ **3 Funcionalidades Parciales** (código existe, no testeadas)
 - Upload de documentos
@@ -490,142 +493,190 @@ Una vez desplegado, verifica que funcione:
 - 📊 **Dashboard con estadísticas** ✅ (en tiempo real)
 - 🔍 **Filtrado inteligente** ✅ (búsqueda, ciudad, tipo, estado)
 - ✏️ **Edición inline** ✅ (actualización instantánea)
-- 🆕 **Virtual Staging Real** ✅ (edición de imágenes preservando estructura con Replicate SDXL)
+- 🍌 **Recreación inteligente de imágenes** ✅ (Google Nano Banana / Gemini 2.5 Flash)
+- 🎬 **Generación de video cinematográfico** ✅ (Google VEO 3 para tours virtuales)
+- 📈 **Upscaling 4x de imágenes** ✅ (Real-ESRGAN para calidad HD)
+- 🎨 **Carteles "SE VENDE"** ✅ (Ideogram V2 con texto perfecto)
+- 🎨 **Generación de imágenes** ✅ (DALL-E 3 desde cero)
+- 👁️ **Análisis de fotos y documentos** ✅ (GPT-4o Vision)
+- 🔍 **Búsqueda web en tiempo real** ✅ (Tavily)
+- 📊 **Informes de valoración con datos reales** ✅ (Tavily + comparables de mercado)
 - 📞 **Agentes Vocales 24/7** (Vapi.ai) - Próximamente
 - 🔄 **Automatizaciones** (Make.com) - Próximamente
 - 📈 **Análisis de portfolio** con IA proactiva - Próximamente
-- 🎨 **Generación de imágenes** para marketing (DALL-E 3)
-- 👁️ **Análisis de fotos** de propiedades (GPT-4 Vision)
-- 🔍 **Búsqueda web en tiempo real** (Tavily)
 
 ---
 
-## 🎨 3 Casos de Uso con Imágenes (NUEVO v1.3.1)
+## 🎨 Casos de Uso con IA Visual (v1.8.1)
 
-Domus-IA ahora ofrece **3 flujos distintos** cuando subes una imagen, cada uno optimizado para necesidades específicas:
+Domus-IA ofrece **múltiples capacidades de IA visual** optimizadas para el sector inmobiliario:
 
 ---
 
-### 🔧 **CASO A: Edición de Contenido** - Virtual Staging con Replicate SDXL
+### 🔧 **Edición de Imágenes con IA** - Google Nano Banana (Gemini 2.5 Flash)
 
-#### ⭐ Tecnología: Replicate SDXL (Stable Diffusion XL)
+#### ⭐ Tecnología: Google Nano Banana - Recreación Inteligente con Gemini 2.5 Flash
 
-A diferencia de DALL-E 3 que genera imágenes nuevas desde cero, **Replicate SDXL preserva EXACTAMENTE la estructura original** de tus fotos mientras edita solo los elementos que solicites.
+**Nano Banana** crea una **versión mejorada** de tu imagen usando IA conversacional avanzada de Google. No es edición pixel-perfect, sino **recreación inteligente** que mantiene el estilo y contexto mientras aplica los cambios solicitados.
 
-### 🎯 Capacidades de Edición
+### 🎯 Capacidades de Recreación con IA
 
 #### ✅ Virtual Staging (Amueblado Virtual)
-- Añade muebles modernos a espacios vacíos
-- Mantiene MISMA perspectiva y arquitectura
-- Proporciones realistas y profesionales
+- Añade/quita muebles con lenguaje natural
+- Comprende español perfectamente ("añade muebles modernos", "quita muebles")
 - Estilos: Modern, Scandinavian, Industrial, Mediterranean, Contemporary, Rustic
+- **Nota:** Recreación IA (puede variar detalles arquitectónicos)
 
-#### ✅ Limpieza y Orden
-- Elimina desorden y objetos personales
-- Limpia espacios manteniendo estructura
-- Ideal para preparar fotos de venta
+#### ✅ Transformaciones de Estilo
+- Cambiar estilo completo del espacio
+- Mejorar iluminación y atmósfera
+- Actualizar decoración y acabados
+- Cambios de color y materiales
 
-#### ✅ Cambios Estéticos
-- **Pintar paredes**: Cambia colores sin afectar estructura
-- **Cambiar suelos**: Reemplaza materiales (parquet, baldosas, etc.)
-- **Mejorar iluminación**: Incrementa luz natural y calidez
-- **Modificar decoración**: Añade plantas, cuadros, accesorios
+#### ✅ Ventajas de Nano Banana
+- **Rápido:** 10-20 segundos (vs 30-60s otros modelos)
+- **Económico:** $0.0075 por imagen (70% más barato)
+- **Inteligente:** Powered by Gemini 2.5 Flash de Google
+- **Conversacional:** Entiende instrucciones en lenguaje natural
+- **Multi-imagen:** Puede fusionar elementos de varias fotos
 
 ### 🔧 Cómo Funciona
 
-**1. Usuario sube imagen a servicio público** (imgur.com recomendado)
-```
-https://i.imgur.com/abc123.jpg
-```
+**1. Usuario sube imagen con botón 📷** (sistema detecta URL automáticamente)
 
 **2. Conversación con Sofía:**
 ```
-Tú: Añade muebles estilo moderno a este salón vacío:
-    https://i.imgur.com/salon-vacio.jpg
+Tú: [Sube foto de salón vacío]
+    "Añade muebles modernos"
 
-Sofía: [Analiza imagen con GPT-4o Vision]
-       Veo un salón de 5x4m aprox, paredes blancas, suelo madera clara,
-       ventana grande en pared izquierda. Voy a añadir mobiliario moderno...
+Sofía: [Analiza con GPT-4o Vision + Nano Banana]
        
-       [Llama a Replicate SDXL con prompt optimizado]
+       ✨ He recreado tu imagen usando Google Nano Banana (Gemini 2.5 Flash).
        
-       ✨ He mejorado tu imagen manteniendo exactamente la misma estructura
-       y perspectiva del espacio original. He añadido:
-       - Sofá gris de 3 plazas
-       - Mesa de centro blanca
-       - Planta decorativa
-       - Lámpara de pie
+       Cambios aplicados:
+       - Sofá moderno gris de 3 plazas
+       - Mesa de centro blanca minimalista
+       - Planta decorativa en esquina
+       - Lámpara de pie estilo nórdico
        
-       [Muestra imagen editada]
+       La nueva imagen mantiene el estilo general pero puede tener 
+       variaciones en detalles arquitectónicos.
+       
+       [Muestra imagen recreada]
 ```
 
 **3. Resultado:**
-- ✅ MISMA arquitectura y distribución
-- ✅ MISMA perspectiva y ángulo
-- ✅ MISMA iluminación natural
-- ✅ Solo elementos solicitados añadidos/modificados
+- ✅ Estilo y contexto general preservados
+- ✅ Cambios solicitados aplicados
+- ✅ Calidad profesional fotorealista
+- ⚠️ Posibles variaciones en detalles arquitectónicos (recreación IA)
 
-### 💰 Costes
+### 💰 Comparativa de Costes
 
-| Servicio | Coste/Imagen | Tiempo | Calidad |
+| Servicio | Coste/Imagen | Tiempo | Enfoque |
 |----------|--------------|--------|---------|
-| **Replicate SDXL** | $0.01-0.05 | 15-30s | ⭐⭐⭐⭐⭐ HD, estructura preservada |
-| DALL-E 3 | $0.04 | 10-20s | ⭐⭐⭐ HD, pero genera nueva imagen |
-| Agencia diseño | $50-200 | 1-3 días | ⭐⭐⭐⭐ Manual, costoso |
+| **Nano Banana (Gemini 2.5 Flash)** | $0.0075 | 10-20s | ⭐⭐⭐⭐⭐ Recreación IA inteligente |
+| DALL-E 3 | $0.04 | 10-20s | ⭐⭐⭐ Genera imagen nueva desde cero |
+| Agencia diseño | $50-200 | 1-3 días | ⭐⭐⭐⭐ Manual, costoso, pixel-perfect |
 
-**Plan Gratuito Replicate:** $5 en créditos = ~100-500 ediciones de prueba
+**Plan Gratuito Replicate:** $5 en créditos = ~660 recreaciones con Nano Banana
 
-### 📋 Limitaciones Técnicas
+### 📋 Qué Esperar
 
-#### ✅ SÍ Puede Hacer:
-- Añadir/quitar muebles y decoración
-- Cambiar colores de paredes
-- Modificar materiales de suelos
-- Mejorar iluminación
-- Limpiar desorden
-- Virtual staging completo
+#### ✅ Nano Banana es EXCELENTE para:
+- Cambios creativos y mejoras estéticas
+- Virtual staging (añadir/quitar muebles)
+- Transformaciones de estilo completas
+- Mejoras de iluminación y atmósfera
+- Actualizaciones rápidas de marketing
 
-#### ❌ NO Puede Hacer:
-- Cambios arquitectónicos (añadir/quitar ventanas, puertas)
-- Modificar distribución de espacios
-- Cambiar perspectiva o ángulo de cámara
-- Ampliar habitaciones
-- Cambiar altura de techos
+#### ⚠️ Limitaciones (Recreación IA):
+- **No es edición pixel-perfect**: Puede variar detalles arquitectónicos
+- **Recreación creativa**: La IA interpreta y mejora, no copia exactamente
+- **Para preservación exacta**: Considera servicios de edición profesional manual
 
 ### 🔐 Seguridad y Privacidad
 
-- **URL pública temporal**: Usa imgur.com (puedes eliminar después)
-- **No almacenamiento**: Replicate no guarda imágenes permanentemente
-- **Procesamiento efímero**: Imágenes procesadas se eliminan tras 1 hora
-- **GDPR compliant**: Cumple normativa europea de privacidad
+- **Upload seguro**: Sistema Cloudinary con URLs temporales
+- **No almacenamiento largo plazo**: Replicate elimina imágenes tras procesamiento
+- **Procesamiento efímero**: Datos no permanecen en servidores
+- **GDPR compliant**: Cumple normativa europea
 
-### 📚 Documentación Completa
+---
 
-El proyecto incluye 3 guías detalladas:
+### 🎬 **Generación de Video con IA** - Google VEO 3
 
-1. **`REPLICATE-SETUP.md`** - Configuración de API token en Vercel (5KB)
-2. **`IMAGEN-UPLOAD-GUIDE.md`** - Cómo subir imágenes correctamente (6KB)
-3. **`PROMPT-EXAMPLES.md`** - 8 ejemplos de prompts efectivos (11KB)
+#### ⭐ Tecnología: Google VEO 3 - Video Generation State-of-the-Art
 
-### 🎯 Casos de Uso Reales
+**VEO 3** genera video cinematográfico profesional desde descripción de texto. Perfecto para **tours virtuales** y **contenido de redes sociales**.
 
-**Agente Inmobiliario:**
+### 🎯 Capacidades de Video
+
+#### ✅ Tours Virtuales Cinematográficos
+- Genera videos de 6 segundos en calidad profesional
+- Formato 16:9 (landscape) ideal para redes sociales
+- Calidad cinematográfica con movimientos de cámara suaves
+- Perfecto para presentaciones de propiedades
+
+#### 💡 Ejemplo de Uso:
 ```
-Problema: Cliente tiene piso vacío con fotos aburridas
-Solución: Virtual staging en 30 segundos con muebles modernos
-Resultado: Propiedad vende 23% más rápido (estadística real sector)
+Usuario: "Crea un vídeo de tour virtual de villa mediterránea"
+
+Sofía: [Llama a Google VEO 3]
+       
+       ✅ Vídeo cinematográfico generado con Google VEO 3:
+       
+       Smooth aerial descent towards modern Spanish villa,
+       white walls gleaming in golden hour lighting,
+       turquoise pool reflecting sunset, palm trees swaying,
+       professional real estate cinematography, 4K quality
+       
+       [Muestra video MP4]
 ```
 
-**Propietario Particular:**
+### 💰 Características VEO 3
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Duración** | 6 segundos (máximo actual) |
+| **Formato** | 16:9 landscape (1920x1080) |
+| **Calidad** | Cinematográfica profesional |
+| **Tiempo generación** | 60-120 segundos |
+| **Uso ideal** | Tours virtuales, redes sociales, presentaciones |
+
+### 🎥 Casos de Uso Reales
+
+**Tour Virtual Exterior:**
 ```
-Problema: Fotos del salón con desorden y muebles viejos
-Solución: Limpieza virtual + cambio de color paredes
-Resultado: Más visitas y contactos en portales inmobiliarios
+"Cinematic aerial shot descending towards luxury beachfront villa,
+modern architecture, infinity pool, golden hour Mediterranean lighting"
+```
+
+**Tour Virtual Interior:**
+```
+"Smooth dolly shot through modern minimalist living room,
+floor-to-ceiling windows, natural daylight, elegant furniture,
+professional real estate cinematography"
 ```
 
 ---
 
-### 🎨 **CASO B: Imagen Publicitaria** - Marketing con Cloudinary Transformations
+### 🔧 **Herramientas Adicionales de IA Visual**
+
+#### 📈 **Upscaling 4x** - Real-ESRGAN
+- Aumenta resolución de imágenes 4x sin pérdida de calidad
+- Convierte 512px → 2048px
+- Ideal para imágenes de baja calidad que necesitas usar en marketing
+
+#### 🎨 **Carteles "SE VENDE"** - Ideogram V2
+- Renderizado perfecto de texto en español
+- Genera carteles profesionales con precio y contacto
+- Diseños modernos, clásicos o elegantes
+- **GDPR compliant**: Cumple normativa europea de privacidad
+
+---
+
+### 🎨 **Imágenes Publicitarias** - Marketing con Cloudinary Transformations
 
 #### ⭐ Tecnología: Cloudinary (URL-based overlays)
 
@@ -661,7 +712,9 @@ Sofía: ✅ He creado tu imagen publicitaria usando tu foto REAL:
 
 ---
 
-### 👁️ **CASO C: Análisis de Visión** - Descripción y Lectura con GPT-4o Vision (NUEVO)
+---
+
+### 👁️ **Análisis de Visión** - GPT-4o Vision API
 
 #### ⭐ Tecnología: GPT-4o Vision API
 
@@ -731,40 +784,7 @@ Sofía: 👁️ Basándome en la imagen, te recomiendo:
 - **No modificación**: Imagen original intacta
 - **Versátil**: Imágenes Y documentos
 
----
 
-### 🧠 Detección Inteligente de Intención
-
-Sofía detecta **automáticamente** qué quieres hacer basándose en tu mensaje al subir la imagen:
-
-#### Si dices...
-- **"Añade muebles"** → Caso A (Edición)
-- **"Con precio y logo"** → Caso B (Marketing)
-- **"Describe esto"** → Caso C (Análisis)
-
-#### Si subes imagen sin mensaje
-Sofía te presenta las **3 opciones** para que elijas:
-
-```
-📸 ¡Perfecto! He recibido tu imagen.
-
-¿Qué quieres hacer con esta imagen?
-
-🔧 OPCIÓN A: Mejorarla para el anuncio
-🎨 OPCIÓN B: Crear imagen publicitaria de portada
-👁️ OPCIÓN C: Analizar/Describir la imagen
-```
-
----
-
-### 📚 Documentación Completa de los 3 Casos
-
-El proyecto incluye guías detalladas:
-
-1. **`REPLICATE-SETUP.md`** - Configuración Caso A (5KB)
-2. **`IMAGEN-UPLOAD-GUIDE.md`** - Cómo subir imágenes (6KB)
-3. **`PROMPT-EXAMPLES.md`** - Ejemplos efectivos Caso A (11KB)
-4. **`👁️_CASO_C_ANALISIS_VISION.md`** - Documentación completa Caso C (12KB)
 
 ---
 
@@ -857,10 +877,14 @@ DELETE /api/properties
 
 ### IA & APIs
 - **OpenAI GPT-4o** (chat, vision, function calling)
-- **DALL-E 3** (generación de imágenes nuevas)
-- **Replicate SDXL** (edición de imágenes preservando estructura) 🆕
-- **Tavily API** (búsqueda web)
-- **Catastro API** (datos oficiales propiedades)
+- **DALL-E 3** (generación de imágenes desde cero)
+- **Google Nano Banana (Gemini 2.5 Flash)** (recreación inteligente de imágenes) ⭐
+- **Google VEO 3** (generación de video cinematográfico) 🎬
+- **Real-ESRGAN** (upscaling 4x de imágenes)
+- **Ideogram V2** (renderizado perfecto de texto en carteles)
+- **Tavily API** (búsqueda web + comparables de mercado)
+- **Cloudinary** (transformaciones de imágenes para marketing)
+- **Catastro API** (datos oficiales propiedades - próximamente)
 - **Vapi.ai** (agentes vocales - próximamente)
 - **Make.com** (automatizaciones - próximamente)
 
