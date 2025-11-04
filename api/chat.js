@@ -201,11 +201,9 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
 // ============================================================================
 // 🎬 GOOGLE VEO 3 - VIDEO GENERATION
 // ============================================================================
-async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9") {
+async function generateVideoWithVeo3(prompt) {
   console.log('🎬 Google VEO 3 - Text-to-video generation');
   console.log('📝 Prompt:', prompt);
-  console.log('⏱️ Duration:', duration, 'seconds');
-  console.log('📐 Aspect ratio:', aspectRatio);
   
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
@@ -225,9 +223,7 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
       },
       body: JSON.stringify({
         input: {
-          prompt: prompt,
-          duration: duration,
-          aspect_ratio: aspectRatio
+          prompt: prompt
         }
       })
     });
@@ -733,19 +729,13 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "generate_video_from_text",
-          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description (up to 6 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
+          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description. Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
           parameters: {
             type: "object",
             properties: {
               description: {
                 type: "string",
-                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
-              },
-              duration: {
-                type: "number",
-                enum: [2, 4, 6],
-                description: "Video duration in seconds (maximum 6 seconds for best quality)",
-                default: 6
+                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style, mood. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
               }
             },
             required: ["description"]
@@ -1359,12 +1349,11 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
     else if (toolCall.function.name === 'generate_video_from_text') {
       try {
         const functionArgs = JSON.parse(toolCall.function.arguments);
-        const duration = functionArgs.duration || 6;
-        const result = await generateVideoWithVeo3(functionArgs.description, duration, "16:9");
+        const result = await generateVideoWithVeo3(functionArgs.description);
         
         return res.status(200).json({
           success: true,
-          message: `✅ Vídeo de ${duration} segundos generado con **Google VEO 3**. Tour virtual cinematográfico listo para usar en redes sociales.`,
+          message: `✅ Vídeo cinematográfico generado con **Google VEO 3**. Tour virtual listo para usar en redes sociales.`,
           videoUrl: result,
           tool: 'generate_video_from_text',
           model: 'Google VEO 3'
