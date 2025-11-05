@@ -40,6 +40,23 @@
 - ✅ **Optimización de rendimiento** con debounce en filtros
 - ✅ **Deployment exitoso en Vercel** - Proyecto 100% funcional en producción
 
+**🎯 Mejoras v1.7.4 (04 Noviembre 2025) - UX MENSAJE DE BIENVENIDA:**
+- ✅ **Mensaje de bienvenida solo primera vez:** No se repite en cada refresh
+- ✅ **localStorage persistence:** Sistema recuerda que ya viste el mensaje
+- ✅ **Tiempo de pausa voz corregido:** 1.5s → 4 segundos (información actualizada)
+- ✅ **Explicación mejorada:** Más claro que puedes hablar continuamente
+- ✅ **Experiencia fluida:** Chat inicia vacío para usuarios recurrentes
+- 📝 **Mejor UX:** No trata al usuario como nuevo cada vez
+
+**🔧 Mejoras v1.7.3 (04 Noviembre 2025) - FIX IMAGEN DE MARKETING:**
+- 🔥 **FIX CRÍTICO:** Imagen de marketing ahora funciona correctamente con imágenes subidas
+- ✅ **Búsqueda mejorada:** Encuentra URLs de Cloudinary en historial (expandido a 15 mensajes)
+- ✅ **Validación robusta:** Rechaza URLs incorrectas (Slack, etc.) y busca la correcta
+- ✅ **Error "functionArgs is not defined" resuelto:** Variables correctamente definidas en catch
+- ✅ **Mensajes de error mejorados:** Instrucciones claras si falla
+- ✅ **Logs informativos:** Mejor debug de problemas
+- 📝 **Flujo correcto:** 1) Subir foto 2) Pedir imagen publicitaria con precio
+
 **🎬 Mejoras v1.7.2 (04 Noviembre 2025) - UPGRADE A VEO 3.1:**
 - 🚀 **UPGRADE: Google VEO 3.1** - Modelo mejorado de última generación
 - 🎥 **Duración extendida:** De 6 a 8 segundos de video profesional
