@@ -406,8 +406,19 @@ class DomusIA {
     }
 
     initializeChat() {
-        const welcomeMessage = this.getWelcomeMessage();
-        this.addMessage('assistant', welcomeMessage, false);
+        // 🔥 NUEVO: Solo mostrar mensaje de bienvenida la primera vez
+        const hasSeenWelcome = localStorage.getItem('domusIA_hasSeenWelcome');
+        
+        if (!hasSeenWelcome) {
+            const welcomeMessage = this.getWelcomeMessage();
+            this.addMessage('assistant', welcomeMessage, false);
+            
+            // Marcar que ya vio el mensaje de bienvenida
+            localStorage.setItem('domusIA_hasSeenWelcome', 'true');
+            console.log('✅ Mensaje de bienvenida mostrado (primera vez)');
+        } else {
+            console.log('ℹ️ Usuario ya vio mensaje de bienvenida, saltando...');
+        }
         
         // API status check removed - GPT-4o is always active
         // No need to show demo message since backend is configured
@@ -423,9 +434,10 @@ class DomusIA {
 
 🎤 **Abajo junto al campo de texto** hay un botón de micrófono. **Úsalo para hablar en vez de escribir:**
 - Haz click en el micrófono y empieza a hablar
-- Cuando hagas una pausa de más de 1.5 segundos, lo que dijiste se escribirá automáticamente
-- Para continuar tu mensaje: respira, vuelve a hacer click en el micrófono y sigue hablando
-- Cuando termines todo tu mensaje, dale a enviar
+- Puedes hablar continuamente - el sistema seguirá transcribiendo mientras hables
+- Cuando hagas una pausa de más de 4 segundos, lo que dijiste se escribirá automáticamente
+- Para continuar tu mensaje: simplemente vuelve a hacer click en el micrófono y sigue hablando
+- Cuando termines todo tu mensaje, revisa el texto y dale a enviar
 
 ¡Así es mucho más cómodo! 😊`;
 
