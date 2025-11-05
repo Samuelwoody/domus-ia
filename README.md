@@ -40,8 +40,17 @@
 - ✅ **Optimización de rendimiento** con debounce en filtros
 - ✅ **Deployment exitoso en Vercel** - Proyecto 100% funcional en producción
 
-**🎬 Mejoras v1.7.1 (04 Noviembre 2025) - VIDEO EN CHAT + VEO 3:**
-- 🎥 **NUEVO: Video en el chat** - Los videos generados con VEO 3 ahora aparecen directamente en el chat
+**🎬 Mejoras v1.7.2 (04 Noviembre 2025) - UPGRADE A VEO 3.1:**
+- 🚀 **UPGRADE: Google VEO 3.1** - Modelo mejorado de última generación
+- 🎥 **Duración extendida:** De 6 a 8 segundos de video profesional
+- 📺 **Resolución 1080p:** Calidad Full HD cinematográfica (upgrade de 720p)
+- 🔊 **Generación de audio:** Videos con sonido ambiente automático
+- 🖼️ **Soporte imágenes de referencia:** Usa fotos como guía (hasta 2 imágenes)
+- ✅ **Mejor calidad:** SOTA mejorado para tours virtuales inmobiliarios
+- ⚡ **Mismo rendimiento:** ~30-60 segundos de generación
+
+**🎬 Mejoras v1.7.1 (04 Noviembre 2025) - VIDEO EN CHAT:**
+- 🎥 **NUEVO: Video en el chat** - Los videos generados aparecen directamente en el chat
 - ▶️ **Controles completos:** Play, pausa, avanzar, retroceder, pantalla completa
 - 📥 **Descargar video:** Botón de descarga directa en formato MP4
 - 🔗 **Compartir URL:** Copiar enlace del video al portapapeles con un click
@@ -50,8 +59,7 @@
 
 **🎬 Mejoras v1.7.0 (03 Noviembre 2025) - OPTIMIZACIÓN MASIVA + GOOGLE VEO 3:**
 - 🚀 **OPTIMIZACIÓN COMPLETA:** De 12 modelos Replicate → Solo 4 modelos esenciales
-- 🎬 **NUEVO: Google VEO 3** - Generación de video cinematográfico text-to-video powered by Google
-- ✅ **Duración máxima:** 6 segundos de video profesional en 16:9 (landscape)
+- 🎬 **Google VEO 3** - Generación de video cinematográfico text-to-video powered by Google
 - ✅ **Calidad cinematográfica:** SOTA para real estate virtual tours
 - ✅ **Reemplaza 2 modelos:** Runway Gen-3 y Stable Video Diffusion eliminados
 - 🍌 **Google Nano Banana:** Edición conversacional REAL de imágenes (Gemini 2.5 Flash)
