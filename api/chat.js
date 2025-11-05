@@ -199,13 +199,14 @@ async function editImageWithNanoBanana(imageUrl, editInstructions) {
 }
 
 // ============================================================================
-// 🎬 GOOGLE VEO 3 - VIDEO GENERATION
+// 🎬 GOOGLE VEO 3.1 - VIDEO GENERATION (UPGRADED)
 // ============================================================================
-async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9") {
-  console.log('🎬 Google VEO 3 - Text-to-video generation');
+async function generateVideoWithVeo3(prompt, duration = 8, aspectRatio = "16:9", referenceImages = []) {
+  console.log('🎬 Google VEO 3.1 - Text-to-video generation (UPGRADED)');
   console.log('📝 Prompt:', prompt);
-  console.log('⏱️ Duration:', duration, 'seconds');
+  console.log('⏱️ Duration:', duration, 'seconds (max 8s)');
   console.log('📐 Aspect ratio:', aspectRatio);
+  console.log('🖼️ Reference images:', referenceImages.length);
   
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
@@ -214,37 +215,46 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
   }
   
   try {
-    console.log('🎬 Calling google/veo-3...');
+    console.log('🎬 Calling google/veo-3.1...');
     
-    const response = await fetch('https://api.replicate.com/v1/models/google/veo-3/predictions', {
+    // Preparar input según el formato de VEO 3.1
+    const input = {
+      prompt: prompt,
+      duration: duration,
+      resolution: "1080p",  // VEO 3.1 soporta 1080p
+      aspect_ratio: aspectRatio,
+      generate_audio: true  // VEO 3.1 puede generar audio
+    };
+    
+    // Añadir imágenes de referencia si existen
+    if (referenceImages && referenceImages.length > 0) {
+      input.reference_images = referenceImages.map(url => ({ value: url }));
+      console.log('🖼️ Usando', referenceImages.length, 'imagen(es) de referencia');
+    }
+    
+    const response = await fetch('https://api.replicate.com/v1/models/google/veo-3.1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
         'Prefer': 'wait'
       },
-      body: JSON.stringify({
-        input: {
-          prompt: prompt,
-          duration: duration,
-          aspect_ratio: aspectRatio
-        }
-      })
+      body: JSON.stringify({ input })
     });
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Replicate API error:', response.status, errorText);
-      throw new Error(`VEO 3 API error: ${response.status} - ${errorText}`);
+      throw new Error(`VEO 3.1 API error: ${response.status} - ${errorText}`);
     }
     
     let prediction = await response.json();
-    console.log('📊 VEO 3 prediction ID:', prediction.id);
+    console.log('📊 VEO 3.1 prediction ID:', prediction.id);
     console.log('📊 Status inicial:', prediction.status);
     
-    // Polling para esperar el resultado (video generation takes longer)
+    // Polling para esperar el resultado (VEO 3.1 puede tardar más por mejor calidad)
     let attempts = 0;
-    const maxAttempts = 120; // 2 minutes max for video generation
+    const maxAttempts = 150; // 2.5 minutes max for video generation (1080p + audio)
     
     while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -268,20 +278,20 @@ async function generateVideoWithVeo3(prompt, duration = 6, aspectRatio = "16:9")
     }
     
     if (prediction.status === 'failed') {
-      throw new Error(`VEO 3 falló: ${prediction.error || 'Unknown error'}`);
+      throw new Error(`VEO 3.1 falló: ${prediction.error || 'Unknown error'}`);
     }
     
     if (attempts >= maxAttempts) {
-      throw new Error(`Timeout: VEO 3 tardó más de ${maxAttempts} segundos`);
+      throw new Error(`Timeout: VEO 3.1 tardó más de ${maxAttempts} segundos`);
     }
     
     const videoUrl = prediction.output;
-    console.log('✅ Video generado con VEO 3:', videoUrl);
+    console.log('✅ Video generado con VEO 3.1 (1080p):', videoUrl);
     
     return videoUrl;
     
   } catch (error) {
-    console.error('❌ Error en VEO 3:', error);
+    console.error('❌ Error en VEO 3.1:', error);
     throw error;
   }
 }
@@ -310,7 +320,7 @@ async function generateSaleSign(prompt) {
 // ✅ SOLO 4 MODELOS REPLICATE ESENCIALES PARA SOFÍA IA
 // ============================================================================
 // 1. Google Nano Banana (Gemini 2.5 Flash) - Image editing
-// 2. Google VEO 3 - Video generation  
+// 2. Google VEO 3.1 (UPGRADED) - Video generation 1080p + audio (8 seconds max)
 // 3. Real-ESRGAN - Image upscaling
 // 4. Ideogram V2 - Text rendering on images
 // ============================================================================
@@ -733,19 +743,19 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "generate_video_from_text",
-          description: "🎬 GOOGLE VEO 3 VIDEO GENERATOR - Generate professional cinematic video from text description (up to 6 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. Powered by Google's state-of-the-art video generation model.",
+          description: "🎬 GOOGLE VEO 3.1 VIDEO GENERATOR (UPGRADED) - Generate professional cinematic video in 1080p with audio from text description (up to 8 seconds). Use when user wants: 'crea un vídeo de...', 'genera tour virtual', 'vídeo recorriendo...', 'video profesional'. Perfect for: virtual tours, property presentations, social media content, cinematic walkthroughs. NEW: Better quality, longer duration, audio generation, reference images support. Powered by Google's latest VEO 3.1 model.",
           parameters: {
             type: "object",
             properties: {
               description: {
                 type: "string",
-                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, professional real estate cinematography'"
+                description: "Detailed cinematic description of the video scene. Be specific about camera movement, lighting, style, audio if desired. Ex: 'Smooth cinematic aerial shot descending towards modern Spanish villa with white walls and pool, golden hour lighting, mediterranean architecture, ambient music, professional real estate cinematography in 1080p'"
               },
               duration: {
                 type: "number",
-                enum: [2, 4, 6],
-                description: "Video duration in seconds (maximum 6 seconds for best quality)",
-                default: 6
+                enum: [2, 4, 6, 8],
+                description: "Video duration in seconds (maximum 8 seconds for VEO 3.1, best quality at 6-8s)",
+                default: 8
               }
             },
             required: ["description"]
@@ -1355,25 +1365,27 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       }
     }
     
-    // 3️⃣ GENERATE VIDEO FROM TEXT (VEO 3)
+    // 3️⃣ GENERATE VIDEO FROM TEXT (VEO 3.1)
     else if (toolCall.function.name === 'generate_video_from_text') {
       try {
         const functionArgs = JSON.parse(toolCall.function.arguments);
-        const duration = functionArgs.duration || 6;
+        const duration = functionArgs.duration || 8;
         const result = await generateVideoWithVeo3(functionArgs.description, duration, "16:9");
         
         return res.status(200).json({
           success: true,
-          message: `✅ Vídeo de ${duration} segundos generado con **Google VEO 3**. Tour virtual cinematográfico listo para usar en redes sociales.`,
+          message: `✅ Vídeo de ${duration} segundos generado con **Google VEO 3.1** en 1080p con audio. Tour virtual cinematográfico profesional listo para usar en redes sociales y marketing inmobiliario.`,
           videoUrl: result,
           tool: 'generate_video_from_text',
-          model: 'Google VEO 3'
+          model: 'Google VEO 3.1',
+          duration: duration,
+          resolution: '1080p'
         });
       } catch (error) {
-        console.error('❌ Error generate video VEO 3:', error);
+        console.error('❌ Error generate video VEO 3.1:', error);
         return res.status(200).json({
           success: true,
-          message: '⚠️ No pude generar el vídeo con VEO 3. Intenta con una descripción más específica y cinematográfica.'
+          message: '⚠️ No pude generar el vídeo con VEO 3.1. Intenta con una descripción más específica y cinematográfica. Recuerda que puedes pedir hasta 8 segundos de duración.'
         });
       }
     }
