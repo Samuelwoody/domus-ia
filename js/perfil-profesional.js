@@ -1,647 +1,470 @@
-// ============================================
-// PERFIL PROFESIONAL - DOMUS-IA
-// Gestión completa del perfil empresarial
-// ============================================
-
-// Estado global
-let currentProfile = null;
-let originalProfile = null;
-let isEditMode = false;
-let currentAgents = [];
-
-// Cloudinary config
-const CLOUDINARY_CLOUD_NAME = 'dbtkvvp3o';
-const CLOUDINARY_UPLOAD_PRESET = 'xh5qy5qd';
-
-// ============================================
-// INICIALIZACIÓN
-// ============================================
-
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('✅ Perfil Profesional - Inicializando...');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Profesional - DomusIA</title>
     
-    // Verificar autenticación
-    const userEmail = localStorage.getItem('userEmail');
-    const userName = localStorage.getItem('userName');
-    const userType = localStorage.getItem('userType');
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    if (!userEmail) {
-        console.log('❌ Usuario no autenticado');
-        window.location.href = 'login.html';
-        return;
-    }
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    // Verificar que sea profesional
-    if (userType !== 'profesional') {
-        console.log('❌ Usuario no es profesional');
-        showToast('Solo usuarios profesionales pueden acceder a esta página', 'error');
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 2000);
-        return;
-    }
-    
-    // Actualizar nombre de usuario en header
-    document.getElementById('userName').textContent = userName || 'Usuario';
-    
-    // Cargar perfil
-    await loadProfile(userEmail);
-    
-    // Event listeners
-    setupEventListeners();
-    
-    console.log('✅ Perfil Profesional - Listo');
-});
-
-// ============================================
-// CARGAR PERFIL
-// ============================================
-
-async function loadProfile(email) {
-    const loadingState = document.getElementById('loadingState');
-    const profileContent = document.getElementById('profileContent');
-    const emptyState = document.getElementById('emptyState');
-    const errorState = document.getElementById('errorState');
-    
-    try {
-        console.log('📥 Cargando perfil para:', email);
-        
-        const response = await fetch(`/api/professional-profile?email=${encodeURIComponent(email)}`);
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 Datos recibidos:', data);
-        
-        if (data.profile && data.profile.onboarding_completed) {
-            currentProfile = data.profile;
-            originalProfile = JSON.parse(JSON.stringify(data.profile)); // Deep copy
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/perfil-profesional.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <span>DomusIA</span>
+            </div>
             
-            // Ocultar loading y mostrar perfil
-            loadingState.style.display = 'none';
-            profileContent.style.display = 'block';
+            <nav class="nav-menu">
+                <a href="index.html#chat" class="nav-link">
+                    <i class="fas fa-comments"></i>
+                    Chat con Sofia
+                </a>
+                <a href="crm.html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Mi CRM
+                </a>
+                <a href="perfil-profesional.html" class="nav-link active">
+                    <i class="fas fa-user-tie"></i>
+                    Perfil Profesional
+                </a>
+            </nav>
             
-            // Renderizar perfil
-            renderProfile(currentProfile);
+            <div class="user-section">
+                <span class="user-name" id="userName">Usuario</span>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando perfil...</p>
+        </div>
+
+        <!-- Profile Content -->
+        <div id="profileContent" class="profile-content" style="display: none;">
             
-            showToast('Perfil cargado correctamente', 'success');
-        } else {
-            // Perfil no completado
-            console.log('⚠️ Perfil no completado');
-            loadingState.style.display = 'none';
-            emptyState.style.display = 'flex';
-        }
-        
-    } catch (error) {
-        console.error('❌ Error cargando perfil:', error);
-        loadingState.style.display = 'none';
-        errorState.style.display = 'flex';
-        document.getElementById('errorMessage').textContent = error.message;
-    }
-}
-
-// ============================================
-// RENDERIZAR PERFIL
-// ============================================
-
-function renderProfile(profile) {
-    console.log('🎨 Renderizando perfil...', profile);
-    
-    // Sección Empresa
-    document.getElementById('companyName').value = profile.company_name || '';
-    document.getElementById('companySlogan').value = profile.company_slogan || '';
-    
-    // Logo
-    if (profile.company_logo_url) {
-        document.getElementById('logoImage').src = profile.company_logo_url;
-        document.getElementById('logoImage').style.display = 'block';
-        document.getElementById('logoPlaceholder').style.display = 'none';
-        document.getElementById('removeLogoBtn').style.display = 'inline-flex';
-    } else {
-        document.getElementById('logoImage').style.display = 'none';
-        document.getElementById('logoPlaceholder').style.display = 'flex';
-        document.getElementById('removeLogoBtn').style.display = 'none';
-    }
-    
-    // Sección Ubicación
-    document.getElementById('streetAddress').value = profile.street_address || '';
-    document.getElementById('city').value = profile.city || '';
-    document.getElementById('stateProvince').value = profile.state_province || '';
-    document.getElementById('postalCode').value = profile.postal_code || '';
-    document.getElementById('country').value = profile.country || 'España';
-    
-    // Sección Contacto
-    document.getElementById('corporateEmail').value = profile.corporate_email || '';
-    document.getElementById('corporatePhone').value = profile.corporate_phone || '';
-    document.getElementById('mobilePhone').value = profile.mobile_phone || '';
-    
-    // Sección Redes Sociales
-    document.getElementById('websiteUrl').value = profile.website_url || '';
-    document.getElementById('facebookUrl').value = profile.facebook_url || '';
-    document.getElementById('instagramUrl').value = profile.instagram_url || '';
-    document.getElementById('linkedinUrl').value = profile.linkedin_url || '';
-    document.getElementById('twitterUrl').value = profile.twitter_url || '';
-    document.getElementById('youtubeUrl').value = profile.youtube_url || '';
-    
-    // Sección Gerente
-    document.getElementById('managerName').value = profile.manager_name || '';
-    document.getElementById('managerPosition').value = profile.manager_position || '';
-    document.getElementById('managerEmail').value = profile.manager_email || '';
-    document.getElementById('managerPhone').value = profile.manager_phone || '';
-    document.getElementById('managerBio').value = profile.manager_bio || '';
-    
-    // Sección Agentes
-    currentAgents = Array.isArray(profile.agents) ? profile.agents : [];
-    renderAgents();
-    
-    // Footer - Fechas
-    const updatedDate = profile.updated_at ? new Date(profile.updated_at).toLocaleString('es-ES') : '-';
-    const createdDate = profile.created_at ? new Date(profile.created_at).toLocaleString('es-ES') : '-';
-    document.getElementById('lastUpdated').textContent = updatedDate;
-    document.getElementById('createdAt').textContent = createdDate;
-}
-
-// ============================================
-// RENDERIZAR AGENTES
-// ============================================
-
-function renderAgents() {
-    const agentsList = document.getElementById('agentsList');
-    const noAgents = document.getElementById('noAgents');
-    
-    if (currentAgents.length === 0) {
-        agentsList.style.display = 'none';
-        noAgents.style.display = 'block';
-    } else {
-        agentsList.style.display = 'grid';
-        noAgents.style.display = 'none';
-        
-        agentsList.innerHTML = currentAgents.map((agent, index) => `
-            <div class="agent-card" data-index="${index}">
-                <div class="agent-card-header">
-                    <div>
-                        <div class="agent-name">${agent.name || 'Sin nombre'}</div>
-                        ${agent.specialty ? `<span class="agent-specialty">${agent.specialty}</span>` : ''}
-                    </div>
-                    <div class="agent-actions" style="display: ${isEditMode ? 'flex' : 'none'};">
-                        <button class="agent-edit-btn" onclick="editAgent(${index})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="agent-delete-btn" onclick="deleteAgent(${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-left">
+                    <h1>
+                        <i class="fas fa-user-tie"></i>
+                        Perfil Profesional
+                    </h1>
+                    <p class="subtitle">Gestiona la información de tu empresa y equipo</p>
                 </div>
-                <div class="agent-info">
-                    ${agent.email ? `
-                        <div class="agent-info-item">
-                            <i class="fas fa-envelope"></i>
-                            <span>${agent.email}</span>
-                        </div>
-                    ` : ''}
-                    ${agent.phone ? `
-                        <div class="agent-info-item">
-                            <i class="fas fa-phone"></i>
-                            <span>${agent.phone}</span>
-                        </div>
-                    ` : ''}
+                <div class="header-right">
+                    <button id="editBtn" class="btn btn-primary">
+                        <i class="fas fa-edit"></i>
+                        Editar Perfil
+                    </button>
+                    <button id="saveBtn" class="btn btn-success" style="display: none;">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                    <button id="cancelBtn" class="btn btn-secondary" style="display: none;">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
                 </div>
             </div>
-        `).join('');
-    }
-}
 
-// ============================================
-// EVENT LISTENERS
-// ============================================
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
 
-function setupEventListeners() {
-    // Botón Editar
-    document.getElementById('editBtn').addEventListener('click', enterEditMode);
-    
-    // Botón Guardar
-    document.getElementById('saveBtn').addEventListener('click', saveProfile);
-    
-    // Botón Cancelar
-    document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
-    
-    // Logo upload
-    document.getElementById('uploadLogoBtn').addEventListener('click', () => {
-        document.getElementById('logoInput').click();
-    });
-    
-    document.getElementById('logoInput').addEventListener('change', handleLogoUpload);
-    
-    document.getElementById('removeLogoBtn').addEventListener('click', removeLogo);
-    
-    // Añadir agente
-    document.getElementById('addAgentBtn').addEventListener('click', openAddAgentModal);
-    
-    // Guardar agente desde modal
-    document.getElementById('saveAgentBtn').addEventListener('click', saveAgent);
-    
-    // Cerrar modal con ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAgentModal();
-        }
-    });
-}
+            <!-- Profile Sections -->
+            <div class="profile-sections">
+                
+                <!-- SECCIÓN 1: EMPRESA -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-building"></i>
+                            Información de la Empresa
+                        </h2>
+                        <span class="section-status" id="companyStatus">
+                            <i class="fas fa-check-circle"></i>
+                            Completo
+                        </span>
+                    </div>
+                    
+                    <div class="section-content">
+                        <!-- Logo -->
+                        <div class="form-group logo-upload-group">
+                            <label>Logo de la Empresa</label>
+                            <div class="logo-container">
+                                <div class="logo-preview" id="logoPreview">
+                                    <img id="logoImage" src="" alt="Logo" style="display: none;">
+                                    <div id="logoPlaceholder" class="logo-placeholder">
+                                        <i class="fas fa-building"></i>
+                                        <p>Sin logo</p>
+                                    </div>
+                                </div>
+                                <div class="logo-actions" id="logoActions" style="display: none;">
+                                    <button type="button" class="btn btn-small" id="uploadLogoBtn">
+                                        <i class="fas fa-upload"></i>
+                                        Subir Logo
+                                    </button>
+                                    <button type="button" class="btn btn-small btn-danger" id="removeLogoBtn" style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                        Eliminar
+                                    </button>
+                                    <input type="file" id="logoInput" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                            <small class="help-text">Formatos: JPG, PNG. Tamaño máximo: 5MB</small>
+                        </div>
 
-// ============================================
-// MODO EDICIÓN
-// ============================================
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="companyName">
+                                    Nombre de la Empresa <span class="required">*</span>
+                                </label>
+                                <input type="text" id="companyName" class="form-control" readonly>
+                            </div>
+                        </div>
 
-function enterEditMode() {
-    isEditMode = true;
-    
-    // Cambiar botones
-    document.getElementById('editBtn').style.display = 'none';
-    document.getElementById('saveBtn').style.display = 'inline-flex';
-    document.getElementById('cancelBtn').style.display = 'inline-flex';
-    
-    // Habilitar campos
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        if (input.id !== 'companyName') { // Nombre de empresa no editable
-            input.removeAttribute('readonly');
-        }
-    });
-    
-    // Mostrar acciones de logo
-    document.getElementById('logoActions').style.display = 'flex';
-    
-    // Mostrar botón añadir agente
-    document.getElementById('addAgentBtn').style.display = 'inline-flex';
-    
-    // Mostrar acciones de agentes
-    renderAgents();
-    
-    showAlert('Modo edición activado. Realiza los cambios y guarda.', 'info');
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="companySlogan">Eslogan</label>
+                                <input type="text" id="companySlogan" class="form-control" readonly>
+                                <small class="help-text">Frase que describe tu empresa</small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-function cancelEdit() {
-    isEditMode = false;
-    
-    // Restaurar perfil original
-    currentProfile = JSON.parse(JSON.stringify(originalProfile));
-    currentAgents = Array.isArray(originalProfile.agents) ? originalProfile.agents : [];
-    
-    // Renderizar de nuevo
-    renderProfile(currentProfile);
-    
-    // Cambiar botones
-    document.getElementById('editBtn').style.display = 'inline-flex';
-    document.getElementById('saveBtn').style.display = 'none';
-    document.getElementById('cancelBtn').style.display = 'none';
-    
-    // Deshabilitar campos
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.setAttribute('readonly', true);
-    });
-    
-    // Ocultar acciones
-    document.getElementById('logoActions').style.display = 'none';
-    document.getElementById('addAgentBtn').style.display = 'none';
-    
-    showAlert('Cambios cancelados', 'info');
-}
+                <!-- SECCIÓN 2: UBICACIÓN -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-map-marker-alt"></i>
+                            Ubicación
+                        </h2>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="streetAddress">Dirección</label>
+                                <input type="text" id="streetAddress" class="form-control" readonly>
+                            </div>
+                        </div>
 
-// ============================================
-// GUARDAR PERFIL
-// ============================================
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">Ciudad</label>
+                                <input type="text" id="city" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="stateProvince">Provincia</label>
+                                <input type="text" id="stateProvince" class="form-control" readonly>
+                            </div>
+                        </div>
 
-async function saveProfile() {
-    console.log('💾 Guardando perfil...');
-    
-    // Validar campos obligatorios
-    const companyName = document.getElementById('companyName').value.trim();
-    const corporateEmail = document.getElementById('corporateEmail').value.trim();
-    
-    if (!companyName) {
-        showAlert('El nombre de la empresa es obligatorio', 'error');
-        return;
-    }
-    
-    if (!corporateEmail) {
-        showAlert('El email corporativo es obligatorio', 'error');
-        return;
-    }
-    
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(corporateEmail)) {
-        showAlert('El email corporativo no es válido', 'error');
-        return;
-    }
-    
-    // Deshabilitar botón guardar
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-    
-    try {
-        // Recopilar datos del formulario
-        const profileData = {
-            company_name: companyName,
-            company_slogan: document.getElementById('companySlogan').value.trim(),
-            company_logo_url: document.getElementById('logoImage').src || null,
-            
-            street_address: document.getElementById('streetAddress').value.trim(),
-            city: document.getElementById('city').value.trim(),
-            state_province: document.getElementById('stateProvince').value.trim(),
-            postal_code: document.getElementById('postalCode').value.trim(),
-            country: document.getElementById('country').value.trim() || 'España',
-            
-            corporate_email: corporateEmail,
-            corporate_phone: document.getElementById('corporatePhone').value.trim(),
-            mobile_phone: document.getElementById('mobilePhone').value.trim(),
-            
-            website_url: document.getElementById('websiteUrl').value.trim(),
-            facebook_url: document.getElementById('facebookUrl').value.trim(),
-            instagram_url: document.getElementById('instagramUrl').value.trim(),
-            linkedin_url: document.getElementById('linkedinUrl').value.trim(),
-            twitter_url: document.getElementById('twitterUrl').value.trim(),
-            youtube_url: document.getElementById('youtubeUrl').value.trim(),
-            
-            manager_name: document.getElementById('managerName').value.trim(),
-            manager_position: document.getElementById('managerPosition').value.trim(),
-            manager_email: document.getElementById('managerEmail').value.trim(),
-            manager_phone: document.getElementById('managerPhone').value.trim(),
-            manager_bio: document.getElementById('managerBio').value.trim(),
-            
-            agents: currentAgents
-        };
-        
-        console.log('📊 Datos a guardar:', profileData);
-        
-        // Llamar API
-        const userEmail = localStorage.getItem('userEmail');
-        const response = await fetch('/api/professional-profile', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: userEmail,
-                profileData
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al guardar perfil');
-        }
-        
-        const result = await response.json();
-        console.log('✅ Perfil guardado:', result);
-        
-        // Actualizar estado
-        currentProfile = result.profile;
-        originalProfile = JSON.parse(JSON.stringify(result.profile));
-        
-        // Salir de modo edición
-        isEditMode = false;
-        document.getElementById('editBtn').style.display = 'inline-flex';
-        document.getElementById('saveBtn').style.display = 'none';
-        document.getElementById('cancelBtn').style.display = 'none';
-        
-        // Deshabilitar campos
-        const inputs = document.querySelectorAll('.form-control');
-        inputs.forEach(input => {
-            input.setAttribute('readonly', true);
-        });
-        
-        // Ocultar acciones
-        document.getElementById('logoActions').style.display = 'none';
-        document.getElementById('addAgentBtn').style.display = 'none';
-        
-        renderAgents();
-        
-        showAlert('✅ Perfil guardado correctamente', 'success');
-        showToast('Perfil actualizado', 'success');
-        
-    } catch (error) {
-        console.error('❌ Error guardando perfil:', error);
-        showAlert(`Error al guardar: ${error.message}`, 'error');
-        showToast('Error al guardar perfil', 'error');
-    } finally {
-        // Rehabilitar botón
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
-    }
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="postalCode">Código Postal</label>
+                                <input type="text" id="postalCode" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="country">País</label>
+                                <input type="text" id="country" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-// ============================================
-// LOGO UPLOAD
-// ============================================
+                <!-- SECCIÓN 3: CONTACTO -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-phone"></i>
+                            Información de Contacto
+                        </h2>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="corporateEmail">
+                                    Email Corporativo <span class="required">*</span>
+                                </label>
+                                <input type="email" id="corporateEmail" class="form-control" readonly>
+                            </div>
+                        </div>
 
-async function handleLogoUpload(event) {
-    const file = event.target.files[0];
-    
-    if (!file) return;
-    
-    // Validar tipo
-    if (!file.type.startsWith('image/')) {
-        showAlert('Solo se permiten archivos de imagen', 'error');
-        return;
-    }
-    
-    // Validar tamaño (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        showAlert('El archivo es demasiado grande. Máximo 5MB', 'error');
-        return;
-    }
-    
-    console.log('📤 Subiendo logo a Cloudinary...');
-    showToast('Subiendo logo...', 'info');
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        formData.append('folder', 'domus-ia/logos');
-        
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
-        
-        if (!response.ok) {
-            throw new Error('Error al subir imagen');
-        }
-        
-        const data = await response.json();
-        console.log('✅ Logo subido:', data.secure_url);
-        
-        // Actualizar preview
-        document.getElementById('logoImage').src = data.secure_url;
-        document.getElementById('logoImage').style.display = 'block';
-        document.getElementById('logoPlaceholder').style.display = 'none';
-        document.getElementById('removeLogoBtn').style.display = 'inline-flex';
-        
-        showToast('Logo subido correctamente', 'success');
-        
-    } catch (error) {
-        console.error('❌ Error subiendo logo:', error);
-        showAlert('Error al subir el logo', 'error');
-        showToast('Error al subir logo', 'error');
-    }
-    
-    // Limpiar input
-    event.target.value = '';
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="corporatePhone">Teléfono Fijo</label>
+                                <input type="tel" id="corporatePhone" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="mobilePhone">Teléfono Móvil</label>
+                                <input type="tel" id="mobilePhone" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-function removeLogo() {
-    if (confirm('¿Estás seguro de que quieres eliminar el logo?')) {
-        document.getElementById('logoImage').src = '';
-        document.getElementById('logoImage').style.display = 'none';
-        document.getElementById('logoPlaceholder').style.display = 'flex';
-        document.getElementById('removeLogoBtn').style.display = 'none';
-        
-        showToast('Logo eliminado', 'info');
-    }
-}
+                <!-- SECCIÓN 4: REDES SOCIALES -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-share-alt"></i>
+                            Redes Sociales
+                        </h2>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="websiteUrl">
+                                    <i class="fas fa-globe"></i>
+                                    Sitio Web
+                                </label>
+                                <input type="url" id="websiteUrl" class="form-control" readonly placeholder="https://tuempresa.com">
+                            </div>
+                        </div>
 
-// ============================================
-// GESTIÓN DE AGENTES
-// ============================================
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="facebookUrl">
+                                    <i class="fab fa-facebook"></i>
+                                    Facebook
+                                </label>
+                                <input type="url" id="facebookUrl" class="form-control" readonly placeholder="https://facebook.com/tuempresa">
+                            </div>
+                            <div class="form-group">
+                                <label for="instagramUrl">
+                                    <i class="fab fa-instagram"></i>
+                                    Instagram
+                                </label>
+                                <input type="url" id="instagramUrl" class="form-control" readonly placeholder="https://instagram.com/tuempresa">
+                            </div>
+                        </div>
 
-function openAddAgentModal() {
-    document.getElementById('agentModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Añadir Agente';
-    document.getElementById('agentEditIndex').value = '';
-    document.getElementById('agentName').value = '';
-    document.getElementById('agentEmail').value = '';
-    document.getElementById('agentPhone').value = '';
-    document.getElementById('agentSpecialty').value = '';
-    
-    document.getElementById('agentModal').classList.add('active');
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="linkedinUrl">
+                                    <i class="fab fa-linkedin"></i>
+                                    LinkedIn
+                                </label>
+                                <input type="url" id="linkedinUrl" class="form-control" readonly placeholder="https://linkedin.com/company/tuempresa">
+                            </div>
+                            <div class="form-group">
+                                <label for="twitterUrl">
+                                    <i class="fab fa-twitter"></i>
+                                    Twitter / X
+                                </label>
+                                <input type="url" id="twitterUrl" class="form-control" readonly placeholder="https://twitter.com/tuempresa">
+                            </div>
+                        </div>
 
-function editAgent(index) {
-    const agent = currentAgents[index];
-    
-    document.getElementById('agentModalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Editar Agente';
-    document.getElementById('agentEditIndex').value = index;
-    document.getElementById('agentName').value = agent.name || '';
-    document.getElementById('agentEmail').value = agent.email || '';
-    document.getElementById('agentPhone').value = agent.phone || '';
-    document.getElementById('agentSpecialty').value = agent.specialty || '';
-    
-    document.getElementById('agentModal').classList.add('active');
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="youtubeUrl">
+                                    <i class="fab fa-youtube"></i>
+                                    YouTube
+                                </label>
+                                <input type="url" id="youtubeUrl" class="form-control" readonly placeholder="https://youtube.com/@tuempresa">
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-function saveAgent() {
-    const name = document.getElementById('agentName').value.trim();
-    
-    if (!name) {
-        showToast('El nombre del agente es obligatorio', 'error');
-        return;
-    }
-    
-    const agent = {
-        name,
-        email: document.getElementById('agentEmail').value.trim(),
-        phone: document.getElementById('agentPhone').value.trim(),
-        specialty: document.getElementById('agentSpecialty').value
-    };
-    
-    const editIndex = document.getElementById('agentEditIndex').value;
-    
-    if (editIndex === '') {
-        // Añadir nuevo
-        currentAgents.push(agent);
-        showToast('Agente añadido', 'success');
-    } else {
-        // Editar existente
-        currentAgents[parseInt(editIndex)] = agent;
-        showToast('Agente actualizado', 'success');
-    }
-    
-    renderAgents();
-    closeAgentModal();
-}
+                <!-- SECCIÓN 5: GERENTE -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-user-tie"></i>
+                            Información del Gerente
+                        </h2>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="managerName">Nombre Completo</label>
+                                <input type="text" id="managerName" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="managerPosition">Cargo</label>
+                                <input type="text" id="managerPosition" class="form-control" readonly>
+                            </div>
+                        </div>
 
-function deleteAgent(index) {
-    if (confirm('¿Estás seguro de que quieres eliminar este agente?')) {
-        currentAgents.splice(index, 1);
-        renderAgents();
-        showToast('Agente eliminado', 'info');
-    }
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="managerEmail">Email</label>
+                                <input type="email" id="managerEmail" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="managerPhone">Teléfono</label>
+                                <input type="tel" id="managerPhone" class="form-control" readonly>
+                            </div>
+                        </div>
 
-function closeAgentModal() {
-    document.getElementById('agentModal').classList.remove('active');
-}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="managerBio">Biografía Profesional</label>
+                                <textarea id="managerBio" class="form-control" rows="3" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-// ============================================
-// ALERTAS Y NOTIFICACIONES
-// ============================================
+                <!-- SECCIÓN 6: AGENTES -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-users"></i>
+                            Equipo de Agentes
+                        </h2>
+                        <button id="addAgentBtn" class="btn btn-small btn-primary" style="display: none;">
+                            <i class="fas fa-plus"></i>
+                            Añadir Agente
+                        </button>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div id="agentsList" class="agents-list">
+                            <!-- Agents will be dynamically inserted here -->
+                        </div>
+                        
+                        <div id="noAgents" class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No hay agentes registrados</p>
+                        </div>
+                    </div>
+                </section>
 
-function showAlert(message, type = 'info') {
-    const alertContainer = document.getElementById('alertContainer');
-    
-    const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    };
-    
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas ${icons[type]}"></i>
-        <span>${message}</span>
-    `;
-    
-    alertContainer.innerHTML = '';
-    alertContainer.appendChild(alert);
-    
-    // Auto-hide después de 5 segundos
-    setTimeout(() => {
-        alert.remove();
-    }, 5000);
-}
+            </div>
 
-function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toastContainer');
-    
-    const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-times-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    };
-    
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-        <i class="fas ${icons[type]}"></i>
-        <span class="toast-message">${message}</span>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    // Auto-hide después de 3 segundos
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
+            <!-- Profile Footer -->
+            <div class="profile-footer">
+                <div class="footer-info">
+                    <p>
+                        <i class="fas fa-clock"></i>
+                        <strong>Última actualización:</strong> 
+                        <span id="lastUpdated">-</span>
+                    </p>
+                    <p>
+                        <i class="fas fa-calendar"></i>
+                        <strong>Perfil creado:</strong> 
+                        <span id="createdAt">-</span>
+                    </p>
+                </div>
+            </div>
 
-// ============================================
-// LOGOUT
-// ============================================
+        </div>
 
-function logout() {
-    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-        localStorage.clear();
-        window.location.href = 'login.html';
-    }
-}
+        <!-- Empty State (No Profile) -->
+        <div id="emptyState" class="empty-profile-state" style="display: none;">
+            <div class="empty-content">
+                <i class="fas fa-user-circle"></i>
+                <h2>Perfil No Completado</h2>
+                <p>Aún no has completado tu perfil profesional.</p>
+                <p>Ve al chat con Sofia para completar el proceso de onboarding.</p>
+                <a href="index.html#chat" class="btn btn-primary">
+                    <i class="fas fa-comments"></i>
+                    Ir al Chat
+                </a>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Error al Cargar Perfil</h2>
+                <p id="errorMessage">Ha ocurrido un error inesperado.</p>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Add/Edit Agent -->
+    <div id="agentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="agentModalTitle">
+                    <i class="fas fa-user-plus"></i>
+                    Añadir Agente
+                </h3>
+                <button class="modal-close" onclick="closeAgentModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="agentEditIndex">
+                
+                <div class="form-group">
+                    <label for="agentName">
+                        Nombre Completo <span class="required">*</span>
+                    </label>
+                    <input type="text" id="agentName" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="agentEmail">Email</label>
+                    <input type="email" id="agentEmail" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="agentPhone">Teléfono</label>
+                    <input type="tel" id="agentPhone" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="agentSpecialty">Especialidad</label>
+                    <select id="agentSpecialty" class="form-control">
+                        <option value="">Seleccionar...</option>
+                        <option value="Residencial">Residencial</option>
+                        <option value="Comercial">Comercial</option>
+                        <option value="Lujo">Lujo</option>
+                        <option value="Alquileres">Alquileres</option>
+                        <option value="Inversión">Inversión</option>
+                        <option value="Industrial">Industrial</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAgentModal()">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary" id="saveAgentBtn">
+                    <i class="fas fa-save"></i>
+                    Guardar Agente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/perfil-profesional.js"></script>
+</body>
+</html>
