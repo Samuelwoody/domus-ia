@@ -321,6 +321,14 @@ class DomusIA {
             if (crmNavLink) crmNavLink.classList.remove('hidden');
             if (crmNavLinkMobile) crmNavLinkMobile.classList.remove('hidden');
             
+            // Mostrar link de Perfil Profesional solo para profesionales
+            const perfilProfesionalNavLink = document.getElementById('perfilProfesionalNavLink');
+            const perfilProfesionalNavLinkMobile = document.getElementById('perfilProfesionalNavLinkMobile');
+            if (this.userType === 'profesional') {
+                if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.remove('hidden');
+                if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.remove('hidden');
+            }
+            
             // Añadir botón al CRM si no existe
             if (!document.getElementById('crmBtn')) {
                 const crmBtn = document.createElement('a');
@@ -342,6 +350,12 @@ class DomusIA {
             // Ocultar links de CRM en navegación
             if (crmNavLink) crmNavLink.classList.add('hidden');
             if (crmNavLinkMobile) crmNavLinkMobile.classList.add('hidden');
+            
+            // Ocultar link de Perfil Profesional
+            const perfilProfesionalNavLink = document.getElementById('perfilProfesionalNavLink');
+            const perfilProfesionalNavLinkMobile = document.getElementById('perfilProfesionalNavLinkMobile');
+            if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.add('hidden');
+            if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.add('hidden');
             
             // Remover botón CRM si existe
             const crmBtn = document.getElementById('crmBtn');
@@ -405,12 +419,33 @@ class DomusIA {
         console.log('✅ Chat cerrado correctamente');
     }
 
-    initializeChat() {
+    async initializeChat() {
         // 🔥 NUEVO: Solo mostrar mensaje de bienvenida la primera vez
         const hasSeenWelcome = localStorage.getItem('domusIA_hasSeenWelcome');
         
         if (!hasSeenWelcome) {
-            const welcomeMessage = this.getWelcomeMessage();
+            // 🎯 FASE 2: Verificar si usuario profesional necesita onboarding
+            let needsOnboarding = false;
+            
+            if (this.isAuthenticated && this.userType === 'profesional' && this.userEmail) {
+                try {
+                    console.log('🔍 Verificando si profesional necesita onboarding...');
+                    const response = await fetch(`/api/professional-profile?email=${encodeURIComponent(this.userEmail)}`);
+                    const data = await response.json();
+                    
+                    needsOnboarding = !data.profile || !data.profile.onboarding_completed;
+                    console.log(`✅ Estado onboarding: ${needsOnboarding ? 'NECESITA' : 'COMPLETADO'}`);
+                } catch (error) {
+                    console.error('❌ Error verificando onboarding:', error);
+                    needsOnboarding = false; // En caso de error, usar mensaje normal
+                }
+            }
+            
+            // Elegir mensaje apropiado
+            const welcomeMessage = needsOnboarding ? 
+                this.getOnboardingWelcomeMessage() : 
+                this.getWelcomeMessage();
+            
             this.addMessage('assistant', welcomeMessage, false);
             
             // Marcar que ya vio el mensaje de bienvenida
@@ -422,6 +457,31 @@ class DomusIA {
         
         // API status check removed - GPT-4o is always active
         // No need to show demo message since backend is configured
+    }
+
+    getOnboardingWelcomeMessage() {
+        return `# ¡Bienvenido/a a DomusIA, Profesional! 🎉
+
+Soy **Sofia**, tu asistente de IA especializada en el sector inmobiliario.
+
+Antes de comenzar, me gustaría **conocer tu empresa** para poder ayudarte mejor. Voy a hacerte algunas preguntas sobre:
+
+✅ **Información de tu empresa** (nombre, eslogan, logo)
+✅ **Ubicación y contacto** (dirección, teléfonos, email)
+✅ **Redes sociales** (Facebook, Instagram, LinkedIn, etc.)
+✅ **Información del gerente** (nombre, cargo, bio)
+✅ **Agentes de tu equipo** (nombres y contactos)
+
+**Este perfil me permitirá:**
+- 🎨 Crear materiales de marketing personalizados automáticamente
+- 📧 Incluir tus datos en propiedades y anuncios
+- 🤝 Personalizar la experiencia según tu empresa
+
+📋 **Te tomará solo 5-10 minutos** y podrás editar la información cuando quieras desde el CRM.
+
+**¿Estás listo/a para comenzar?** 🚀
+
+💡 **Nota:** Puedes responder por escrito o usar el micrófono 🎤 abajo para hablar conmigo.`;
     }
 
     getWelcomeMessage() {
