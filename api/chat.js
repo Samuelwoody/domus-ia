@@ -1215,24 +1215,14 @@ Continúa manteniendo estos principios en tu próxima respuesta.`;
 
           return res.status(200).json({
             success: true,
-            message: '✨ He recreado tu imagen usando **Google Nano Banana** (Gemini 2.5 Flash). ' +
-                     '\n\n📝 Cambios aplicados: ' +
-                     `**${functionArgs.desired_changes}**.\n\n` +
-                     '🍌 Este modelo de Google crea una **versión mejorada** de tu imagen original incorporando los cambios solicitados. ' +
-                     'La nueva imagen mantiene el estilo y contexto de la original, pero puede tener variaciones en los detalles.\n\n' +
-                     '⚡ Rápido (10-20s) y con comprensión de lenguaje natural.\n\n' +
-                     '💡 **Nota:** Si necesitas que la imagen sea EXACTAMENTE igual excepto por un cambio específico, dímelo y puedo usar un modelo de edición más preciso.\n\n' +
-                     '¿Quieres hacer más ajustes?',
+            message: '✅ Aquí tienes tu imagen mejorada.',
             imageUrl: editedImageUrl,
             originalImageUrl: imageUrl,
             originalDescription: functionArgs.original_description,
             appliedChanges: functionArgs.desired_changes,
             isPermanent: false,
-            nanoBananaUsed: true,
             imageEdited: true,
-            tokensUsed: data.usage.total_tokens,
-            model: 'Google Nano Banana (Gemini 2.5 Flash)',
-            editMethod: 'ai-recreation'  // vs 'pixel-editing'
+            tokensUsed: data.usage.total_tokens
           });
 
         } catch (error) {
