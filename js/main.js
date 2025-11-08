@@ -726,14 +726,10 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
 
     async generateAIResponse(message, file = null, fileType = null, documentText = null, cloudinaryUrl = null) {
-        // Try to use Vercel/Netlify Function (ChatGPT real via backend)
-        const endpoints = [
-            '/api/chat',                      // Vercel
-            '/.netlify/functions/chat'        // Netlify (fallback)
-        ];
+        // Try to use Vercel Function (ChatGPT real via backend)
+        const endpoint = '/api/chat'; // Solo Vercel, sin fallback a Netlify
 
-        for (const endpoint of endpoints) {
-            try {
+        try {
                 // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
                 const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
                 
@@ -1049,32 +1045,46 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                     }
                 }
             } catch (error) {
-                // Try next endpoint
-                console.error('Error en endpoint:', endpoint, error);
-                continue;
+                console.error('❌ Error en API:', error);
+                
+                // Distinguir tipos de error
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    console.error('🌐 Error de red - Sin conexión a internet o CORS bloqueado');
+                    throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+                } else if (error.status === 404) {
+                    console.error('🔍 Error 404 - Endpoint no existe');
+                    throw new Error('El servicio de IA no está disponible en esta URL.');
+                } else if (error.status >= 500) {
+                    console.error('⚠️ Error del servidor - Código:', error.status);
+                    throw new Error('Error temporal del servidor. Por favor intenta de nuevo.');
+                } else {
+                    console.error('❓ Error desconocido:', error);
+                    throw error; // Re-lanzar para que lo maneje el código superior
+                }
             }
+        } catch (finalError) {
+            // Solo usar modo demo si es realmente necesario
+            console.error('⚠️ No se pudo conectar con la IA:', finalError.message);
+            console.warn('⚠️ Backend no disponible, usando respuestas simuladas');
+            console.log('ℹ️ Para ChatGPT real, despliega en Vercel o Netlify.');
+            
+            // Si hay archivo adjunto, agregar contexto al mensaje
+            if (fileType === 'image') {
+                return "🖼️ He visto tu imagen. En modo demo no puedo analizarla completamente, pero puedo darte consejos generales basados en la descripción.";
+            }
+            if (fileType === 'document') {
+                return "📄 He recibido tu documento. En modo demo no puedo procesarlo completamente, pero puedo responder preguntas generales sobre documentación inmobiliaria.";
+            }
+            
+            // Mock AI responses as fallback
+            const responses = this.getContextualResponses(message);
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+            
+            // Return appropriate response
+            return responses[Math.floor(Math.random() * responses.length)];
         }
-        
-        // If all backends fail, use mock
-        console.warn('⚠️ Backend no disponible, usando respuestas simuladas');
-        console.log('ℹ️ Para ChatGPT real, despliega en Vercel o Netlify.');
-        
-        // Si hay archivo adjunto, agregar contexto al mensaje
-        if (fileType === 'image') {
-            return "🖼️ He visto tu imagen. En modo demo no puedo analizarla completamente, pero puedo darte consejos generales basados en la descripción.";
-        }
-        if (fileType === 'document') {
-            return "📄 He recibido tu documento. En modo demo no puedo procesarlo completamente, pero puedo responder preguntas generales sobre documentación inmobiliaria.";
-        }
-        
-        // Mock AI responses as fallback
-        const responses = this.getContextualResponses(message);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-        
-        // Return appropriate response
-        return responses[Math.floor(Math.random() * responses.length)];
     }
     
     // Helper: Convertir archivo a Base64
