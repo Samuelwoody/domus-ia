@@ -1604,37 +1604,16 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
         // 🔍 Verificar si el perfil ya existe (directo con Supabase)
         console.log('🔍 Verificando si perfil existe en Supabase...');
         
-        // Buscar usuario por email usando Supabase Admin API
-        const { data: { users: authUsers }, error: authError } = await supabaseClient.auth.admin.listUsers();
-        
-        if (authError) {
-          throw new Error(`Error buscando usuarios: ${authError.message}`);
-        }
-        
-        const authUser = authUsers?.find(u => u.email === userEmail);
-        
-        if (!authUser) {
-          throw new Error(`Usuario no encontrado con email: ${userEmail}`);
-        }
-        
-        // Obtener datos adicionales del perfil
-        const { data: profileData, error: profileDataError } = await supabaseClient
-          .from('profiles')
-          .select('full_name, role')
-          .eq('id', authUser.id)
+        // Buscar usuario por email en public.users
+        const { data: user, error: userError } = await supabaseClient
+          .from('users')
+          .select('id, email, name, user_type')
+          .eq('email', userEmail)
           .single();
         
-        if (profileDataError) {
-          console.warn('⚠️ No se pudo obtener perfil:', profileDataError.message);
+        if (userError || !user) {
+          throw new Error(`Usuario no encontrado: ${userError?.message || 'Email inválido'}`);
         }
-        
-        // Combinar datos de auth.users + profiles
-        const user = {
-          id: authUser.id,
-          email: authUser.email,
-          name: profileData?.full_name || 'Usuario',
-          user_type: profileData?.role || 'agent'
-        };
         
         // Buscar perfil profesional existente
         const { data: existingProfile, error: profileError } = await supabaseClient
