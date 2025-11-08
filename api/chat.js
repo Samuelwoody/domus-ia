@@ -1601,62 +1601,112 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           throw new Error('Email de usuario no disponible para guardar perfil');
         }
         
-        // Obtener dominio base para las llamadas a la API
-        const baseUrl = process.env.VERCEL_URL 
-          ? `https://${process.env.VERCEL_URL}` 
-          : 'http://localhost:3000';
+        // 🔍 Verificar si el perfil ya existe (directo con Supabase)
+        console.log('🔍 Verificando si perfil existe en Supabase...');
         
-        // Verificar si el perfil ya existe
-        console.log('🔍 Verificando si perfil existe...');
-        const getResponse = await fetch(`${baseUrl}/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
-        const { profile: existingProfile } = await getResponse.json();
+        // Buscar usuario por email usando Supabase Admin API
+        const { data: { users: authUsers }, error: authError } = await supabaseClient.auth.admin.listUsers();
+        
+        if (authError) {
+          throw new Error(`Error buscando usuarios: ${authError.message}`);
+        }
+        
+        const authUser = authUsers?.find(u => u.email === userEmail);
+        
+        if (!authUser) {
+          throw new Error(`Usuario no encontrado con email: ${userEmail}`);
+        }
+        
+        // Obtener datos adicionales del perfil
+        const { data: profileData, error: profileDataError } = await supabaseClient
+          .from('profiles')
+          .select('full_name, role')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (profileDataError) {
+          console.warn('⚠️ No se pudo obtener perfil:', profileDataError.message);
+        }
+        
+        // Combinar datos de auth.users + profiles
+        const user = {
+          id: authUser.id,
+          email: authUser.email,
+          name: profileData?.full_name || 'Usuario',
+          user_type: profileData?.role || 'agent'
+        };
+        
+        // Buscar perfil profesional existente
+        const { data: existingProfile, error: profileError } = await supabaseClient
+          .from('professional_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Si error pero NO es "not found", lanzar error
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw new Error(`Error obteniendo perfil: ${profileError.message}`);
+        }
         
         console.log(existingProfile ? '✅ Perfil existente encontrado' : '🆕 Creando nuevo perfil');
         
-        // Preparar datos para guardar (merge con datos existentes)
-        const profileData = existingProfile ? { ...existingProfile, ...data } : data;
+        // Preparar datos para guardar
+        let savedProfile;
         
-        // Determinar método HTTP
-        const method = existingProfile ? 'PUT' : 'POST';
-        
-        // Guardar o actualizar perfil
-        console.log(`📤 ${method} /api/professional-profile`);
-        const saveResponse = await fetch(`${baseUrl}/api/professional-profile`, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: userEmail,
-            profileData
-          })
-        });
-        
-        if (!saveResponse.ok) {
-          const errorData = await saveResponse.text();
-          throw new Error(`Error al guardar perfil: ${saveResponse.status} - ${errorData}`);
+        if (existingProfile) {
+          // 📝 ACTUALIZAR perfil existente (merge)
+          const profileData = { ...existingProfile, ...data };
+          
+          const { data: updated, error: updateError } = await supabaseClient
+            .from('professional_profiles')
+            .update(profileData)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+          
+          if (updateError) {
+            throw new Error(`Error actualizando perfil: ${updateError.message}`);
+          }
+          
+          savedProfile = updated;
+          console.log('✅ Perfil actualizado exitosamente');
+        } else {
+          // 🆕 CREAR nuevo perfil
+          const { data: created, error: createError } = await supabaseClient
+            .from('professional_profiles')
+            .insert({
+              user_id: user.id,
+              ...data
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            throw new Error(`Error creando perfil: ${createError.message}`);
+          }
+          
+          savedProfile = created;
+          console.log('✅ Perfil creado exitosamente');
         }
-        
-        const { profile: savedProfile } = await saveResponse.json();
-        console.log('✅ Perfil guardado exitosamente');
         
         // Si se debe marcar como completo
         if (mark_complete || section === 'complete') {
           console.log('🎉 Marcando onboarding como completo...');
           
-          const completeResponse = await fetch(`${baseUrl}/api/professional-profile`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: userEmail,
-              profileData: {
-                onboarding_completed: true,
-                is_complete: true,
-                profile_completed_at: new Date().toISOString()
-              }
+          const { data: completedProfile, error: completeError } = await supabaseClient
+            .from('professional_profiles')
+            .update({
+              onboarding_completed: true,
+              is_complete: true,
+              profile_completed_at: new Date().toISOString()
             })
-          });
+            .eq('user_id', user.id)
+            .select()
+            .single();
           
-          if (completeResponse.ok) {
+          if (!completeError && completedProfile) {
             console.log('✅ Onboarding marcado como completo');
+            savedProfile = completedProfile;
             
             // Retornar mensaje de finalización
             return res.status(200).json({
@@ -1675,6 +1725,8 @@ Puedes editar esta información cuando quieras desde el **CRM > Perfil Profesion
               section: 'complete',
               profile: savedProfile
             });
+          } else {
+            console.error('❌ Error marcando como completo:', completeError);
           }
         }
         
