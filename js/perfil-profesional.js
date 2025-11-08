@@ -1,470 +1,300 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil Profesional - DomusIA</title>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/perfil-profesional.css">
-</head>
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-building"></i>
-                <span>DomusIA</span>
-            </div>
-            
-            <nav class="nav-menu">
-                <a href="index.html#chat" class="nav-link">
-                    <i class="fas fa-comments"></i>
-                    Chat con Sofia
-                </a>
-                <a href="crm.html" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    Mi CRM
-                </a>
-                <a href="perfil-profesional.html" class="nav-link active">
-                    <i class="fas fa-user-tie"></i>
-                    Perfil Profesional
-                </a>
-            </nav>
-            
-            <div class="user-section">
-                <span class="user-name" id="userName">Usuario</span>
-                <button class="btn-logout" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Salir
-                </button>
-            </div>
-        </div>
-    </header>
+// ============================================================================
+// API: Professional Profile Management
+// Descripción: CRUD completo para perfiles profesionales de agentes/empresas
+// Autor: Domus-IA España
+// Fecha: 04 Noviembre 2025
+// ============================================================================
 
-    <!-- Main Content -->
-    <main class="main-container">
-        <!-- Loading State -->
-        <div id="loadingState" class="loading-state">
-            <div class="spinner"></div>
-            <p>Cargando perfil...</p>
-        </div>
+import { createClient } from '@supabase/supabase-js';
 
-        <!-- Profile Content -->
-        <div id="profileContent" class="profile-content" style="display: none;">
-            
-            <!-- Page Header -->
-            <div class="page-header">
-                <div class="header-left">
-                    <h1>
-                        <i class="fas fa-user-tie"></i>
-                        Perfil Profesional
-                    </h1>
-                    <p class="subtitle">Gestiona la información de tu empresa y equipo</p>
-                </div>
-                <div class="header-right">
-                    <button id="editBtn" class="btn btn-primary">
-                        <i class="fas fa-edit"></i>
-                        Editar Perfil
-                    </button>
-                    <button id="saveBtn" class="btn btn-success" style="display: none;">
-                        <i class="fas fa-save"></i>
-                        Guardar Cambios
-                    </button>
-                    <button id="cancelBtn" class="btn btn-secondary" style="display: none;">
-                        <i class="fas fa-times"></i>
-                        Cancelar
-                    </button>
-                </div>
-            </div>
+// Inicializar cliente Supabase
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase no configurado');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+}
 
-            <!-- Alert Messages -->
-            <div id="alertContainer"></div>
+export default async function handler(req, res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-            <!-- Profile Sections -->
-            <div class="profile-sections">
-                
-                <!-- SECCIÓN 1: EMPRESA -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-building"></i>
-                            Información de la Empresa
-                        </h2>
-                        <span class="section-status" id="companyStatus">
-                            <i class="fas fa-check-circle"></i>
-                            Completo
-                        </span>
-                    </div>
-                    
-                    <div class="section-content">
-                        <!-- Logo -->
-                        <div class="form-group logo-upload-group">
-                            <label>Logo de la Empresa</label>
-                            <div class="logo-container">
-                                <div class="logo-preview" id="logoPreview">
-                                    <img id="logoImage" src="" alt="Logo" style="display: none;">
-                                    <div id="logoPlaceholder" class="logo-placeholder">
-                                        <i class="fas fa-building"></i>
-                                        <p>Sin logo</p>
-                                    </div>
-                                </div>
-                                <div class="logo-actions" id="logoActions" style="display: none;">
-                                    <button type="button" class="btn btn-small" id="uploadLogoBtn">
-                                        <i class="fas fa-upload"></i>
-                                        Subir Logo
-                                    </button>
-                                    <button type="button" class="btn btn-small btn-danger" id="removeLogoBtn" style="display: none;">
-                                        <i class="fas fa-trash"></i>
-                                        Eliminar
-                                    </button>
-                                    <input type="file" id="logoInput" accept="image/*" style="display: none;">
-                                </div>
-                            </div>
-                            <small class="help-text">Formatos: JPG, PNG. Tamaño máximo: 5MB</small>
-                        </div>
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="companyName">
-                                    Nombre de la Empresa <span class="required">*</span>
-                                </label>
-                                <input type="text" id="companyName" class="form-control" readonly>
-                            </div>
-                        </div>
+  const supabase = getSupabaseClient();
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="companySlogan">Eslogan</label>
-                                <input type="text" id="companySlogan" class="form-control" readonly>
-                                <small class="help-text">Frase que describe tu empresa</small>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+  try {
+    // ========================================================================
+    // GET: Obtener perfil profesional
+    // ========================================================================
+    if (req.method === 'GET') {
+      const { email, userId } = req.query;
 
-                <!-- SECCIÓN 2: UBICACIÓN -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-map-marker-alt"></i>
-                            Ubicación
-                        </h2>
-                    </div>
-                    
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="streetAddress">Dirección</label>
-                                <input type="text" id="streetAddress" class="form-control" readonly>
-                            </div>
-                        </div>
+      if (!email && !userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email o userId requerido'
+        });
+      }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="city">Ciudad</label>
-                                <input type="text" id="city" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="stateProvince">Provincia</label>
-                                <input type="text" id="stateProvince" class="form-control" readonly>
-                            </div>
-                        </div>
+      // Buscar usuario primero
+      let user;
+      if (email) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email, name, user_type')
+          .eq('email', email)
+          .single();
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="postalCode">Código Postal</label>
-                                <input type="text" id="postalCode" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="country">País</label>
-                                <input type="text" id="country" class="form-control" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+        if (userError || !userData) {
+          return res.status(404).json({
+            success: false,
+            error: 'Usuario no encontrado'
+          });
+        }
+        user = userData;
+      } else {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email, name, user_type')
+          .eq('id', userId)
+          .single();
 
-                <!-- SECCIÓN 3: CONTACTO -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-phone"></i>
-                            Información de Contacto
-                        </h2>
-                    </div>
-                    
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="corporateEmail">
-                                    Email Corporativo <span class="required">*</span>
-                                </label>
-                                <input type="email" id="corporateEmail" class="form-control" readonly>
-                            </div>
-                        </div>
+        if (userError || !userData) {
+          return res.status(404).json({
+            success: false,
+            error: 'Usuario no encontrado'
+          });
+        }
+        user = userData;
+      }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="corporatePhone">Teléfono Fijo</label>
-                                <input type="tel" id="corporatePhone" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="mobilePhone">Teléfono Móvil</label>
-                                <input type="tel" id="mobilePhone" class="form-control" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+      // Obtener perfil profesional
+      const { data: profile, error: profileError } = await supabase
+        .from('professional_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-                <!-- SECCIÓN 4: REDES SOCIALES -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-share-alt"></i>
-                            Redes Sociales
-                        </h2>
-                    </div>
-                    
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="websiteUrl">
-                                    <i class="fas fa-globe"></i>
-                                    Sitio Web
-                                </label>
-                                <input type="url" id="websiteUrl" class="form-control" readonly placeholder="https://tuempresa.com">
-                            </div>
-                        </div>
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error obteniendo perfil:', profileError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error al obtener perfil'
+        });
+      }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="facebookUrl">
-                                    <i class="fab fa-facebook"></i>
-                                    Facebook
-                                </label>
-                                <input type="url" id="facebookUrl" class="form-control" readonly placeholder="https://facebook.com/tuempresa">
-                            </div>
-                            <div class="form-group">
-                                <label for="instagramUrl">
-                                    <i class="fab fa-instagram"></i>
-                                    Instagram
-                                </label>
-                                <input type="url" id="instagramUrl" class="form-control" readonly placeholder="https://instagram.com/tuempresa">
-                            </div>
-                        </div>
+      // Si no existe perfil, devolver null pero indicar que el usuario existe
+      if (!profile) {
+        return res.status(200).json({
+          success: true,
+          profile: null,
+          user: user,
+          message: 'Usuario existe pero no tiene perfil profesional creado'
+        });
+      }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="linkedinUrl">
-                                    <i class="fab fa-linkedin"></i>
-                                    LinkedIn
-                                </label>
-                                <input type="url" id="linkedinUrl" class="form-control" readonly placeholder="https://linkedin.com/company/tuempresa">
-                            </div>
-                            <div class="form-group">
-                                <label for="twitterUrl">
-                                    <i class="fab fa-twitter"></i>
-                                    Twitter / X
-                                </label>
-                                <input type="url" id="twitterUrl" class="form-control" readonly placeholder="https://twitter.com/tuempresa">
-                            </div>
-                        </div>
+      return res.status(200).json({
+        success: true,
+        profile: profile,
+        user: user
+      });
+    }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="youtubeUrl">
-                                    <i class="fab fa-youtube"></i>
-                                    YouTube
-                                </label>
-                                <input type="url" id="youtubeUrl" class="form-control" readonly placeholder="https://youtube.com/@tuempresa">
-                            </div>
-                        </div>
-                    </div>
-                </section>
+    // ========================================================================
+    // POST: Crear perfil profesional
+    // ========================================================================
+    if (req.method === 'POST') {
+      const { email, profileData } = req.body;
 
-                <!-- SECCIÓN 5: GERENTE -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-user-tie"></i>
-                            Información del Gerente
-                        </h2>
-                    </div>
-                    
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="managerName">Nombre Completo</label>
-                                <input type="text" id="managerName" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="managerPosition">Cargo</label>
-                                <input type="text" id="managerPosition" class="form-control" readonly>
-                            </div>
-                        </div>
+      if (!email || !profileData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email y profileData requeridos'
+        });
+      }
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="managerEmail">Email</label>
-                                <input type="email" id="managerEmail" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="managerPhone">Teléfono</label>
-                                <input type="tel" id="managerPhone" class="form-control" readonly>
-                            </div>
-                        </div>
+      // Buscar usuario
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, email, name, user_type')
+        .eq('email', email)
+        .single();
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="managerBio">Biografía Profesional</label>
-                                <textarea id="managerBio" class="form-control" rows="3" readonly></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+      if (userError || !user) {
+        return res.status(404).json({
+          success: false,
+          error: 'Usuario no encontrado'
+        });
+      }
 
-                <!-- SECCIÓN 6: AGENTES -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2>
-                            <i class="fas fa-users"></i>
-                            Equipo de Agentes
-                        </h2>
-                        <button id="addAgentBtn" class="btn btn-small btn-primary" style="display: none;">
-                            <i class="fas fa-plus"></i>
-                            Añadir Agente
-                        </button>
-                    </div>
-                    
-                    <div class="section-content">
-                        <div id="agentsList" class="agents-list">
-                            <!-- Agents will be dynamically inserted here -->
-                        </div>
-                        
-                        <div id="noAgents" class="empty-state">
-                            <i class="fas fa-users"></i>
-                            <p>No hay agentes registrados</p>
-                        </div>
-                    </div>
-                </section>
+      // Verificar que sea profesional
+      if (user.user_type !== 'profesional') {
+        return res.status(403).json({
+          success: false,
+          error: 'Solo usuarios profesionales pueden crear perfil de empresa'
+        });
+      }
 
-            </div>
+      // Verificar si ya existe un perfil
+      const { data: existingProfile } = await supabase
+        .from('professional_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-            <!-- Profile Footer -->
-            <div class="profile-footer">
-                <div class="footer-info">
-                    <p>
-                        <i class="fas fa-clock"></i>
-                        <strong>Última actualización:</strong> 
-                        <span id="lastUpdated">-</span>
-                    </p>
-                    <p>
-                        <i class="fas fa-calendar"></i>
-                        <strong>Perfil creado:</strong> 
-                        <span id="createdAt">-</span>
-                    </p>
-                </div>
-            </div>
+      if (existingProfile) {
+        return res.status(409).json({
+          success: false,
+          error: 'El usuario ya tiene un perfil profesional. Use PUT para actualizar.'
+        });
+      }
 
-        </div>
+      // Crear perfil profesional
+      const { data: newProfile, error: createError } = await supabase
+        .from('professional_profiles')
+        .insert({
+          user_id: user.id,
+          ...profileData
+        })
+        .select()
+        .single();
 
-        <!-- Empty State (No Profile) -->
-        <div id="emptyState" class="empty-profile-state" style="display: none;">
-            <div class="empty-content">
-                <i class="fas fa-user-circle"></i>
-                <h2>Perfil No Completado</h2>
-                <p>Aún no has completado tu perfil profesional.</p>
-                <p>Ve al chat con Sofia para completar el proceso de onboarding.</p>
-                <a href="index.html#chat" class="btn btn-primary">
-                    <i class="fas fa-comments"></i>
-                    Ir al Chat
-                </a>
-            </div>
-        </div>
+      if (createError) {
+        console.error('Error creando perfil:', createError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error al crear perfil profesional',
+          details: createError.message
+        });
+      }
 
-        <!-- Error State -->
-        <div id="errorState" class="error-state" style="display: none;">
-            <div class="error-content">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h2>Error al Cargar Perfil</h2>
-                <p id="errorMessage">Ha ocurrido un error inesperado.</p>
-                <button class="btn btn-primary" onclick="location.reload()">
-                    <i class="fas fa-redo"></i>
-                    Reintentar
-                </button>
-            </div>
-        </div>
+      return res.status(201).json({
+        success: true,
+        profile: newProfile,
+        message: 'Perfil profesional creado exitosamente'
+      });
+    }
 
-    </main>
+    // ========================================================================
+    // PUT: Actualizar perfil profesional
+    // ========================================================================
+    if (req.method === 'PUT') {
+      const { email, profileData } = req.body;
 
-    <!-- Modal: Add/Edit Agent -->
-    <div id="agentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="agentModalTitle">
-                    <i class="fas fa-user-plus"></i>
-                    Añadir Agente
-                </h3>
-                <button class="modal-close" onclick="closeAgentModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="agentEditIndex">
-                
-                <div class="form-group">
-                    <label for="agentName">
-                        Nombre Completo <span class="required">*</span>
-                    </label>
-                    <input type="text" id="agentName" class="form-control" required>
-                </div>
+      if (!email || !profileData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email y profileData requeridos'
+        });
+      }
 
-                <div class="form-group">
-                    <label for="agentEmail">Email</label>
-                    <input type="email" id="agentEmail" class="form-control">
-                </div>
+      // Buscar usuario
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-                <div class="form-group">
-                    <label for="agentPhone">Teléfono</label>
-                    <input type="tel" id="agentPhone" class="form-control">
-                </div>
+      if (userError || !user) {
+        return res.status(404).json({
+          success: false,
+          error: 'Usuario no encontrado'
+        });
+      }
 
-                <div class="form-group">
-                    <label for="agentSpecialty">Especialidad</label>
-                    <select id="agentSpecialty" class="form-control">
-                        <option value="">Seleccionar...</option>
-                        <option value="Residencial">Residencial</option>
-                        <option value="Comercial">Comercial</option>
-                        <option value="Lujo">Lujo</option>
-                        <option value="Alquileres">Alquileres</option>
-                        <option value="Inversión">Inversión</option>
-                        <option value="Industrial">Industrial</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeAgentModal()">
-                    Cancelar
-                </button>
-                <button class="btn btn-primary" id="saveAgentBtn">
-                    <i class="fas fa-save"></i>
-                    Guardar Agente
-                </button>
-            </div>
-        </div>
-    </div>
+      // Actualizar perfil
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('professional_profiles')
+        .update(profileData)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-    <!-- Toast Notifications -->
-    <div id="toastContainer" class="toast-container"></div>
+      if (updateError) {
+        console.error('Error actualizando perfil:', updateError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error al actualizar perfil profesional',
+          details: updateError.message
+        });
+      }
 
-    <!-- Scripts -->
-    <script src="js/perfil-profesional.js"></script>
-</body>
-</html>
+      return res.status(200).json({
+        success: true,
+        profile: updatedProfile,
+        message: 'Perfil profesional actualizado exitosamente'
+      });
+    }
+
+    // ========================================================================
+    // DELETE: Eliminar perfil profesional
+    // ========================================================================
+    if (req.method === 'DELETE') {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email requerido'
+        });
+      }
+
+      // Buscar usuario
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (userError || !user) {
+        return res.status(404).json({
+          success: false,
+          error: 'Usuario no encontrado'
+        });
+      }
+
+      // Eliminar perfil
+      const { error: deleteError } = await supabase
+        .from('professional_profiles')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error('Error eliminando perfil:', deleteError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error al eliminar perfil profesional',
+          details: deleteError.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Perfil profesional eliminado exitosamente'
+      });
+    }
+
+    // Método no soportado
+    return res.status(405).json({
+      success: false,
+      error: `Método ${req.method} no soportado`
+    });
+
+  } catch (error) {
+    console.error('Error en professional-profile API:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      details: error.message
+    });
+  }
+}
