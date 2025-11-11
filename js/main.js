@@ -729,7 +729,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         // Try to use Vercel Function (ChatGPT real via backend)
         const endpoint = '/api/chat'; // Solo Vercel, sin fallback a Netlify
 
-        try {
+        try { // Try externo para capturar errores generales
+            try { // Try interno para el fetch de la API
                 // 🧠 HISTORIAL COMPLETO: Enviar últimos 10 mensajes para contexto
                 const recentHistory = this.conversationHistory.slice(-10); // Últimos 10 mensajes
                 
