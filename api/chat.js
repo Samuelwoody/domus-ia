@@ -1524,11 +1524,13 @@ async function addMemoryToSystemPrompt(basePrompt, userContext) {
   // CONVERSACIONES RECIENTES
   if (userContext.conversations && userContext.conversations.length > 0) {
     const recentConvs = userContext.conversations.slice(-15);
-    const convSummary = recentConvs.map(conv => {
-      const date = new Date(conv.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-      const preview = conv.message.substring(0, 120);
-      return `[${date}] ${conv.sender === 'user' ? '👤' : '🤖'}: ${preview}${conv.message.length > 120 ? '...' : ''}`;
-    }).join('\n');
+    const convSummary = recentConvs
+      .filter(conv => conv.message && conv.message.trim()) // 🔥 FIX v1.10.1: Filtrar mensajes null/vacíos
+      .map(conv => {
+        const date = new Date(conv.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+        const preview = conv.message.substring(0, 120);
+        return `[${date}] ${conv.sender === 'user' ? '👤' : '🤖'}: ${preview}${conv.message.length > 120 ? '...' : ''}`;
+      }).join('\n');
     
     memorySections.push(`## 💬 CONVERSACIONES RECIENTES (${recentConvs.length})
 
