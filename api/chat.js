@@ -239,8 +239,9 @@ export default async function handler(req, res) {
     let webSearchResults = null;
     const lastMessage = messages[messages.length - 1];
     
+    // 🔥 FIX: Validar que lastMessage.content no sea null antes de shouldSearchWeb
     const needsWebSearch = webSearch === true || 
-                          (webSearch === 'auto' && shouldSearchWeb(lastMessage.content));
+                          (webSearch === 'auto' && lastMessage.content && shouldSearchWeb(lastMessage.content));
     
     if (needsWebSearch && TAVILY_API_KEY) {
       console.log('🌐 Realizando búsqueda web:', lastMessage.content);
@@ -272,12 +273,15 @@ export default async function handler(req, res) {
       
       // Solo procesar si tenemos URL válida
       if (imageUrlToUse) {
+        // 🔥 FIX: Validar que content no sea null
+        const textContent = lastMsg.content || '';
+        
         processedMessages[lastMessageIndex] = {
           role: lastMsg.role,
           content: [
             {
               type: 'text',
-              text: lastMsg.content
+              text: textContent
             },
             {
               type: 'image_url',
@@ -298,9 +302,21 @@ export default async function handler(req, res) {
       const lastMessageIndex = processedMessages.length - 1;
       const lastMsg = processedMessages[lastMessageIndex];
       
+      // 🔥 FIX: Manejar correctamente si content es array (imagen) o string
+      let baseContent = '';
+      
+      if (Array.isArray(lastMsg.content)) {
+        // Si es array (imagen procesada), extraer el texto del primer elemento
+        const textPart = lastMsg.content.find(item => item.type === 'text');
+        baseContent = textPart ? textPart.text : '';
+      } else {
+        // Si es string, usar directamente (o vacío si es null)
+        baseContent = lastMsg.content || '';
+      }
+      
       processedMessages[lastMessageIndex] = {
         role: lastMsg.role,
-        content: `${lastMsg.content}\n\n---\n📄 DOCUMENTO ADJUNTO:\n\n${documentText}\n---`
+        content: `${baseContent}\n\n---\n📄 DOCUMENTO ADJUNTO:\n\n${documentText}\n---`
       };
       
       console.log('📄 Documento procesado - Texto extraído incluido en contexto');
@@ -1524,19 +1540,21 @@ async function addMemoryToSystemPrompt(basePrompt, userContext) {
   // CONVERSACIONES RECIENTES
   if (userContext.conversations && userContext.conversations.length > 0) {
     const recentConvs = userContext.conversations.slice(-15);
-    const convSummary = recentConvs
-      .filter(conv => conv.message && conv.message.trim()) // 🔥 FIX v1.10.1: Filtrar mensajes null/vacíos
-      .map(conv => {
+    const validConvs = recentConvs.filter(conv => conv.message && conv.message.trim()); // 🔥 FIX v1.10.1: Filtrar mensajes null/vacíos
+    
+    if (validConvs.length > 0) {
+      const convSummary = validConvs.map(conv => {
         const date = new Date(conv.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
         const preview = conv.message.substring(0, 120);
         return `[${date}] ${conv.sender === 'user' ? '👤' : '🤖'}: ${preview}${conv.message.length > 120 ? '...' : ''}`;
       }).join('\n');
-    
-    memorySections.push(`## 💬 CONVERSACIONES RECIENTES (${recentConvs.length})
+      
+      memorySections.push(`## 💬 CONVERSACIONES RECIENTES (${validConvs.length})
 
 ${convSummary}
 
 **Usa esto para:** Recordar temas anteriores, no repetir info, hacer seguimiento.`);
+    }
   }
   
   // PROPIEDADES
