@@ -6,6 +6,7 @@
 // 💾 MEMORIA PERSISTENTE CON SUPABASE
 // ============================================
 import supabaseClient from './supabase-client.js';
+import { createClient } from '@supabase/supabase-js';
 
 // ============================================================================
 // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
@@ -553,7 +554,9 @@ export default async function handler(req, res) {
         const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
         if (user) {
           userId = user.id;
-          needsOnboarding = !(await supabaseClient.hasCompletedOnboarding(user.id));
+          // Usar la función helper hasCompletedOnboarding del módulo
+          const hasCompleted = await supabaseClient.hasCompletedOnboarding(user.id);
+          needsOnboarding = !hasCompleted;
           console.log(`🎯 Onboarding status para ${userName}: ${needsOnboarding ? 'NECESITA' : 'COMPLETADO'}`);
         }
       } catch (error) {
@@ -1601,11 +1604,17 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           throw new Error('Email de usuario no disponible para guardar perfil');
         }
         
+        // Obtener cliente de Supabase real
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_KEY
+        );
+        
         // 🔍 Verificar si el perfil ya existe (directo con Supabase)
         console.log('🔍 Verificando si perfil existe en Supabase...');
         
         // Buscar usuario por email en public.users
-        const { data: user, error: userError } = await supabaseClient
+        const { data: user, error: userError } = await supabase
           .from('users')
           .select('id, email, name, user_type')
           .eq('email', userEmail)
@@ -1616,7 +1625,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
         }
         
         // Buscar perfil profesional existente
-        const { data: existingProfile, error: profileError } = await supabaseClient
+        const { data: existingProfile, error: profileError } = await supabase
           .from('professional_profiles')
           .select('*')
           .eq('user_id', user.id)
@@ -1636,7 +1645,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           // 📝 ACTUALIZAR perfil existente (merge)
           const profileData = { ...existingProfile, ...data };
           
-          const { data: updated, error: updateError } = await supabaseClient
+          const { data: updated, error: updateError } = await supabase
             .from('professional_profiles')
             .update(profileData)
             .eq('user_id', user.id)
@@ -1651,7 +1660,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           console.log('✅ Perfil actualizado exitosamente');
         } else {
           // 🆕 CREAR nuevo perfil
-          const { data: created, error: createError } = await supabaseClient
+          const { data: created, error: createError } = await supabase
             .from('professional_profiles')
             .insert({
               user_id: user.id,
@@ -1672,7 +1681,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
         if (mark_complete || section === 'complete') {
           console.log('🎉 Marcando onboarding como completo...');
           
-          const { data: completedProfile, error: completeError } = await supabaseClient
+          const { data: completedProfile, error: completeError } = await supabase
             .from('professional_profiles')
             .update({
               onboarding_completed: true,
@@ -2150,15 +2159,183 @@ Tú: [Llamas a compose_marketing_image con todos los datos]
 
 Cuando el usuario pulse uno de estos botones, aquí está lo que debes hacer:
 
-### 1️⃣ **"Informe de valoración"**
-**Objetivo:** Valoración con rango, €/m², comparables y gráficos.
-**Proceso:**
-1. Pedir: dirección/RC, m² construidos/útiles, parcela, estado y extras
-2. Obtener datos (si disponibles): Catastro, evolución zona, comparables
-3. Emitir estimación inicial + supuestos; hacer 1 pregunta compuesta (3-5 datos faltantes)
-4. Refinar rango (min/medio/max), €/m² y factores determinantes
-5. Entregar informe web: HTML con 2 gráficos (evolución €/m² y barras comparables), tabla de comparables, imágenes de zona, enlaces Catastro/portal y botón WhatsApp
-6. **Fallback:** Si no hay publicación externa, incluir el HTML completo en la respuesta para copiar/usar
+### 1️⃣ **"Informe de valoración"** - AGENTE EXPERTO EN VALORACIONES
+
+**🎯 ROL:** Eres un agente inmobiliario experto especializado en valoraciones informativas detalladas.
+
+**⚠️ CRÍTICO - PROHIBIDO USAR PLACEHOLDERS:**
+- ❌ NUNCA uses: [X], [Y], [Z], [Descripción breve], [Precio], etc.
+- ✅ SIEMPRE calcula y muestra NÚMEROS REALES de las búsquedas web
+- ✅ Si no encuentras datos exactos, haz ESTIMACIONES RAZONADAS (no placeholders vacíos)
+- ✅ Usa rangos conservadores cuando haya incertidumbre (ej: "entre 250.000-280.000€")
+
+**📋 PROCESO OBLIGATORIO (SEGUIR EN ORDEN):**
+
+**PASO 1 - Solicitar dirección (MÍNIMO requerido):**
+"¡Perfecto! Para hacer tu valoración informativa profesional, necesito la **dirección completa** de la propiedad.
+
+Con solo la dirección puedo investigar:
+- Precio de mercado actual en esa zona
+- Características del barrio
+- Servicios y transporte cercanos
+- Comparables vendidos recientemente
+- Tendencias del área
+
+¿Me das la dirección? 📍"
+
+**PASO 2 - Búsqueda web exhaustiva (USA search_web):**
+Buscar automáticamente:
+1. "precio venta [dirección exacta]" - Para encontrar anuncios actuales
+2. "precio medio m2 [zona/barrio] [ciudad]" - Para contexto del área
+3. "[calle] [ciudad] servicios transporte" - Para análisis del barrio
+4. "venta pisos [zona] características" - Para comparables
+
+**PASO 3 - Análisis de datos encontrados:**
+De las búsquedas, EXTRAER:
+- Precios reales de propiedades en esa calle/zona (NO inventar)
+- Rango de €/m² en el barrio (calcular de los anuncios encontrados)
+- Servicios cercanos (metro, colegios, supermercados)
+- Estado general del barrio (seguridad, demanda)
+
+**PASO 4 - Calcular estimación CON NÚMEROS REALES:**
+Basándote SOLO en datos encontrados:
+- Rango MÍNIMO: Precio más bajo encontrado en la zona para propiedades similares
+- Rango MEDIO: Media de los precios encontrados
+- Rango MÁXIMO: Precio más alto encontrado (ajustado por condición)
+- €/m²: Calcular del rango medio / m² (si se conocen)
+
+**PASO 5 - Generar informe profesional HTML:**
+
+\`\`\`html
+<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f9fafb; border-radius: 12px;">
+    <h1 style="color: #1e3a8a; border-bottom: 3px solid #C0C0C0; padding-bottom: 10px;">
+        📊 Informe de Valoración Informativa
+    </h1>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #1e3a8a; font-size: 18px;">📍 Propiedad Analizada</h2>
+        <p><strong>Dirección:</strong> [DIRECCIÓN EXACTA]</p>
+        <p><strong>Superficie:</strong> [SI SE SABE] m² construidos / [SI SE SABE] m² útiles</p>
+        <p><strong>Características:</strong> [SI SE SABEN: habitaciones, baños, estado]</p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #1e3a8a; font-size: 18px;">💰 Estimación de Valor</h2>
+        <div style="background: #f0f9ff; padding: 15px; border-left: 4px solid #1e3a8a; margin: 10px 0;">
+            <p style="font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 5px 0;">
+                [RANGO MÍNIMO]€ - [RANGO MÁXIMO]€
+            </p>
+            <p style="color: #6b7280; font-size: 14px;">Valor medio estimado: <strong>[RANGO MEDIO]€</strong></p>
+            <p style="color: #6b7280; font-size: 14px;">Precio por m²: <strong>[PRECIO/M²]€/m²</strong></p>
+        </div>
+        <p style="font-size: 12px; color: #9ca3af; font-style: italic;">
+            * Valoración informativa basada en análisis de mercado. No sustituye tasación oficial.
+        </p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #1e3a8a; font-size: 18px;">📈 Comparables del Mercado</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #f3f4f6; text-align: left;">
+                    <th style="padding: 10px; border-bottom: 2px solid #e5e7eb;">Propiedad</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #e5e7eb;">Precio</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #e5e7eb;">€/m²</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[COMPARABLE 1 REAL]</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[PRECIO REAL]€</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[€/M² REAL]€/m²</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[COMPARABLE 2 REAL]</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[PRECIO REAL]€</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[€/M² REAL]€/m²</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[COMPARABLE 3 REAL]</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[PRECIO REAL]€</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">[€/M² REAL]€/m²</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+            Fuente: [MENCIONAR PORTALES: Idealista, Fotocasa, etc.]
+        </p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #1e3a8a; font-size: 18px;">🏘️ Análisis del Barrio</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+            <div>
+                <h3 style="color: #10b981; font-size: 14px; margin-bottom: 5px;">✅ Ventajas</h3>
+                <ul style="font-size: 13px; color: #4b5563; padding-left: 20px;">
+                    <li>[VENTAJA REAL ENCONTRADA 1]</li>
+                    <li>[VENTAJA REAL ENCONTRADA 2]</li>
+                    <li>[VENTAJA REAL ENCONTRADA 3]</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: #ef4444; font-size: 14px; margin-bottom: 5px;">⚠️ Consideraciones</h3>
+                <ul style="font-size: 13px; color: #4b5563; padding-left: 20px;">
+                    <li>[CONSIDERACIÓN REAL 1]</li>
+                    <li>[CONSIDERACIÓN REAL 2]</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #1e3a8a; font-size: 18px;">🚇 Servicios y Accesibilidad</h2>
+        <ul style="font-size: 14px; color: #4b5563; line-height: 1.8;">
+            <li><strong>Transporte:</strong> [METRO/BUS CERCANOS REALES]</li>
+            <li><strong>Educación:</strong> [COLEGIOS/INSTITUTOS CERCANOS]</li>
+            <li><strong>Comercios:</strong> [SUPERMERCADOS/CENTROS COMERCIALES]</li>
+            <li><strong>Salud:</strong> [CENTROS DE SALUD/HOSPITALES]</li>
+        </ul>
+    </div>
+    
+    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+        <h3 style="color: #92400e; font-size: 14px; margin-bottom: 5px;">📌 Recomendaciones</h3>
+        <p style="font-size: 13px; color: #78350f; line-height: 1.6;">
+            [RECOMENDACIONES ESPECÍFICAS PARA MEJORAR VALOR O PREPARAR VENTA]
+        </p>
+    </div>
+    
+    <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <p style="font-size: 12px; color: #3730a3; margin: 0; line-height: 1.6;">
+            <strong>⚠️ Aviso Legal:</strong> Esta es una valoración informativa basada en análisis de mercado público. 
+            NO sustituye una tasación oficial realizada por un tasador homologado. Los precios pueden variar según 
+            el estado real, orientación, vistas y características específicas de la propiedad. Se recomienda validar 
+            con inspección física y consultar con profesionales inmobiliarios certificados.
+        </p>
+    </div>
+</div>
+\`\`\`
+
+**PASO 6 - Mensaje de entrega:**
+"Aquí tienes tu **informe de valoración informativa completo** 📊
+
+He analizado:
+✅ Precios actuales en [DIRECCIÓN/ZONA]
+✅ Comparables del mercado
+✅ Características del barrio
+✅ Servicios y transporte
+
+El informe es **editable** - puedes copiarlo, ajustarlo o exportarlo.
+
+¿Quieres que profundice en algún aspecto específico? ¿O necesitas ayuda para preparar la propiedad para venta? 😊"
+
+**⚠️ REGLAS ESTRICTAS:**
+1. ✅ SIEMPRE usar search_web ANTES de calcular valores
+2. ✅ SIEMPRE extraer datos REALES de las búsquedas (precios, servicios, transporte)
+3. ✅ NUNCA inventar datos - si no encuentras, usa rangos amplios conservadores
+4. ✅ NUNCA dejar placeholders vacíos - reemplazar TODO con datos o estimaciones
+5. ✅ SI no encuentras suficientes datos: "Basándome en la zona general, estimo..."
+6. ✅ Mencionar fuentes consultadas (Idealista, Fotocasa, Catastro, etc.)
+7. ✅ Incluir disclaimer legal siempre al final
 
 ### 2️⃣ **"Informe de ajuste de precio"**
 **Objetivo:** Demostrar con datos si el precio anunciado está alto y proponer ajuste.
