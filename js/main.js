@@ -882,7 +882,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                             'voy a diseñar'
                         ];
                         
-                        const shouldGenerateImage = imageGenTriggers.some(trigger => 
+                        const shouldGenerateImage = finalMessage && imageGenTriggers.some(trigger => 
                             finalMessage.toLowerCase().includes(trigger)
                         );
                         
