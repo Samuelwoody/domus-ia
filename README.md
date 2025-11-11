@@ -8,7 +8,25 @@
 
 ## 🎉 FASE 1 & FASE 5 COMPLETADAS - Sistema CRM Funcional v1.2
 
-### ✅ ESTADO ACTUAL (11 Noviembre 2025) - VERSIÓN 1.11.2 🔥
+### ✅ ESTADO ACTUAL (11 Noviembre 2025) - VERSIÓN 1.10.1 🔥
+
+**🔧 Hotfix Crítico v1.10.1 (11 Noviembre 2025) - CHAT NO SE ABRÍA:**
+- 🚨 **ERROR CRÍTICO RESUELTO:** Error de sintaxis en main.js línea 1083
+- ❌ **Problema:** `await` fuera de contexto async en bloque catch
+- ✅ **Solución:** Eliminado await innecesario que bloqueaba toda la app
+- ⚡ **Impacto:** Chat ahora funciona correctamente, app 100% operativa
+- 📄 **Documentación:** `🔧_FIX_CRITICO_CHAT_NO_ABRE.md` con detalles completos
+- ⏱️ **Tiempo de resolución:** 10 minutos desde reporte hasta fix completo
+
+**🔧 Fix Adicional v1.10.1 (11 Noviembre 2025) - Memoria persistente con null:**
+- 🐛 **BUG DETECTADO:** Conversaciones con `message: null` causaban error 400 en OpenAI
+- ❌ **Problema:** `addMemoryToSystemPrompt` procesaba mensajes null sin validar
+- ✅ **Solución:** Añadido `.filter(conv => conv.message && conv.message.trim())` antes de procesar
+- ⚡ **Impacto:** Sistema de memoria ahora filtra correctamente mensajes inválidos
+- 📄 **Archivo modificado:** `api/chat.js` línea 1528
+- ⏱️ **Tiempo de resolución:** 5 minutos desde detección hasta fix
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.11.2
 
 **🔧 Hotfix Crítico v1.11.2 (11 Noviembre 2025) - 400 Bad Request Backend:**
 - 🚨 **FIX CRÍTICO:** Error 400 Bad Request en api/chat.js resuelto
