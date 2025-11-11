@@ -8,7 +8,28 @@
 
 ## 🎉 FASE 1 & FASE 5 COMPLETADAS - Sistema CRM Funcional v1.2
 
-### ✅ ESTADO ACTUAL (11 Noviembre 2025) - VERSIÓN 1.11.0 🔥
+### ✅ ESTADO ACTUAL (11 Noviembre 2025) - VERSIÓN 1.11.2 🔥
+
+**🔧 Hotfix Crítico v1.11.2 (11 Noviembre 2025) - 400 Bad Request Backend:**
+- 🚨 **FIX CRÍTICO:** Error 400 Bad Request en api/chat.js resuelto
+- ❌ **Problema:** Syntax error por template HTML con triple backticks anidados en system prompt
+- ✅ **Solución:** Revertida sección "Informe de valoración" a versión original funcional
+- ⚡ **Impacto:** Backend completamente restaurado, chat 100% operativo
+- 🔄 **Cambios revertidos:** 
+  - Eliminado bloque HTML masivo (150+ líneas) con sintaxis problemática
+  - Restaurada versión concisa del prompt de valoración
+  - Restaurada versión original de Home Staging Virtual
+- ⏱️ **Tiempo de resolución:** 10 minutos desde detección hasta fix completo
+
+**🔧 Hotfix Urgente v1.11.1 (11 Noviembre 2025) - TypeError finalMessage:**
+- 🚨 **FIX CRÍTICO:** Error TypeError en main.js línea 886 resuelto
+- ❌ **Problema:** `finalMessage.toLowerCase()` crasheaba cuando backend devolvía null
+- ✅ **Solución:** Añadida validación `finalMessage &&` antes de `.toLowerCase()`
+- ⚡ **Impacto:** Chat ya no crashea, respuestas funcionan correctamente
+- 📄 **Documentación:** `🔧_HOTFIX_v1.11.1_TypeError_finalMessage.md`
+- ⏱️ **Tiempo de resolución:** 5 minutos desde detección hasta fix
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.11.0
 
 **🎯 Mejora Mayor v1.11.0 (11 Noviembre 2025) - VALORACIONES PROFESIONALES:**
 - 🏆 **INTEGRADO AGENTE EXPERTO:** Lógica de agente Genspark especializado en valoraciones
