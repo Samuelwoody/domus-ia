@@ -1079,10 +1079,7 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             // Mock AI responses as fallback
             const responses = this.getContextualResponses(message);
             
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-            
-            // Return appropriate response
+            // Return appropriate response (sin await, ya que no es necesario para setTimeout en catch)
             return responses[Math.floor(Math.random() * responses.length)];
         }
     }
