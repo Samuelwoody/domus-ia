@@ -9,6 +9,7 @@ class PromptSuggestions {
             {
                 icon: '📊',
                 text: 'Informe de valoración',
+                prompt: 'Necesito un informe de valoración profesional de mi propiedad',
                 category: 'valoracion'
             },
             {
@@ -153,7 +154,7 @@ class PromptSuggestions {
             <button 
                 type="button"
                 class="suggestion-pill" 
-                data-prompt="${this.escapeHtml(suggestion.text)}"
+                data-prompt="${this.escapeHtml(suggestion.prompt || suggestion.text)}"
                 data-index="${index}"
                 style="animation-delay: ${index * 0.08}s"
             >
