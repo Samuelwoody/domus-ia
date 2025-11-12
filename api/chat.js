@@ -460,6 +460,35 @@ export default async function handler(req, res) {
     ];
 
     // ============================================================================
+    // 🛡️ VALIDACIÓN FINAL: Filtrar mensajes con content null ANTES de enviar
+    // ============================================================================
+    const safeMessages = processedMessages.filter(msg => {
+      if (!msg.content) {
+        console.warn('⚠️ Mensaje con content null detectado y filtrado:', msg.role);
+        return false;
+      }
+      // Si content es array, verificar que tenga al menos un elemento con text
+      if (Array.isArray(msg.content)) {
+        const hasValidText = msg.content.some(item => item.type === 'text' && item.text !== null);
+        if (!hasValidText) {
+          console.warn('⚠️ Mensaje con array sin text válido filtrado:', msg.role);
+          return false;
+        }
+      }
+      return true;
+    });
+
+    console.log(`📤 Enviando ${safeMessages.length} mensajes a OpenAI (filtrados ${processedMessages.length - safeMessages.length})`);
+    
+    // 🔍 DEBUG: Mostrar estructura de mensajes para debugging
+    safeMessages.forEach((msg, index) => {
+      const contentPreview = Array.isArray(msg.content) 
+        ? `[array con ${msg.content.length} items]` 
+        : (typeof msg.content === 'string' ? msg.content.substring(0, 50) + '...' : String(msg.content));
+      console.log(`  [${index}] ${msg.role}: ${contentPreview}`);
+    });
+
+    // ============================================================================
     // Call OpenAI API con todas las capacidades + Function Calling
     // ============================================================================
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -472,7 +501,7 @@ export default async function handler(req, res) {
         model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          ...processedMessages
+          ...safeMessages
         ],
         max_tokens: config.maxTokens,
         temperature: config.temperature,
