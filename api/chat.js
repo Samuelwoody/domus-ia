@@ -32,7 +32,7 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
 
   try {
     // Nano Banana (Gemini 2.5 Flash) - Edición conversacional real
-    const response = await fetch('https://api.replicate.com/v1/models/fofr/nano-banana/predictions', {
+    const response = await fetch('https://api.replicate.com/v1/models/google/nano-banana/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
@@ -41,10 +41,10 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
       },
       body: JSON.stringify({
         input: {
-          image_input: [imageUrl],
+          image_input: [{value: imageUrl}],
           prompt: prompt,
-          output_format: "png",
-          output_quality: 95
+          aspect_ratio: "match_input_image",
+          output_format: "jpg"
         }
       })
     });
@@ -58,7 +58,8 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
     
     // Si la respuesta ya tiene el output (Prefer: wait)
     if (prediction.status === 'succeeded' && prediction.output) {
-      return prediction.output[0]; // URL de imagen editada
+      // Nano Banana devuelve string directo o array
+      return Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
     }
     
     // Si no, hacer polling
@@ -68,14 +69,15 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
     while (attempts < maxAttempts) {
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
-          'Authorization': `Token ${REPLICATE_API_TOKEN}`
+          'Authorization': `Bearer ${REPLICATE_API_TOKEN}`
         }
       });
       
       const statusData = await statusResponse.json();
       
       if (statusData.status === 'succeeded') {
-        return statusData.output[0];
+        // Nano Banana devuelve string directo o array
+        return Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
       }
       
       if (statusData.status === 'failed' || statusData.status === 'canceled') {
@@ -693,8 +695,9 @@ export default async function handler(req, res) {
       // 🎨 EDIT REAL ESTATE IMAGE - NANO BANANA (ACTIVADO)
       // ============================================================================
       else if (toolCall.function.name === 'edit_real_estate_image') {
+        let functionArgs; // Declarar fuera del try para acceso en catch
         try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
+          functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('✏️ Editando imagen con Replicate:', functionArgs);
           
           // Verificar que REPLICATE_API_TOKEN esté configurado
@@ -792,18 +795,21 @@ export default async function handler(req, res) {
           console.error('❌ Error editando imagen con Replicate:', error);
           
           // Fallback: Instrucciones manuales
+          const errorMessage = functionArgs 
+            ? `⚠️ No pude procesar la edición con Nano Banana. ` +
+              `Esto puede ser porque:\n\n` +
+              `1️⃣ REPLICATE_API_TOKEN no está configurado\n` +
+              `2️⃣ La URL de la imagen no es accesible: ${functionArgs.image_url || 'no encontrada'}\n` +
+              `3️⃣ Nano Banana está temporalmente no disponible\n\n` +
+              `**Cambios solicitados:** ${functionArgs.desired_changes}\n` +
+              `**Estilo:** ${functionArgs.style || 'moderno'}\n\n` +
+              `**Error técnico:** ${error.message}\n\n` +
+              `Recomendación: Intenta de nuevo en unos segundos.`
+            : `⚠️ Error procesando la edición: ${error.message}`;
+          
           return res.status(200).json({
             success: true,
-            message: '⚠️ No pude procesar la edición automática de la imagen. ' +
-                     'Esto puede ser porque:\n\n' +
-                     '1️⃣ La API de Replicate no está configurada correctamente\n' +
-                     '2️⃣ La URL de la imagen no es accesible públicamente\n' +
-                     '3️⃣ El servicio está temporalmente no disponible\n\n' +
-                     '**Cambios solicitados:**\n' +
-                     `• ${functionArgs.desired_changes}\n\n` +
-                     `**Estilo:** ${functionArgs.style || 'moderno'}\n\n` +
-                     '**Recomendación:** Verifica que la imagen se haya subido correctamente ' +
-                     'o intenta con otra imagen.',
+            message: errorMessage,
             imageEdited: false,
             fallbackMode: true,
             errorDetails: error.message
