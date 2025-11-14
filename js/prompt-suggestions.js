@@ -15,36 +15,43 @@ class PromptSuggestions {
             {
                 icon: '🎨',
                 text: 'Imagen para Facebook',
+                prompt: 'Crea una imagen publicitaria para Facebook con el precio y características de mi propiedad',
                 category: 'imagen'
             },
             {
                 icon: '📝',
                 text: 'Texto para anuncio',
+                prompt: 'Escribe un texto atractivo y profesional para publicar mi propiedad en portales inmobiliarios',
                 category: 'anuncio'
             },
             {
                 icon: '🎯',
                 text: 'Embudo Vendedores',
+                prompt: 'Explícame el embudo de captación de vendedores de Montcastell-AI',
                 category: 'embudo'
             },
             {
                 icon: '🏢',
                 text: 'Formato corporativo',
+                prompt: 'Ayúdame a crear materiales corporativos profesionales para mi agencia inmobiliaria',
                 category: 'corporativo'
             },
             {
                 icon: '💰',
                 text: 'Informe de ajuste de precio',
+                prompt: 'Analiza si el precio de mi propiedad es competitivo y recomienda ajustes basados en el mercado',
                 category: 'precio'
             },
             {
                 icon: '📋',
                 text: 'Contrato de arras',
+                prompt: 'Explícame qué es un contrato de arras y ayúdame a prepararlo',
                 category: 'contrato'
             },
             {
                 icon: '🎓',
                 text: 'Formación Montcastell-ai',
+                prompt: 'Cuéntame sobre los cursos y formación que ofrece Montcastell-AI para agentes inmobiliarios',
                 category: 'formacion'
             }
         ];
