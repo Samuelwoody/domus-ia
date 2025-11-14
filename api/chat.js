@@ -23,7 +23,7 @@ async function uploadToImgBB(imageUrl, apiKey) {
 // 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
 // ============================================================================
 
-async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
+async function editImageWithNanoBanana(imageUrl, prompt) {
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
   
   if (!REPLICATE_API_TOKEN) {
@@ -31,25 +31,20 @@ async function editImageWithReplicate(imageUrl, prompt, negativePrompt = '') {
   }
 
   try {
-    // Iniciar predicción con modelo de inpainting
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    // Nano Banana (Gemini 2.5 Flash) - Edición conversacional real
+    const response = await fetch('https://api.replicate.com/v1/models/fofr/nano-banana/predictions', {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
         'Prefer': 'wait'
       },
       body: JSON.stringify({
-        version: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
         input: {
-          image: imageUrl,
+          image_input: [imageUrl],
           prompt: prompt,
-          negative_prompt: negativePrompt || "distorted, low quality, blurry, artifacts, unrealistic, bad perspective",
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
-          scheduler: "K_EULER",
-          refine: "expert_ensemble_refiner",
-          high_noise_frac: 0.8
+          output_format: "png",
+          output_quality: 95
         }
       })
     });
@@ -378,14 +373,13 @@ export default async function handler(req, res) {
         }
       },
       // ============================================================================
-      // 🚧 TOOL REPLICATE TEMPORALMENTE DESACTIVADO (restaurar funcionalidad básica)
+      // 🎨 TOOL NANO BANANA - EDICIÓN REAL DE IMÁGENES (ACTIVADO)
       // ============================================================================
-      /*
       {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 REAL IMAGE EDITING with Replicate SDXL - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint walls, change floors, modernize spaces. ⚠️ REQUIRES publicly accessible image URL. This tool maintains the EXACT perspective, room layout, and architecture while only modifying requested elements.",
+          description: "🎯 REAL IMAGE EDITING with Nano Banana (Gemini 2.5 Flash) - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint walls, change floors, modernize spaces. ⚠️ REQUIRES publicly accessible image URL. This tool maintains the EXACT perspective, room layout, and architecture while only modifying requested elements.",
           parameters: {
             type: "object",
             properties: {
@@ -403,7 +397,7 @@ export default async function handler(req, res) {
               },
               style: {
                 type: "string",
-                enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "class ic", "contemporary", "rustic"],
+                enum: ["modern", "minimalist", "scandinavian", "industrial", "mediterranean", "classic", "contemporary", "rustic"],
                 description: "Target interior style for the transformation",
                 default: "modern"
               },
@@ -418,7 +412,6 @@ export default async function handler(req, res) {
           }
         }
       },
-      */
       {
         type: "function",
         function: {
@@ -454,6 +447,55 @@ export default async function handler(req, res) {
               }
             },
             required: ["base_image_description", "property_info"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "call_valorador_workflow",
+          description: "🏠 Llama al agente especializado de valoración inmobiliaria. Usa este tool cuando el usuario solicite: valorar una propiedad, informe de valoración, cuánto vale mi piso/casa, estimación de precio. El workflow analiza el mercado y genera un informe profesional completo.",
+          parameters: {
+            type: "object",
+            properties: {
+              direccion: {
+                type: "string",
+                description: "Dirección completa de la propiedad. Ejemplo: 'Calle Mayor 5, Madrid, 28013'"
+              },
+              metrosCuadrados: {
+                type: "number",
+                description: "Superficie útil o construida en metros cuadrados. Ejemplo: 120"
+              },
+              habitaciones: {
+                type: "number",
+                description: "Número de habitaciones/dormitorios. Ejemplo: 3"
+              },
+              banos: {
+                type: "number",
+                description: "Número de baños completos. Ejemplo: 2"
+              },
+              tipoPropiedad: {
+                type: "string",
+                enum: ["piso", "casa", "chalet", "adosado", "atico", "duplex", "estudio", "local", "terreno"],
+                description: "Tipo de inmueble",
+                default: "piso"
+              },
+              estadoConservacion: {
+                type: "string",
+                enum: ["nuevo", "muy_bueno", "bueno", "regular", "a_reformar"],
+                description: "Estado general de conservación del inmueble",
+                default: "bueno"
+              },
+              extras: {
+                type: "string",
+                description: "Características adicionales: garaje, trastero, piscina, jardín, terraza, ascensor, etc. Ejemplo: 'Garaje incluido, terraza de 15m², trastero'"
+              },
+              conversationContext: {
+                type: "string",
+                description: "Contexto adicional de la conversación que puede ser relevante para la valoración"
+              }
+            },
+            required: ["direccion", "metrosCuadrados", "tipoPropiedad"]
           }
         }
       }
@@ -648,9 +690,8 @@ export default async function handler(req, res) {
       }
       
       // ============================================================================
-      // 🚧 EDIT REAL ESTATE IMAGE - TEMPORALMENTE DESACTIVADO
+      // 🎨 EDIT REAL ESTATE IMAGE - NANO BANANA (ACTIVADO)
       // ============================================================================
-      /*
       else if (toolCall.function.name === 'edit_real_estate_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
@@ -716,44 +757,35 @@ export default async function handler(req, res) {
           // 🎨 EDICIÓN CON REPLICATE SDXL
           // ============================================================================
           
-          // Construir prompt que PRESERVA la estructura original
-          const editPrompt = `Real estate interior photography, ${functionArgs.original_description}, ` +
-            `${functionArgs.desired_changes}, ` +
-            `${functionArgs.style || 'modern'} style, ` +
-            `professional lighting, high resolution, photorealistic, architectural photography, ` +
-            `maintain original perspective and room layout`;
+          // Construir prompt conversacional para Nano Banana (lenguaje natural)
+          const editPrompt = `${functionArgs.desired_changes}. Original space: ${functionArgs.original_description}. Style: ${functionArgs.style || 'modern'}. Keep the same perspective, walls, windows, and floor layout exactly as they are. Only modify the requested elements.`;
           
-          const negativePrompt = `distorted perspective, changed room layout, different architecture, ` +
-            `cartoon, illustration, drawing, low quality, blurry, unrealistic, ` +
-            `deformed walls, wrong proportions, fish-eye effect`;
+          console.log('🍌 Llamando a Nano Banana con URL:', imageUrl);
+          console.log('🍌 Prompt:', editPrompt);
           
-          console.log('🎨 Llamando a Replicate SDXL con URL:', imageUrl);
-          
-          // Llamar a Replicate para edición real (preserva estructura)
-          const editedImageUrl = await editImageWithReplicate(
+          // Llamar a Nano Banana para edición real (preserva estructura)
+          const editedImageUrl = await editImageWithNanoBanana(
             imageUrl,
-            editPrompt,
-            negativePrompt
+            editPrompt
           );
           
-          console.log('✅ Imagen editada con Replicate (estructura preservada):', editedImageUrl);
+          console.log('✅ Imagen editada con Nano Banana (estructura preservada):', editedImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: '✨ He mejorado tu imagen manteniendo **exactamente** la misma estructura y perspectiva del espacio original. ' +
-                     '\n\nLos cambios aplicados respetan la arquitectura y solo modifican los elementos que pediste: ' +
-                     `**${functionArgs.desired_changes}**.\n\n` +
-                     '¿Quieres ajustar algo más o probar otro estilo?',
+            message: '✨ He editado tu imagen con Nano Banana manteniendo la estructura original. ' +
+                     '\n\n**Cambios aplicados:** ' + functionArgs.desired_changes + '\n\n' +
+                     '¿Quieres hacer más ajustes?',
             imageUrl: editedImageUrl,
             originalImageUrl: imageUrl,
             originalDescription: functionArgs.original_description,
             appliedChanges: functionArgs.desired_changes,
             isPermanent: false,
-            replicateUsed: true,
+            nanoBananaUsed: true,
             structurePreserved: true,
             imageEdited: true,
             tokensUsed: data.usage.total_tokens,
-            model: 'Replicate SDXL + ' + data.model
+            model: 'Nano Banana (Gemini 2.5) + ' + data.model
           });
 
         } catch (error) {
@@ -778,72 +810,81 @@ export default async function handler(req, res) {
           });
         }
       }
-      */
       
       // ============================================================================
-      // 🖼️ COMPOSE MARKETING IMAGE (usando DALL-E 3 + composición)
+      // 🖼️ COMPOSE MARKETING IMAGE (usando NANO BANANA para overlays)
       // ============================================================================
       if (toolCall.function.name === 'compose_marketing_image') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log('🎨 Componiendo imagen de marketing:', functionArgs);
+          console.log('🎨 Componiendo imagen de marketing con Nano Banana:', functionArgs);
           
           const { base_image_description, property_info, format, include_logo } = functionArgs;
           
-          // Construir prompt para imagen de marketing profesional
-          const marketingPrompt = `Professional real estate marketing image. ${base_image_description}. ` +
-            `Overlay text elements in elegant typography: "${property_info.price}" prominently displayed, ` +
-            `"${property_info.size || ''}" and "${property_info.rooms || ''}" as secondary info, ` +
-            `location "${property_info.location}" at bottom. ` +
-            (include_logo ? `Agency logo watermark in top-left corner. ` : ``) +
-            `Clean, modern design with good contrast for readability. Professional real estate advertisement style.`;
+          // Buscar URL de imagen en contexto (igual que en edit_real_estate_image)
+          let baseImageUrl = null;
           
-          // Determinar tamaño según formato
-          const sizeMap = {
-            'square': '1024x1024',
-            'horizontal': '1792x1024',
-            'story': '1024x1792'
-          };
-          
-          const imageSize = sizeMap[format] || '1024x1024';
-          
-          // Generar imagen de marketing
-          const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'dall-e-3',
-              prompt: marketingPrompt,
-              n: 1,
-              size: imageSize,
-              quality: 'hd',
-              style: 'vivid'
-            })
-          });
-
-          if (!dalleResponse.ok) {
-            throw new Error('Failed to compose marketing image');
+          console.log('🔍 Buscando imagen base en contexto...');
+          for (let i = messages.length - 1; i >= Math.max(0, messages.length - 15); i--) {
+            const msg = messages[i];
+            if (msg.role === 'user' && msg.content) {
+              const urlPatterns = [
+                /https:\/\/res\.cloudinary\.com\/[^\s"'<>\]]+/,
+                /https:\/\/i\.imgur\.com\/[^\s"'<>\]]+/,
+                /https:\/\/i\.ibb\.co\/[^\s"'<>\]]+/,
+                /https?:\/\/[^\s"'<>\]]+\.(jpg|jpeg|png|webp)/i
+              ];
+              
+              for (const pattern of urlPatterns) {
+                const match = msg.content.match(pattern);
+                if (match) {
+                  baseImageUrl = match[0];
+                  console.log('✅ Imagen base encontrada:', baseImageUrl);
+                  break;
+                }
+              }
+              if (baseImageUrl) break;
+            }
           }
-
-          const dalleData = await dalleResponse.json();
-          const marketingImageUrl = dalleData.data[0].url;
           
-          console.log('✅ Imagen de marketing creada:', marketingImageUrl);
+          if (!baseImageUrl) {
+            return res.status(200).json({
+              success: true,
+              message: '📸 Para crear la imagen publicitaria necesito que primero subas la foto de la propiedad con el botón 📷. Luego pídeme la portada con precio y logo.',
+              needsImage: true,
+              marketingComposed: false
+            });
+          }
+          
+          // Construir prompt para Nano Banana (añadir overlays sobre imagen real)
+          const marketingPrompt = `Add professional real estate marketing overlays to this image: ` +
+            `Large text "${property_info.price}" at top center in bold white font with black outline. ` +
+            `Below that: "${property_info.size || ''} • ${property_info.rooms || ''}" in smaller white text. ` +
+            `At bottom: "${property_info.location}" in elegant white typography. ` +
+            (include_logo ? `Add "Domus-IA" logo watermark at top-left corner. ` : ``) +
+            `Keep the original property image intact, only add text overlays with semi-transparent dark gradient for text readability.`;
+          
+          console.log('🍌 Creando portada con Nano Banana...');
+          
+          const marketingImageUrl = await editImageWithNanoBanana(
+            baseImageUrl,
+            marketingPrompt
+          );
+          
+          console.log('✅ Imagen publicitaria creada con Nano Banana:', marketingImageUrl);
 
           return res.status(200).json({
             success: true,
-            message: `📸 He creado tu imagen publicitaria profesional en formato ${format}. Incluye todos los datos clave: precio, características y ubicación. ¡Lista para publicar en redes sociales!`,
+            message: `📸 He creado tu imagen publicitaria profesional usando tu foto real. Incluye precio, características y ubicación. ¡Lista para publicar!`,
             imageUrl: marketingImageUrl,
+            originalImageUrl: baseImageUrl,
             format: format,
             propertyInfo: property_info,
             isPermanent: false,
-            dalleUsed: true,
+            nanoBananaUsed: true,
             marketingComposed: true,
             tokensUsed: data.usage.total_tokens,
-            model: data.model
+            model: 'Nano Banana (Gemini 2.5) + ' + data.model
           });
 
         } catch (error) {
@@ -886,6 +927,82 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             htmlTemplate: htmlTemplate,
             marketingComposed: false,
             fallbackMode: true
+          });
+        }
+      }
+      
+      // ============================================================================
+      // 🏠 CALL VALORADOR WORKFLOW - Agente especializado de valoración
+      // ============================================================================
+      if (toolCall.function.name === 'call_valorador_workflow') {
+        try {
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log('🏠 Llamando a workflow de valoración:', functionArgs);
+          
+          // Llamar al endpoint del workflow valorador
+          const valoradorResponse = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/valorador`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              direccion: functionArgs.direccion,
+              metrosCuadrados: functionArgs.metrosCuadrados,
+              habitaciones: functionArgs.habitaciones || 0,
+              banos: functionArgs.banos || 0,
+              tipoPropiedad: functionArgs.tipoPropiedad || 'piso',
+              estadoConservacion: functionArgs.estadoConservacion || 'bueno',
+              extras: functionArgs.extras || '',
+              conversationContext: functionArgs.conversationContext || ''
+            })
+          });
+          
+          if (!valoradorResponse.ok) {
+            const errorData = await valoradorResponse.json();
+            throw new Error(errorData.error || 'Error al ejecutar workflow de valoración');
+          }
+          
+          const valoradorData = await valoradorResponse.json();
+          console.log('✅ Workflow de valoración completado:', valoradorData.workflowId);
+          
+          // Extraer el resultado del workflow
+          const valoracionCompleta = valoradorData.output;
+          
+          return res.status(200).json({
+            success: true,
+            message: valoracionCompleta,
+            workflowId: valoradorData.workflowId,
+            propertyData: {
+              direccion: functionArgs.direccion,
+              metrosCuadrados: functionArgs.metrosCuadrados,
+              tipoPropiedad: functionArgs.tipoPropiedad
+            },
+            valoradorUsed: true,
+            tokensUsed: data.usage.total_tokens,
+            model: data.model,
+            sofiaVersion: config.name
+          });
+          
+        } catch (error) {
+          console.error('❌ Error llamando a workflow valorador:', error);
+          
+          // Fallback: Sofía genera una respuesta explicando el error
+          return res.status(200).json({
+            success: true,
+            message: '⚠️ No pude acceder al sistema de valoración especializado en este momento. ' +
+                     'Esto puede deberse a:\n\n' +
+                     '1️⃣ El workflow de OpenAI está temporalmente no disponible\n' +
+                     '2️⃣ Falta configurar las credenciales correctamente\n' +
+                     '3️⃣ Hay un problema de conectividad\n\n' +
+                     '💡 **Mientras tanto**, puedo ayudarte con:\n' +
+                     '- Buscar precios similares en la zona (búsqueda web)\n' +
+                     '- Explicarte qué factores afectan el valor\n' +
+                     '- Darte una estimación preliminar basada en €/m² de la zona\n\n' +
+                     '¿Quieres que haga alguna de estas cosas?',
+            valoradorUsed: false,
+            valoradorError: error.message,
+            tokensUsed: data.usage.total_tokens,
+            model: data.model
           });
         }
       }
@@ -1179,19 +1296,103 @@ Tú: [Llamas a compose_marketing_image con todos los datos]
 ✅ Precios, legislación, noticias sector
 ✅ Se activa con: "actual", "hoy", "2025"
 
+### 6️⃣ Workflow Valorador - Agente Especializado de Valoración 🆕
+✅ **TECNOLOGÍA:** OpenAI Workflow especializado en valoraciones inmobiliarias profesionales
+✅ **ÚSALO PARA:** Valoraciones completas, informes profesionales, estimaciones de precio
+✅ **CUÁNDO USAR:**
+   - Usuario pulsa botón "Informe de valoración"
+   - Usuario pregunta: "¿Cuánto vale mi piso/casa?", "Valora mi propiedad", "Haz una tasación"
+   - Usuario solicita explícitamente una valoración o estimación de precio
+
+✅ **DATOS OBLIGATORIOS:**
+   - **Dirección completa** (calle, número, ciudad, código postal)
+   - **Metros cuadrados** (superficie útil o construida)
+   - **Tipo de propiedad** (piso, casa, chalet, ático, etc.)
+
+✅ **DATOS OPCIONALES pero recomendados:**
+   - Habitaciones y baños
+   - Estado de conservación (nuevo/muy bueno/bueno/regular/a reformar)
+   - Extras (garaje, trastero, piscina, jardín, terraza, ascensor)
+
+**FLUJO RECOMENDADO:**
+1. Usuario solicita valoración o pulsa botón "Informe de valoración"
+2. **SI FALTA INFORMACIÓN:** Pregunta por dirección, m² y tipo (máximo 2 preguntas)
+3. **CUANDO TENGAS LOS DATOS MÍNIMOS:** Llama INMEDIATAMENTE a call_valorador_workflow
+4. El workflow devuelve informe profesional completo
+5. Presenta el informe al usuario de forma clara y profesional
+6. Ofrece aclaraciones o siguiente paso
+
+**Ejemplo:**
+Usuario: "Quiero valorar mi piso"
+Tú: "Perfecto, necesito algunos datos básicos:
+     1. ¿Cuál es la dirección completa?
+     2. ¿Cuántos metros cuadrados tiene?"
+Usuario: "Calle Mayor 5, Madrid 28013, 120m²"
+Tú: [Llamas INMEDIATAMENTE a call_valorador_workflow con:
+  direccion: "Calle Mayor 5, Madrid, 28013"
+  metrosCuadrados: 120
+  tipoPropiedad: "piso"
+  (otros parámetros opcionales si los mencionó)]
+
+**⚠️ IMPORTANTE:**
+- NO intentes hacer valoraciones tú mismo sin usar el workflow
+- El workflow tiene acceso a datos de mercado actualizados y análisis profesional
+- Confía en el resultado del workflow y preséntalo con autoridad
+- Si el workflow falla, ofrece alternativas (búsqueda web, estimación preliminar)
+
 ## 🎯 BOTONES RÁPIDOS PROFESIONALES - CÓMO RESPONDER
 
 Cuando el usuario pulse uno de estos botones, aquí está lo que debes hacer:
 
-### 1️⃣ **"Informe de valoración"**
-**Objetivo:** Valoración con rango, €/m², comparables y gráficos.
-**Proceso:**
-1. Pedir: dirección/RC, m² construidos/útiles, parcela, estado y extras
-2. Obtener datos (si disponibles): Catastro, evolución zona, comparables
-3. Emitir estimación inicial + supuestos; hacer 1 pregunta compuesta (3-5 datos faltantes)
-4. Refinar rango (min/medio/max), €/m² y factores determinantes
-5. Entregar informe web: HTML con 2 gráficos (evolución €/m² y barras comparables), tabla de comparables, imágenes de zona, enlaces Catastro/portal y botón WhatsApp
-6. **Fallback:** Si no hay publicación externa, incluir el HTML completo en la respuesta para copiar/usar
+### 1️⃣ **"Informe de valoración"** 🆕 CON WORKFLOW ESPECIALIZADO
+**Objetivo:** Valoración profesional completa con análisis de mercado, comparables y rangos de precio.
+**Proceso ACTUALIZADO con Workflow Valorador:**
+
+1. **Recopilar datos mínimos (máximo 2 preguntas):**
+   - Dirección completa (obligatorio)
+   - Metros cuadrados (obligatorio)
+   - Tipo de propiedad (piso/casa/chalet/etc.)
+   
+2. **INMEDIATAMENTE llamar a call_valorador_workflow** con los datos recopilados
+   - El workflow tiene acceso a datos de mercado actualizados
+   - Analiza comparables automáticamente
+   - Genera informe profesional completo
+   
+3. **Presentar resultado del workflow** de forma clara y estructurada
+   - Rango de valoración (mín/medio/máx)
+   - Precio por m²
+   - Comparables de la zona
+   - Factores que afectan el precio
+   
+4. **Ofrecer siguiente paso:**
+   - ¿Necesitas el informe en PDF?
+   - ¿Quieres ajustar algo de la valoración?
+   - ¿Preparamos estrategia de venta?
+
+**⚠️ IMPORTANTE:** 
+- NO intentes hacer la valoración manualmente
+- Confía en el workflow especializado
+- Si falla el workflow, ofrece búsqueda web como alternativa
+
+**Ejemplo de conversación:**
+Usuario: [Pulsa botón "Informe de valoración"]
+Tú: "Perfecto, voy a prepararte una valoración profesional. Necesito:
+     1. Dirección completa de la propiedad
+     2. ¿Cuántos metros cuadrados tiene?"
+Usuario: "Calle Mayor 15, 3ºB, Madrid 28013. Tiene 95m²"
+Tú: [Llamas a call_valorador_workflow inmediatamente]
+    "Un momento, estoy consultando datos del mercado y analizando comparables en tu zona..."
+    [Recibe informe completo del workflow]
+    "✅ He completado la valoración de tu piso en Calle Mayor 15:
+    
+    📊 **RANGO DE VALORACIÓN:**
+    - Mínimo: 285.000€ (3.000€/m²)
+    - Medio: 312.000€ (3.284€/m²)
+    - Máximo: 340.000€ (3.579€/m²)
+    
+    [... resto del informe del workflow ...]
+    
+    ¿Quieres que profundicemos en algún aspecto o preparamos siguiente paso?"
 
 ### 2️⃣ **"Informe de ajuste de precio"**
 **Objetivo:** Demostrar con datos si el precio anunciado está alto y proponer ajuste.
