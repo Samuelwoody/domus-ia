@@ -36,12 +36,14 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
   if (!client) return null;
   
   try {
-    // Buscar usuario existente
-    let { data: user, error } = await client
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+    // Buscar usuario existente con retry logic
+    let { data: user, error } = await retrySupabaseOperation(async () => {
+      return await client
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+    });
     
     if (error && error.code !== 'PGRST116') {
       console.error('❌ Error buscando usuario en Supabase:', error.message, error.details, error.hint);
@@ -61,11 +63,13 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
         insertData.cif_nif = cifNif;
       }
       
-      const { data: newUser, error: createError } = await client
-        .from('users')
-        .insert(insertData)
-        .select()
-        .single();
+      const { data: newUser, error: createError } = await retrySupabaseOperation(async () => {
+        return await client
+          .from('users')
+          .insert(insertData)
+          .select()
+          .single();
+      });
       
       if (createError) {
         console.error('❌ Error creando usuario en Supabase:', createError.message, createError.details, createError.hint);
@@ -93,6 +97,43 @@ export async function getOrCreateUser(email, name = null, userType = 'particular
     });
     return null;
   }
+}
+
+/**
+ * Helper function para reintentar operaciones de Supabase en caso de errores de red
+ */
+async function retrySupabaseOperation(operation, maxRetries = 3) {
+  let lastError = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await operation();
+      return result; // Éxito, devolver resultado
+    } catch (error) {
+      lastError = error;
+      
+      // Si es error de red, reintentar
+      const isNetworkError = error.message && (
+        error.message.includes('fetch failed') ||
+        error.message.includes('socket') ||
+        error.message.includes('ECONNRESET') ||
+        error.message.includes('timeout')
+      );
+      
+      if (isNetworkError && attempt < maxRetries) {
+        const delay = 500 * attempt; // Backoff exponencial: 500ms, 1000ms, 1500ms
+        console.warn(`⚠️ Intento ${attempt}/${maxRetries} falló - Error de red, reintentando en ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Si no es error de red o ya agotamos reintentos, lanzar error
+      throw error;
+    }
+  }
+  
+  // Si llegamos aquí, todos los reintentos fallaron
+  throw lastError;
 }
 
 // ============================================
@@ -487,6 +528,124 @@ export async function createEvent(userId, eventData) {
 }
 
 // ============================================
+// FUNCIONES DE PERFIL PROFESIONAL
+// ============================================
+
+/**
+ * Obtener perfil profesional por user_id
+ */
+export async function getProfessionalProfile(userId) {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  
+  try {
+    const { data, error } = await client
+      .from('professional_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error en getProfessionalProfile:', error);
+    return null;
+  }
+}
+
+/**
+ * Crear perfil profesional
+ */
+export async function createProfessionalProfile(userId, profileData) {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  
+  try {
+    const { data, error } = await client
+      .from('professional_profiles')
+      .insert({
+        user_id: userId,
+        ...profileData
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    console.log('✅ Perfil profesional creado:', data.id);
+    return data;
+  } catch (error) {
+    console.error('Error en createProfessionalProfile:', error);
+    return null;
+  }
+}
+
+/**
+ * Actualizar perfil profesional
+ */
+export async function updateProfessionalProfile(userId, profileData) {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  
+  try {
+    const { data, error } = await client
+      .from('professional_profiles')
+      .update(profileData)
+      .eq('user_id', userId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    console.log('✅ Perfil profesional actualizado:', data.id);
+    return data;
+  } catch (error) {
+    console.error('Error en updateProfessionalProfile:', error);
+    return null;
+  }
+}
+
+/**
+ * Verificar si el usuario completó el onboarding
+ */
+export async function hasCompletedOnboarding(userId) {
+  const profile = await getProfessionalProfile(userId);
+  return profile ? profile.onboarding_completed === true : false;
+}
+
+/**
+ * Marcar onboarding como completado
+ */
+export async function markOnboardingComplete(userId) {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  
+  try {
+    const { data, error } = await client
+      .from('professional_profiles')
+      .update({
+        onboarding_completed: true,
+        is_complete: true,
+        profile_completed_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    console.log('✅ Onboarding completado para usuario:', userId);
+    return data;
+  } catch (error) {
+    console.error('Error en markOnboardingComplete:', error);
+    return null;
+  }
+}
+
+// ============================================
 // EXPORTAR FUNCIONES
 // ============================================
 
@@ -504,5 +663,11 @@ export default {
   linkPropertyContact,
   createTask,
   getPendingTasks,
-  createEvent
+  createEvent,
+  // Funciones de perfil profesional
+  getProfessionalProfile,
+  createProfessionalProfile,
+  updateProfessionalProfile,
+  hasCompletedOnboarding,
+  markOnboardingComplete
 };
