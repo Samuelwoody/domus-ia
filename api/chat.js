@@ -8,10 +8,10 @@
 import supabaseClient from './supabase-client.js';
 
 // ============================================================================
-// 🖼️ IMGBB IMAGE HOSTING INTEGRATION
+ // 🖼️ IMGBB IMAGE HOSTING INTEGRATION
 // ============================================================================
-// TEMPORALMENTE DESACTIVADO - Causaba errores 500
-// TODO: Implementar después de confirmar que DALL-E funciona básicamente
+ // TEMPORALMENTE DESACTIVADO - Causaba errores 500
+ // TODO: Implementar después de confirmar que DALL-E funciona básicamente
 
 /*
 async function uploadToImgBB(imageUrl, apiKey) {
@@ -20,7 +20,7 @@ async function uploadToImgBB(imageUrl, apiKey) {
 */
 
 // ============================================================================
-// 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
+ // 🎨 REPLICATE IMAGE EDITING INTEGRATION (Inpainting Real)
 // ============================================================================
 async function editImageWithNanoBanana(imageUrl, prompt) {
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -35,7 +35,7 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
   }
 
   if (imageUrl.startsWith('data:')) {
-    // Replicate API typically espera una URL pública; indicar al caller que suba la imagen a Cloudinary/Imgur
+    // Replicate API typically expects a public URL; indicate the caller to upload to Cloudinary/Imgur
     throw new Error('Data URLs are not supported by the Replicate endpoint. Please provide a publicly accessible image URL (e.g., https://.../image.jpg) or upload the file to Cloudinary/Imgur and pass that URL.');
   }
 
@@ -358,13 +358,13 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "generate_dalle_image",
-          description: "Generate a professional real estate image using DALL-E 3. Use this when the user requests to create, generate, visualize, or design an image. Always use this tool for imag[...]
+          description: "Generate a professional real estate image using DALL-E 3. Use this when the user requests to create, generate, visualize, or design an image. Always use this tool for image generation.",
           parameters: {
             type: "object",
             properties: {
               prompt: {
                 type: "string",
-                description: "Detailed description of the image to generate. Be specific about style, composition, lighting, and real estate context. Example: 'Modern minimalist living room with [...]
+                description: "Detailed description of the image to generate. Be specific about style, composition, lighting, and real estate context. Example: 'Modern minimalist living room with natural light and wooden floor'"
               },
               size: {
                 type: "string",
@@ -390,13 +390,13 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "edit_real_estate_image",
-          description: "🎯 REAL IMAGE EDITING with Nano Banana (Gemini 2.5 Flash) - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint w[...]
+          description: "🎯 REAL IMAGE EDITING with Nano Banana (Gemini 2.5 Flash) - PRESERVES EXACT STRUCTURE. Use for: virtual staging (add furniture), improve lighting, clean clutter, paint walls, change colors.",
           parameters: {
             type: "object",
             properties: {
               image_url: {
                 type: "string",
-                description: "🔗 REQUIRED: Publicly accessible URL of the image to edit. Must be a direct link (ending in .jpg, .png, .webp). If user provides local file, ask them to upload to [...]
+                description: "🔗 REQUIRED: Publicly accessible URL of the image to edit. Must be a direct link (ending in .jpg, .png, .webp). If user provides local file, ask them to upload to Cloudinary or similar."
               },
               original_description: {
                 type: "string",
@@ -404,7 +404,7 @@ export default async function handler(req, res) {
               },
               desired_changes: {
                 type: "string",
-                description: "Specific improvements to make PRESERVING STRUCTURE. Example: 'Add modern gray sofa and coffee table, paint walls soft beige, add plants near window, keep same floor [...]
+                description: "Specific improvements to make PRESERVING STRUCTURE. Example: 'Add modern gray sofa and coffee table, paint walls soft beige, add plants near window, keep same floor and window positions'"
               },
               style: {
                 type: "string",
@@ -427,7 +427,7 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "compose_marketing_image",
-          description: "Create a professional marketing image by composing property photo with branding elements (logo, price, features). Use for social media posts, listings, and advertisements.[...]
+          description: "Create a professional marketing image by composing property photo with branding elements (logo, price, features). Use for social media posts, listings, and advertisements.",
           parameters: {
             type: "object",
             properties: {
@@ -465,7 +465,7 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "call_valorador_workflow",
-          description: "🏠 Llama al agente especializado de valoración inmobiliaria. Usa este tool cuando el usuario solicite: valorar una propiedad, informe de valoración, cuánto vale mi pi[...]
+          description: "🏠 Llama al agente especializado de valoración inmobiliaria. Usa este tool cuando el usuario solicite: valorar una propiedad, informe de valoración, cuánto vale mi piso/casa.",
           parameters: {
             type: "object",
             properties: {
@@ -770,7 +770,7 @@ export default async function handler(req, res) {
           // ============================================================================
           
           // Construir prompt conversacional para Nano Banana (lenguaje natural)
-          const editPrompt = `${functionArgs.desired_changes}. Original space: ${functionArgs.original_description}. Style: ${functionArgs.style || 'modern'}. Keep the same perspective, walls, wi[...]
+          const editPrompt = `${functionArgs.desired_changes}. Original space: ${functionArgs.original_description}. Style: ${functionArgs.style || 'modern'}. Keep the same perspective, walls, windows, and floor layout exactly as they are. Only modify the requested elements.`;
           
           console.log('🍌 Llamando a Nano Banana con URL:', imageUrl);
           console.log('🍌 Prompt:', editPrompt);
@@ -1087,7 +1087,7 @@ function buildAdvancedSystemPrompt(userType, userName, sofiaVersion, webSearchRe
       webSearchContext += `   📍 Fuente: ${result.url}\n`;
     });
     
-    webSearchContext += `\n⚠️ IMPORTANTE: Esta información viene de búsqueda en internet en tiempo real. Úsala para complementar tu conocimiento experto. Cita las fuentes cuando uses esta[...]
+    webSearchContext += `\n⚠️ IMPORTANTE: Esta información viene de búsqueda en internet en tiempo real. Úsala para complementar tu conocimiento experto. Cita las fuentes cuando uses esta información.\n`;
   }
   
   const capabilities = sofiaVersion === 'sofia-2.0-pro' 
@@ -1149,4 +1149,106 @@ ${webSearchContext}
 ...
 `;
 
-// (rest of file continues unchanged)
+// (rest of file content for memory functions, addMemoryToSystemPrompt, saveConversationAsync, etc.)
+async function addMemoryToSystemPrompt(basePrompt, userContext) {
+  if (!userContext) return basePrompt;
+  
+  const memorySections = [];
+  
+  // CONVERSACIONES RECIENTES
+  if (userContext.conversations && userContext.conversations.length > 0) {
+    const recentConvs = userContext.conversations.slice(-15);
+    const validConvs = recentConvs.filter(conv => conv.message && conv.message.trim()); // 🔥 FIX v1.10.1: Filtrar mensajes null/vacíos
+    
+    if (validConvs.length > 0) {
+      const convSummary = validConvs.map(conv => {
+        const date = new Date(conv.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+        const preview = conv.message.substring(0, 120);
+        return `[${date}] ${conv.sender === 'user' ? '👤' : '🤖'}: ${preview}${conv.message.length > 120 ? '...' : ''}`;
+      }).join('\n');
+      
+      memorySections.push(`## 💬 CONVERSACIONES RECIENTES (${validConvs.length})
+      
+${convSummary}
+      
+**Usa esto para:** Recordar temas anteriores, no repetir info, hacer seguimiento.`);
+    }
+  }
+  
+  // PROPIEDADES
+  if (userContext.properties && userContext.properties.length > 0) {
+    const propsList = userContext.properties.map(p => 
+      `- 📍 ${p.address}${p.city ? ` (${p.city})` : ''} - ${p.price ? p.price + '€' : 'Sin precio'} - ${p.status}`
+    ).join('\n');
+    
+    memorySections.push(`## 🏠 PROPIEDADES REGISTRADAS (${userContext.properties.length})
+    
+${propsList}
+    
+**Cuando mencione una dirección,** pregunta si quiere archivar info en su carpeta.`);
+  }
+  
+  // TAREAS PENDIENTES
+  if (userContext.tasks && userContext.tasks.length > 0) {
+    const now = new Date();
+    const overdue = userContext.tasks.filter(t => t.due_date && new Date(t.due_date) < now);
+    const upcoming = userContext.tasks.filter(t => t.due_date && new Date(t.due_date) >= now);
+    
+    let tasksInfo = '';
+    if (overdue.length > 0) {
+      tasksInfo += `⚠️ **VENCIDAS:** ${overdue.map(t => t.title).join(', ')}\n`;
+    }
+    if (upcoming.length > 0) {
+      tasksInfo += `📅 **PRÓXIMAS:** ${upcoming.map(t => t.title).join(', ')}`;
+    }
+    
+    memorySections.push(`## ✅ TAREAS (${userContext.tasks.length})
+    
+${tasksInfo}
+    
+**SÉ PROACTIVA:** Menciona tareas vencidas al inicio.`);
+  }
+  
+  // CONTACTOS
+  if (userContext.contacts && userContext.contacts.length > 0) {
+    const contactsList = userContext.contacts.slice(0, 5).map(c => 
+      `- ${c.name} (${c.contact_type})`
+    ).join('\n');
+    
+    memorySections.push(`## 👥 CONTACTOS (${userContext.contacts.length})
+    
+${contactsList}${userContext.contacts.length > 5 ? '\n- ...' : ''}`);
+  }
+  
+  if (memorySections.length === 0) return basePrompt;
+  
+  // Combinar prompt base + memoria
+  return `${basePrompt}
+  
+# ═════════════════════════════════════════════
+# 💾 MEMORIA PERSISTENTE DEL USUARIO
+# ═════════════════════════════════════════════
+
+${memorySections.join('\n\n')}
+
+# ═════════════════════════════════════════════
+`;
+}
+
+/**
+ * Guardar conversación en base de datos (asíncrono)
+ */
+async function saveConversationAsync(userEmail, userName, userType, userMessage, sofiaMessage) {
+  if (!userEmail || !supabaseClient) return;
+  
+  try {
+    const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
+    if (user) {
+      await supabaseClient.saveMessage(user.id, userMessage, 'user');
+      await supabaseClient.saveMessage(user.id, sofiaMessage, 'sofia');
+      console.log('✅ Conversación guardada');
+    }
+  } catch (error) {
+    console.error('⚠️ Error guardando conversación:', error);
+  }
+}
