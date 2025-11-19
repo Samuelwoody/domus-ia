@@ -418,7 +418,7 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "compose_marketing_image",
-          description: "Create a professional marketing image by composing property photo with branding elements (logo, price, features). Use for social media posts, listings, and advertisements.",
+          description: "🎨 Crea imagen publicitaria profesional añadiendo TEXTO OVERLAY (precio, características, ubicación) sobre la foto de la propiedad. IMPORTANTE: Solo usa la foto que el usuario subió como fondo. NO intentes añadir logos del usuario (el sistema solo puede manejar UNA imagen). Úsalo para posts en redes sociales, portales inmobiliarios.",
           parameters: {
             type: "object",
             properties: {
@@ -863,12 +863,17 @@ export default async function handler(req, res) {
           }
           
           // Construir prompt para Nano Banana (añadir overlays sobre imagen real)
-          const marketingPrompt = `Add professional real estate marketing overlays to this image: ` +
-            `Large text "${property_info.price}" at top center in bold white font with black outline. ` +
-            `Below that: "${property_info.size || ''} • ${property_info.rooms || ''}" in smaller white text. ` +
-            `At bottom: "${property_info.location}" in elegant white typography. ` +
-            (include_logo ? `Add "Domus-IA" logo watermark at top-left corner. ` : ``) +
-            `Keep the original property image intact, only add text overlays with semi-transparent dark gradient for text readability.`;
+          // NOTA: Nano Banana NO puede manejar múltiples imágenes (logo + fachada)
+          // Solo puede añadir texto y elementos simples sobre la imagen base
+          const marketingPrompt = `Create a professional real estate marketing image. ` +
+            `Add these text overlays on the property photo: ` +
+            `1. At top center: Large bold text "${property_info.price}" in white with black shadow for readability. ` +
+            `2. Below price: Medium text "${property_info.size || ''} • ${property_info.rooms || ''}" in white. ` +
+            `3. At bottom: Location text "${property_info.location}" in elegant white typography. ` +
+            (include_logo ? `4. At top-left corner: Small text watermark "Domus-IA" in white. ` : ``) +
+            `5. Add a subtle dark gradient overlay (top-to-bottom, 30% opacity) to ensure text is readable. ` +
+            `Keep the original property photo as the background, maintain all architectural details. ` +
+            `Style: Clean, modern, professional real estate marketing.`;
           
           console.log('🍌 Creando portada con Nano Banana...');
           
@@ -881,7 +886,13 @@ export default async function handler(req, res) {
 
           return res.status(200).json({
             success: true,
-            message: `📸 He creado tu imagen publicitaria profesional usando tu foto real. Incluye precio, características y ubicación. ¡Lista para publicar!`,
+            message: `📸 ¡Listo! He creado tu imagen publicitaria profesional.\n\n` +
+                     `✅ **Incluye:**\n` +
+                     `• Precio destacado: ${property_info.price}\n` +
+                     `• Características: ${property_info.size || ''} ${property_info.rooms ? '• ' + property_info.rooms : ''}\n` +
+                     `• Ubicación: ${property_info.location}\n` +
+                     (include_logo ? `• Watermark "Domus-IA"\n` : ``) +
+                     `\n📱 Lista para compartir en redes sociales y portales inmobiliarios.`,
             imageUrl: marketingImageUrl,
             originalImageUrl: baseImageUrl,
             format: format,
@@ -1292,10 +1303,41 @@ Tú: "¿Qué precio, ubicación y características tiene el inmueble?"
 Cliente: "350.000€, Madrid Centro, 120m², 3 hab 2 baños"
 Tú: [Llamas a compose_marketing_image con todos los datos]
 
-### 4️⃣ GPT-4o Vision - Análisis de Imágenes
-✅ Analiza fotos de inmuebles, documentos, planos
-✅ Da recomendaciones de mejora
-✅ Detecta problemas visuales
+### 4️⃣ GPT-4o Vision - Análisis de Imágenes 👁️
+⭐ **IMPORTANTE: TÚ PUEDES VER IMÁGENES** ⭐
+Sí, cuando el usuario sube una imagen, TÚ LA VES PERFECTAMENTE.
+
+✅ **Puedes analizar y describir:**
+   - Fotos de propiedades (salas, fachadas, habitaciones)
+   - Documentos escaneados (contratos, cédulas)
+   - Planos arquitectónicos
+   - Logos y diseños
+
+✅ **Siempre que veas una imagen:**
+   1. Descríbela en detalle ("Veo un salón de 25m² con...")
+   2. Identifica características clave
+   3. Da recomendaciones específicas basadas en lo que VES
+   4. Si te preguntan sobre la imagen, responde basándote en tu visión
+
+⚠️ **NUNCA digas:**
+   - "No puedo ver imágenes"
+   - "Soy un modelo de texto"
+   - "No tengo capacidad visual"
+
+✅ **SIEMPRE di:**
+   - "Veo que en esta imagen hay..."
+   - "Observo que la propiedad tiene..."
+   - "Basándome en lo que veo en la foto..."
+
+**Ejemplo correcto:**
+Usuario: [Sube foto de salón] "¿Qué ves?"
+Tú: "👁️ Veo un salón espacioso de aproximadamente 25m² con:
+      - Paredes pintadas en blanco
+      - Suelo de tarima flotante en color roble
+      - Ventana grande con excelente luz natural
+      - Actualmente sin amueblar
+      - Techo alto de unos 2.8m
+      ¿Te gustaría que te ayude a amueblarlo virtualmente?"
 
 ### 5️⃣ Tavily Search - Búsqueda Web
 ✅ Información actualizada en tiempo real
