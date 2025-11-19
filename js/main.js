@@ -831,8 +831,8 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
                         }
                         
                         // 🎨 NUEVA LÓGICA: Function Calling automático desde backend
-                        // Si el backend ya generó/editó la imagen (DALL-E o Replicate), mostrarla
-                        if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited)) {
+                        // Si el backend ya generó/editó la imagen (DALL-E, Replicate, Nano Banana), mostrarla
+                        if (data.imageUrl && (data.dalleUsed || data.replicateUsed || data.imageEdited || data.marketingComposed)) {
                             const imageSource = data.nanoBananaUsed ? 'Google Nano Banana (edición conversacional)' :
                                               data.replicateUsed ? 'Replicate (edición)' : 
                                               data.dalleUsed ? 'DALL-E 3 (generación)' : 'IA';
