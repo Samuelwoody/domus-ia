@@ -41,7 +41,7 @@ async function editImageWithNanoBanana(imageUrl, prompt) {
       },
       body: JSON.stringify({
         input: {
-          image_input: [{value: imageUrl}],
+          image_input: [imageUrl],
           prompt: prompt,
           aspect_ratio: "match_input_image",
           output_format: "jpg"
