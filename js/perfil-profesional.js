@@ -665,6 +665,18 @@ function showToast(message, type = 'info') {
 }
 
 // ============================================
+// ABRIR CHAT CON SOFÍA
+// ============================================
+
+function openChatWithMessage() {
+    // Guardar mensaje en localStorage para que index.html lo detecte
+    localStorage.setItem('pendingChatMessage', 'Hola Sofía, necesito completar mi perfil profesional. ¿Puedes ayudarme?');
+    
+    // Redirigir a index.html con hash al chat
+    window.location.href = 'index.html#chat';
+}
+
+// ============================================
 // LOGOUT
 // ============================================
 
