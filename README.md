@@ -8,7 +8,46 @@
 
 ## 🎉 FASE 1 & FASE 5 COMPLETADAS - Sistema CRM Funcional v1.2
 
-### ✅ ESTADO ACTUAL (19 Noviembre 2025) - VERSIÓN 1.12.7c 🔥
+### ✅ ESTADO ACTUAL (19 Noviembre 2025) - VERSIÓN 1.13.0 🎉
+
+**🎯 Feature v1.13.0 (19 Noviembre 2025) - ONBOARDING PROFESIONAL AUTOMÁTICO CON SOFÍA:**
+- 🌟 **NUEVA FUNCIONALIDAD COMPLETA:** Sofía completa perfiles profesionales automáticamente mediante conversación
+- 💼 **Nuevo Tool:** `complete_professional_profile` - Guarda datos de empresa/agencia automáticamente
+- 🤖 **Onboarding Conversacional:** Sofía hace preguntas y recopila info sin formularios manuales
+- 📋 **Datos Recopilados:**
+  - Empresa: nombre, eslogan, logo (futuro)
+  - Ubicación: dirección completa, ciudad, provincia, código postal
+  - Contacto: email corporativo, teléfono fijo, móvil/WhatsApp
+  - Redes: web, Facebook, Instagram, LinkedIn, Twitter, YouTube
+  - Gerente: nombre, cargo, email, teléfono, biografía profesional
+- 🎯 **System Prompt Actualizado:**
+  - Instrucciones detalladas para detectar profesionales nuevos
+  - Flujo conversacional paso a paso (1-2 preguntas a la vez)
+  - Llamada automática al tool cuando tiene datos mínimos
+  - Explicación de beneficios al usuario
+- ✨ **UX Mejorada:**
+  - Botón "Completar con Sofía" en perfil-profesional.html
+  - Redirige al chat con mensaje pregenerado
+  - localStorage bridge para comunicación entre páginas
+  - Mensaje de confirmación con resumen de datos guardados
+- 🔄 **Integración Completa:**
+  - API professional-profile.js maneja creación/actualización
+  - Valida que usuario sea profesional
+  - Marca perfil como completado (onboarding_completed: true)
+  - Datos disponibles para uso en marketing/documentos
+- ⚡ **Impacto:**
+  - ✅ Profesionales completan perfil en 2-3 minutos conversando
+  - ✅ Sin formularios largos ni tareas manuales
+  - ✅ Datos reutilizables en imágenes, documentos, materiales
+  - ✅ Experiencia natural y guiada por IA
+- 📝 **Archivos modificados:**
+  - `api/chat.js` (tool + handler + system prompt)
+  - `perfil-profesional.html` (botón mejorado)
+  - `js/perfil-profesional.js` (función openChatWithMessage)
+  - `js/main.js` (handler mensaje pendiente)
+- ⏱️ **Tiempo de desarrollo:** 45 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.7c
 
 **🔧 Hotfix v1.12.7c (19 Noviembre 2025) - FIX SAVEPROFIL() + API MISSING:**
 - 🐛 **PROBLEMA:** `saveProfile()` usaba `localStorage.getItem('userEmail')` (undefined)
