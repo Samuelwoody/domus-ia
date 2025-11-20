@@ -393,8 +393,22 @@ async function saveProfile() {
         
         console.log('📊 Datos a guardar:', profileData);
         
-        // Llamar API
-        const userEmail = localStorage.getItem('userEmail');
+        // Llamar API - Obtener email de la sesión actual
+        let userEmail = null;
+        const authSession = localStorage.getItem('domusIA_session');
+        if (authSession) {
+            try {
+                const session = JSON.parse(authSession);
+                userEmail = session.user?.email;
+            } catch (error) {
+                console.error('Error leyendo sesión:', error);
+            }
+        }
+        
+        if (!userEmail) {
+            throw new Error('No se pudo obtener el email del usuario');
+        }
+        
         const response = await fetch('/api/professional-profile', {
             method: 'PUT',
             headers: {
