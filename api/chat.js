@@ -505,89 +505,89 @@ export default async function handler(req, res) {
         type: "function",
         function: {
           name: "complete_professional_profile",
-          description: "💼 Completa el perfil profesional del usuario automáticamente guardando la información recopilada en la conversación. USA ESTE TOOL cuando un usuario profesional (agente/agencia) te proporcione datos de su empresa durante la conversación de onboarding. Guarda automáticamente: nombre empresa, eslogan, dirección, teléfonos, email, redes sociales, datos del gerente y agentes. El usuario NO tiene que rellenar formularios manualmente.",
+          description: "Complete the professional profile of a real estate agent or agency automatically. Use this when a professional user provides company information during onboarding conversation.",
           parameters: {
             type: "object",
             properties: {
               company_name: {
                 type: "string",
-                description: "Nombre de la empresa/agencia inmobiliaria. Ejemplo: 'Inmobiliaria Madrid Centro' o nombre del agente si trabaja solo"
+                description: "Company or agency name"
               },
               company_slogan: {
                 type: "string",
-                description: "Eslogan o frase comercial. Ejemplo: 'Tu hogar, nuestra pasión'"
+                description: "Company slogan or tagline"
               },
               street_address: {
                 type: "string",
-                description: "Dirección de calle completa. Ejemplo: 'Calle Gran Vía 45, 3º B'"
+                description: "Full street address"
               },
               city: {
                 type: "string",
-                description: "Ciudad. Ejemplo: 'Madrid'"
+                description: "City name"
               },
               state_province: {
                 type: "string",
-                description: "Provincia o comunidad autónoma. Ejemplo: 'Madrid' o 'Comunidad de Madrid'"
+                description: "State or province"
               },
               postal_code: {
                 type: "string",
-                description: "Código postal. Ejemplo: '28013'"
+                description: "Postal code"
               },
               corporate_email: {
                 type: "string",
-                description: "Email corporativo/profesional. Ejemplo: 'info@inmobiliariaejemplo.com'"
+                description: "Corporate email address"
               },
               corporate_phone: {
                 type: "string",
-                description: "Teléfono fijo de la oficina. Ejemplo: '+34 91 234 5678'"
+                description: "Corporate phone number"
               },
               mobile_phone: {
                 type: "string",
-                description: "Teléfono móvil/WhatsApp. Ejemplo: '+34 612 345 678'"
+                description: "Mobile or WhatsApp phone"
               },
               website_url: {
                 type: "string",
-                description: "URL del sitio web. Ejemplo: 'https://www.inmobiliariaejemplo.com'"
+                description: "Website URL"
               },
               facebook_url: {
                 type: "string",
-                description: "URL perfil/página de Facebook"
+                description: "Facebook profile URL"
               },
               instagram_url: {
                 type: "string",
-                description: "URL perfil de Instagram"
+                description: "Instagram profile URL"
               },
               linkedin_url: {
                 type: "string",
-                description: "URL perfil de LinkedIn"
+                description: "LinkedIn profile URL"
               },
               twitter_url: {
                 type: "string",
-                description: "URL perfil de Twitter/X"
+                description: "Twitter profile URL"
               },
               youtube_url: {
                 type: "string",
-                description: "URL canal de YouTube"
+                description: "YouTube channel URL"
               },
               manager_name: {
                 type: "string",
-                description: "Nombre del gerente/director. Ejemplo: 'Juan Pérez García'"
+                description: "Manager or director name"
               },
               manager_position: {
                 type: "string",
-                description: "Cargo del gerente. Ejemplo: 'Director Comercial' o 'CEO'"
+                description: "Manager position or title"
               },
               manager_email: {
                 type: "string",
-                description: "Email personal del gerente"
+                description: "Manager personal email"
               },
               manager_phone: {
                 type: "string",
-                description: "Teléfono directo del gerente"
+                description: "Manager direct phone"
               },
               manager_bio: {
                 type: "string",
-                description: "Breve biografía profesional del gerente (experiencia, especialización). Ejemplo: '15 años de experiencia en el sector inmobiliario de Madrid, especializado en viviendas de lujo'"
+                description: "Manager professional biography"
               }
             },
             required: ["company_name", "corporate_email"]
@@ -1117,23 +1117,18 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
         }
       }
       
-      // ============================================================================
-      // 💼 TOOL: complete_professional_profile - Completar Perfil Profesional
-      // ============================================================================
       if (toolCall.function.name === 'complete_professional_profile') {
         try {
           const functionArgs = JSON.parse(toolCall.function.arguments);
-          console.log('💼 Completando perfil profesional:', functionArgs);
+          console.log('Professional profile completion requested:', functionArgs);
           
-          // Validar que el usuario sea profesional
           if (userType !== 'profesional') {
             return res.status(403).json({
               success: false,
-              error: 'Solo usuarios profesionales pueden completar perfil de empresa'
+              error: 'Only professional users can complete company profile'
             });
           }
           
-          // Preparar datos del perfil
           const profileData = {
             company_name: functionArgs.company_name,
             company_slogan: functionArgs.company_slogan || null,
@@ -1141,7 +1136,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             city: functionArgs.city || null,
             state_province: functionArgs.state_province || null,
             postal_code: functionArgs.postal_code || null,
-            country: 'España', // Por defecto España
+            country: 'España',
             corporate_email: functionArgs.corporate_email,
             corporate_phone: functionArgs.corporate_phone || null,
             mobile_phone: functionArgs.mobile_phone || null,
@@ -1156,12 +1151,12 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             manager_email: functionArgs.manager_email || null,
             manager_phone: functionArgs.manager_phone || null,
             manager_bio: functionArgs.manager_bio || null,
-            agents: [], // Vacío inicialmente
-            onboarding_completed: true // Marcar como completado
+            agents: [],
+            onboarding_completed: true
           };
           
-          // Primero verificar si el perfil ya existe
-          const checkResponse = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
+          const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+          const checkResponse = await fetch(`${baseUrl}/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
           let profileExists = false;
           
           if (checkResponse.ok) {
@@ -1169,8 +1164,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             profileExists = checkData.profile !== null;
           }
           
-          // Usar POST (crear) o PUT (actualizar) según corresponda
-          const profileResponse = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/professional-profile`, {
+          const profileResponse = await fetch(`${baseUrl}/api/professional-profile`, {
             method: profileExists ? 'PUT' : 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -1183,47 +1177,35 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           
           if (!profileResponse.ok) {
             const errorData = await profileResponse.json();
-            throw new Error(errorData.error || 'Error al guardar perfil profesional');
+            throw new Error(errorData.error || 'Error saving professional profile');
           }
           
           const profileResult = await profileResponse.json();
-          console.log('✅ Perfil profesional guardado:', profileResult);
+          console.log('Professional profile saved successfully:', profileResult);
           
           return res.status(200).json({
             success: true,
-            message: `✅ ¡Perfecto ${userName}! He completado tu perfil profesional con toda la información que me has proporcionado.\n\n` +
-                     `📋 **Datos guardados:**\n` +
-                     `• Empresa: ${functionArgs.company_name}\n` +
-                     (functionArgs.city ? `• Ubicación: ${functionArgs.city}\n` : '') +
-                     `• Email: ${functionArgs.corporate_email}\n` +
-                     (functionArgs.mobile_phone ? `• Teléfono: ${functionArgs.mobile_phone}\n` : '') +
-                     (functionArgs.website_url ? `• Web: ${functionArgs.website_url}\n` : '') +
-                     `\n💡 Ahora puedo usar estos datos automáticamente cuando crees:\n` +
-                     `• Imágenes publicitarias con tu marca\n` +
-                     `• Documentos comerciales\n` +
-                     `• Materiales de marketing\n\n` +
-                     `Puedes ver y editar tu perfil completo en cualquier momento desde el menú "Perfil Profesional".\n\n` +
-                     `¿En qué más puedo ayudarte hoy? 🚀`,
+            message: `Perfecto ${userName}, he completado tu perfil profesional con toda la informacion que me has proporcionado.\n\n` +
+                     `Datos guardados:\n` +
+                     `- Empresa: ${functionArgs.company_name}\n` +
+                     (functionArgs.city ? `- Ubicacion: ${functionArgs.city}\n` : '') +
+                     `- Email: ${functionArgs.corporate_email}\n` +
+                     (functionArgs.mobile_phone ? `- Telefono: ${functionArgs.mobile_phone}\n` : '') +
+                     `\nAhora puedo usar estos datos automaticamente cuando crees imagenes publicitarias, documentos o materiales de marketing.\n\n` +
+                     `Puedes ver y editar tu perfil completo en cualquier momento desde el menu Perfil Profesional.\n\n` +
+                     `En que mas puedo ayudarte?`,
             profileCompleted: true,
-            profileData: {
-              company_name: functionArgs.company_name,
-              city: functionArgs.city
-            },
             tokensUsed: data.usage.total_tokens,
             model: data.model,
             sofiaVersion: config.name
           });
           
         } catch (error) {
-          console.error('❌ Error completando perfil profesional:', error);
+          console.error('Error completing professional profile:', error);
           
           return res.status(200).json({
             success: true,
-            message: '⚠️ He tenido un problema al guardar tu perfil profesional. ' +
-                     'Esto puede deberse a un error temporal de conexión con la base de datos.\n\n' +
-                     '💡 Por favor, intenta proporcionarme los datos de nuevo o accede manualmente a tu ' +
-                     'Perfil Profesional desde el menú para completarlo.\n\n' +
-                     'Disculpa las molestias. ¿Puedo ayudarte con algo más mientras tanto?',
+            message: 'He tenido un problema al guardar tu perfil profesional. Por favor, intenta proporcionarme los datos de nuevo o accede manualmente a tu Perfil Profesional desde el menu para completarlo.\n\nDisculpa las molestias. Puedo ayudarte con algo mas mientras tanto?',
             profileCompleted: false,
             profileError: error.message,
             tokensUsed: data.usage.total_tokens,
@@ -1364,6 +1346,43 @@ Quieren vender su inmueble. Debes guiarlos desde el primer contacto hasta la fir
 ### PROFESIONALES INMOBILIARIOS  
 Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema completo MontCastell-AI: las 15 Consultorías Premium desde mentalidad hasta postventa con IA.
 
+### ONBOARDING AUTOMATICO DE PERFIL PROFESIONAL
+
+IMPORTANTE: Cuando un usuario profesional NO tenga su perfil completado:
+
+1. Detecta proactivamente y ofrece ayuda:
+   - "Veo que aun no has completado tu perfil profesional. Te gustaria que te ayude a configurarlo ahora? Solo te llevara 2-3 minutos y luego podre usar automaticamente los datos de tu empresa cuando crees materiales de marketing."
+
+2. Recopila informacion conversacionalmente (1 o 2 preguntas cada vez):
+   - Nombre de la empresa o agencia
+   - Ciudad donde operas
+   - Email corporativo
+   - Telefono movil o WhatsApp
+   - Direccion completa (opcional)
+   - Sitio web (si tiene)
+   - Redes sociales (si tiene)
+   - Eslogan (opcional)
+   - Datos del gerente o director (opcional)
+
+3. Usa el tool automaticamente:
+   - Cuando tengas AL MENOS: nombre empresa y email corporativo
+   - Llama INMEDIATAMENTE a complete_professional_profile con todos los datos recopilados
+   - NO pidas al usuario que llene formularios manualmente
+   - NO le digas que vaya a su perfil a completarlo
+   - TU LO COMPLETAS AUTOMATICAMENTE
+
+4. Confirma y explica beneficios:
+   - "Perfecto, ya tengo todos tus datos guardados"
+   - "Ahora cuando crees imagenes publicitarias, documentos o materiales de marketing, usare automaticamente el nombre de tu empresa, telefono, ubicacion, etc."
+   - "Puedes ver y editar tu perfil completo desde el menu Perfil Profesional cuando quieras"
+
+NUNCA:
+- Digas "debes ir a tu perfil y rellenarlo manualmente"
+- Pidas que complete formularios
+- Dejes al profesional sin perfil completado si ya te dio los datos basicos
+
+IMPORTANTE: Preguntas de UNA en UNA o maximo DOS. Espera respuestas. Empatiza. Haz seguimiento.
+
 ## ✅ PERSONALIDAD Y COMPORTAMIENTO
 
 ### CARACTERÍSTICAS ESENCIALES:
@@ -1423,59 +1442,6 @@ Quieren crear/mejorar su negocio inmobiliario. Debes formarlos en el sistema com
 - ¿Cuántos inmuebles gestionas al mes?
 - ¿Qué es lo que más te cuesta ahora?
 - ¿Has oído hablar de MontCastell-AI?
-
-### ⭐ ONBOARDING PROFESIONAL - COMPLETAR PERFIL AUTOMÁTICAMENTE
-
-**IMPORTANTE - PARA USUARIOS PROFESIONALES NUEVOS:**
-
-Cuando detectes que un usuario profesional (agente o agencia) NO tiene su perfil completado, debes:
-
-1. **Detectar y ofrecer ayuda proactivamente:**
-   - "Veo que aún no has completado tu perfil profesional. ¿Te gustaría que te ayude a configurarlo ahora? Solo te llevará 2-3 minutos y luego podré usar automáticamente los datos de tu empresa cuando crees materiales de marketing."
-
-2. **Recopilar información conversacionalmente (UNA o DOS preguntas a la vez):**
-   - Nombre de la empresa/agencia (o tu nombre si trabajas solo)
-   - Ciudad donde operas
-   - Email corporativo
-   - Teléfono móvil/WhatsApp
-   - Dirección completa (opcional)
-   - Sitio web (si tiene)
-   - Redes sociales (Facebook, Instagram, LinkedIn) (si tiene)
-   - Eslogan o frase comercial (opcional)
-   - Datos del gerente/director (nombre, cargo, bio) (opcional)
-
-3. **Usar el tool automáticamente:**
-   - Cuando tengas AL MENOS: nombre empresa, email corporativo
-   - Llama INMEDIATAMENTE a `complete_professional_profile` con todos los datos recopilados
-   - NO pidas al usuario que llene formularios manualmente
-   - NO le digas que "vaya a su perfil a completarlo"
-   - TÚ LO COMPLETAS AUTOMÁTICAMENTE
-
-4. **Confirmar y explicar beneficios:**
-   - "✅ Perfecto, ya tengo todos tus datos guardados"
-   - "Ahora cuando crees imágenes publicitarias, documentos o materiales de marketing, usaré automáticamente el nombre de tu empresa, teléfono, ubicación, etc."
-   - "Puedes ver y editar tu perfil completo desde el menú 'Perfil Profesional' cuando quieras"
-
-**Ejemplo de flujo correcto:**
-```
-Sofía: "Hola Juan, veo que eres un profesional inmobiliario. Para poder ayudarte mejor, ¿te importa si completo tu perfil profesional? Solo necesito unos datos básicos."
-Usuario: "Vale, adelante"
-Sofía: "Perfecto. ¿Cómo se llama tu empresa o agencia?"
-Usuario: "Inmobiliaria Madrid Centro"
-Sofía: "Genial. ¿En qué ciudad operates principalmente?"
-Usuario: "Madrid"
-Sofía: "¿Cuál es tu email corporativo y teléfono de contacto?"
-Usuario: "info@inmomadridcentro.com y 612345678"
-Sofía: [Llama a complete_professional_profile]
-Sofía: "✅ Perfecto Juan, ya tengo tu perfil completado. Ahora cuando crees materiales de marketing usaré automáticamente 'Inmobiliaria Madrid Centro', tu teléfono y ubicación. ¿En qué puedo ayudarte hoy?"
-```
-
-**⚠️ NUNCA:**
-- Digas "debes ir a tu perfil y rellenarlo manualmente"
-- Pidas que complete formularios
-- Dejes al profesional sin perfil completado si ya te dio los datos básicos
-
-**IMPORTANTE:** Preguntas de UNA en UNA o máximo DOS. Espera respuestas. Empatiza. Haz seguimiento.
 
 ### FASE 2: DIAGNÓSTICO Y PLAN
 
