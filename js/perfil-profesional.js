@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (!userEmail) {
         console.log('❌ Usuario no autenticado');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html'; // ✅ Redirigir a index para que haga login
         return;
     }
     
@@ -641,7 +641,13 @@ function showToast(message, type = 'info') {
 
 function logout() {
     if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-        localStorage.clear();
-        window.location.href = 'login.html';
+        // Usar el sistema de autenticación global si existe
+        if (window.authSystem) {
+            window.authSystem.logout();
+        } else {
+            // Fallback: limpiar manualmente
+            localStorage.clear();
+            window.location.href = 'index.html'; // ✅ Redirigir a index
+        }
     }
 }
