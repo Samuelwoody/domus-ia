@@ -47,6 +47,24 @@ class DomusIA {
                 window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
             }, 500);
         }
+        
+        // Abrir chat con mensaje pendiente desde perfil-profesional
+        const pendingMessage = localStorage.getItem('pendingChatMessage');
+        if (pendingMessage) {
+            setTimeout(() => {
+                this.openChat();
+                // Esperar a que el chat esté visible
+                setTimeout(() => {
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.value = pendingMessage;
+                        userInput.focus();
+                    }
+                    // Limpiar el mensaje pendiente
+                    localStorage.removeItem('pendingChatMessage');
+                }, 300);
+            }, 500);
+        }
     }
 
     // ===== USER DATA MANAGEMENT =====
