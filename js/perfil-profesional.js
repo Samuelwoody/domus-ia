@@ -20,10 +20,25 @@ const CLOUDINARY_UPLOAD_PRESET = 'xh5qy5qd';
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('✅ Perfil Profesional - Inicializando...');
     
-    // Verificar autenticación
-    const userEmail = localStorage.getItem('userEmail');
-    const userName = localStorage.getItem('userName');
-    const userType = localStorage.getItem('userType');
+    // Verificar autenticación - LEER DE domusIA_session
+    let userEmail = null;
+    let userName = null;
+    let userType = null;
+    
+    const authSession = localStorage.getItem('domusIA_session');
+    if (authSession) {
+        try {
+            const session = JSON.parse(authSession);
+            if (session.user && session.token) {
+                userEmail = session.user.email;
+                userName = session.user.name;
+                userType = session.user.userType;
+                console.log('✅ Usuario autenticado:', userName, `(${userType})`);
+            }
+        } catch (error) {
+            console.error('Error leyendo sesión:', error);
+        }
+    }
     
     if (!userEmail) {
         console.log('❌ Usuario no autenticado');
