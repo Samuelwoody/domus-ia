@@ -8,7 +8,182 @@
 
 ## 🎉 FASE 1 & FASE 5 COMPLETADAS - Sistema CRM Funcional v1.2
 
-### ✅ ESTADO ACTUAL (11 Noviembre 2025) - VERSIÓN 1.10.1 🔥
+### ✅ ESTADO ACTUAL (19 Noviembre 2025) - VERSIÓN 1.12.7c 🔥
+
+**🔧 Hotfix v1.12.7c (19 Noviembre 2025) - FIX SAVEPROFIL() + API MISSING:**
+- 🐛 **PROBLEMA:** `saveProfile()` usaba `localStorage.getItem('userEmail')` (undefined)
+- 🔍 **Causa:** Variable individual no existe, debe leer de `domusIA_session`
+- 🔧 **FIX - saveProfile() línea 424-444:**
+  - ❌ ANTES: `const userEmail = localStorage.getItem('userEmail')` → undefined
+  - ✅ AHORA: Lee de `domusIA_session` y parsea `session.user.email`
+  - ✅ Validación: Lanza error si no puede obtener email
+- ⚠️ **API FALTANTE:** `api/professional-profile.js` existe localmente (8.6KB) pero NO está en GitHub/Vercel
+- 📝 **Archivos a subir:**
+  - `js/perfil-profesional.js` (fix saveProfile)
+  - `api/professional-profile.js` (archivo completo que faltaba)
+- ⚡ **Impacto:**
+  - ✅ Carga de perfil funcionará cuando API esté deployada
+  - ✅ Guardado de perfil leerá email correctamente
+  - ✅ Sin más errores de variables undefined
+- ⏱️ **Tiempo de resolución:** 5 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.7b
+
+**🔧 Hotfix v1.12.7b (19 Noviembre 2025) - FIX PERFIL REDIRECT LOOP:**
+- 🐛 **PROBLEMA CRÍTICO:** Perfil Profesional se abría 1 segundo y redirigía a landing
+- 🔍 **Causa raíz:** `perfil-profesional.js` buscaba variables individuales que NO EXISTEN
+  - ❌ `localStorage.getItem('userEmail')` → **undefined**
+  - ❌ `localStorage.getItem('userName')` → **undefined**
+  - ❌ `localStorage.getItem('userType')` → **undefined**
+- 🎯 **Sistema real:** Auth usa `domusIA_session` (objeto JSON con user + token)
+- 🔧 **FIX - Lectura correcta de sesión (línea 20-47):**
+  - ❌ ANTES: Buscaba variables individuales inexistentes
+  - ✅ AHORA: Lee de `domusIA_session` y parsea `session.user.{email, name, userType}`
+  - ✅ Validación robusta con try-catch
+  - ✅ Logs de debug para troubleshooting
+- ⚡ **Impacto:**
+  - ✅ Perfil Profesional carga correctamente para usuarios autenticados
+  - ✅ Verificación de `userType === 'profesional'` funciona
+  - ✅ Redirige a CRM si usuario es particular
+  - ✅ Redirige a index.html si no hay sesión
+- 📝 **Archivo modificado:** `js/perfil-profesional.js` (refactorizada lectura de sesión)
+- ⏱️ **Tiempo de resolución:** 10 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.7
+
+**🔧 Hotfix v1.12.7 (19 Noviembre 2025) - FIX LOGIN.HTML 404 ERROR:**
+- 🐛 **PROBLEMA:** Error 404 al intentar acceder a `login.html` desde logout
+- 🔍 **Causa:** `perfil-profesional.js` redirigía a `login.html` que NO EXISTE
+- 🎯 **Arquitectura:** La plataforma usa MODALES en `index.html`, no página dedicada
+- 🔧 **FIX 1 - Logout inconsistente (línea 645):**
+  - ❌ ANTES: `window.location.href = 'login.html';`
+  - ✅ AHORA: `window.location.href = 'index.html';`
+  - ✅ Integración con `window.authSystem.logout()` cuando está disponible
+- 🔧 **FIX 2 - Protección de autenticación (línea 30):**
+  - ❌ ANTES: Redirigía a `login.html` si no autenticado
+  - ✅ AHORA: Redirige a `index.html` para login con modal
+- ⚡ **Impacto:**
+  - ✅ Logout desde Perfil Profesional funciona correctamente
+  - ✅ Acceso sin autenticación redirige a página correcta
+  - ✅ Consistencia con `auth.js` (línea 174) y `crm-dashboard.js` (línea 700)
+- 📝 **Archivo modificado:** `js/perfil-profesional.js` (2 correcciones)
+- ⏱️ **Tiempo de resolución:** 15 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.6
+
+**🔧 Hotfix v1.12.6 (19 Noviembre 2025) - FIX SUPABASE SOCKET ERROR:**
+- 🐛 **PROBLEMA:** `SocketError: other side closed` al conectar con Supabase
+- 🔍 **Causa:** Conexiones inestables entre Vercel y Supabase
+- 🔧 **FIX:** Implementado retry logic con backoff exponencial
+- ✅ **Retry logic:** 3 intentos con delays de 500ms, 1000ms, 1500ms
+- ✅ **Helper function:** `retrySupabaseOperation()` para reintentar operaciones
+- ✅ **Detección inteligente:** Detecta errores de red (fetch failed, socket, timeout)
+- ⚡ **Impacto:** Conexiones más estables, menos errores 500
+- 📝 **Archivo modificado:** `api/supabase-client.js` (añadida función retry)
+- ⏱️ **Tiempo de implementación:** 10 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.5
+
+**🔧 Hotfix v1.12.5 (19 Noviembre 2025) - FIX 404 PERFIL PROFESIONAL:**
+- 🐛 **PROBLEMA:** Error 404 al hacer clic en "Perfil Profesional"
+- 🔍 **Causa:** Archivo `perfil-profesional.html` NO estaba en GitHub/Vercel
+- ✅ **Archivos locales:** Existen (perfil-profesional.html + CSS + JS)
+- ❌ **En producción:** No existen (no se hicieron git add + commit + push)
+- 🔧 **FIX:** Agregar archivos a Git y hacer push
+- 📝 **Archivos a subir:**
+  - `perfil-profesional.html` (21KB)
+  - `css/perfil-profesional.css` (16KB)
+  - `js/perfil-profesional.js` (23KB)
+- ⚡ **Impacto:** Perfil Profesional accesible en producción
+- ⏱️ **Tiempo de deploy:** 1 minuto (Vercel auto-deploy)
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.4
+
+**🔧 Hotfix v1.12.4 (19 Noviembre 2025) - FIX VISION API Y MARKETING IMAGES:**
+- 🐛 **PROBLEMA 1:** Sofía negaba poder ver imágenes ("No puedo ver imágenes")
+- 🐛 **PROBLEMA 2:** Marketing images ponían logo encima de toda la imagen
+- 🐛 **PROBLEMA 3:** Nano Banana NO puede manejar múltiples imágenes (logo + fachada)
+- 🔧 **FIX 1 - Vision System Prompt (30 líneas):**
+  - ✅ Instrucción clara: "TÚ PUEDES VER IMÁGENES"
+  - ✅ Ejemplos de cómo responder cuando ve imágenes
+  - ❌ Prohibido decir "No puedo ver imágenes"
+- 🔧 **FIX 2 - Marketing Image Prompt:**
+  - ✅ Prompt optimizado para Nano Banana (solo texto overlay)
+  - ✅ Eliminada referencia a logo del usuario
+  - ✅ Añadido degradado oscuro para legibilidad
+  - ✅ Watermark "Domus-IA" en texto (no imagen)
+- 🔧 **FIX 3 - Tool Description:**
+  - ✅ "Solo usa UNA imagen (la del usuario)"
+  - ✅ "NO intentes añadir logos del usuario"
+- ⚡ **Impacto:**
+  - ✅ Sofía VE y DESCRIBE imágenes correctamente
+  - ✅ Marketing images con texto overlay (no logos extra)
+  - ✅ Usuario puede preguntar "¿Qué ves?" y obtiene respuesta
+- 📝 **Archivo modificado:** `api/chat.js` (4 ediciones)
+- ⏱️ **Tiempo de resolución:** 20 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.3
+
+**🔧 Hotfix v1.12.3 (19 Noviembre 2025) - FIX IMÁGENES PUBLICITARIAS NO SE MOSTRABAN:**
+- 🐛 **PROBLEMA:** Sofía creaba imágenes publicitarias con Nano Banana pero no las mostraba en el chat
+- ✅ **Backend funcionando:** `compose_marketing_image` generaba imagen correctamente con Nano Banana
+- ❌ **Frontend bloqueando:** Condición solo detectaba `imageEdited` pero no `marketingComposed`
+- 🔧 **FIX:** Añadida flag `marketingComposed` a condición de detección de imágenes (línea 835)
+- ⚡ **Impacto:** Ahora las imágenes publicitarias (precio + texto) se muestran correctamente
+- 📝 **Archivo modificado:** `js/main.js` (1 línea)
+- ⏱️ **Tiempo de resolución:** 10 minutos
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.2
+
+**🔧 Hotfix v1.12.2 (19 Noviembre 2025) - BOTONES DE SUGERENCIAS DESACTIVADOS:**
+- 🚫 **BOTONES REMOVIDOS:** Todos los botones de sugerencias de prompts eliminados de la interfaz
+- ✅ **Razón:** Los botones funcionaban mal y se repondrán de uno en uno según se activen las funciones
+- 🔒 **NANO BANANA INTACTO:** No se tocó ningún archivo de API ni conexiones (api/chat.js sin cambios)
+- 📝 **Cambios realizados:**
+  - `js/prompt-suggestions.js`: Array `this.suggestions` vaciado con comentario explicativo
+  - `index.html`: Script `prompt-suggestions.js` comentado (línea 55)
+  - `css/prompt-suggestions.css`: Archivo mantenido intacto para uso futuro
+- ⚡ **Impacto:** Interfaz limpia sin botones no funcionales, APIs 100% operativas
+- 📄 **Documentación:** README actualizado con estado actual
+- ⏱️ **Tiempo de implementación:** 5 minutos de cambios seguros
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.1
+
+**🔧 Hotfix v1.12.1 (14 Noviembre 2025) - FIX NANO BANANA ERROR 404:**
+- 🐛 **FIX:** Error 404 "Resource not found" resuelto
+- ✅ **Endpoint correcto:** Cambiado de `fofr/nano-banana` a `google/nano-banana`
+- ✅ **Estructura correcta:** `image_input: [imageUrl]` (array de strings, NO objetos)
+- ✅ **Parámetros completos:** Añadido `aspect_ratio: "match_input_image"`
+- ✅ **Authorization consistente:** `Bearer` en todos los requests
+- ✅ **Error handling:** Variable `functionArgs` accesible en catch
+- ✅ **Output handling:** Manejo de array o string directo
+- ✅ **Mensaje de error mejorado:** Detalles técnicos y troubleshooting
+- 📄 **Documentación:** `FIX_NANO_BANANA_404.md` con análisis completo
+- ⏱️ **Tiempo de resolución:** 15 minutos desde detección hasta fix
+- 🎉 **NANO BANANA FUNCIONANDO:** Confirmado por usuario después de fix 422
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.12.0
+
+**🔧 Fix v1.12.0 (12 Noviembre 2025) - NANO BANANA ACTIVADO:**
+- 🎨 **Nano Banana activado:** Edición real de imágenes preservando estructura
+- 🖼️ **Portadas publicitarias:** Logo + texto sobre foto real con Nano Banana
+- 🔘 **Botones de prompt:** Los 8 botones funcionando correctamente
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.11.0
+
+**🆕 Feature v1.11.0 (12 Noviembre 2025) - WORKFLOW VALORADOR INTEGRADO:**
+- 🏠 **NUEVO:** Agente especializado de valoración inmobiliaria (OpenAI Workflow)
+- 🎯 **Workflow ID:** wf_6913dc3786b48190a8dd6cabc850b94d0c51915bd5ba7b25
+- ✅ **Integración completa:** Sofía detecta automáticamente solicitudes de valoración
+- 🔧 **API endpoint:** `/api/valorador.js` conectado al workflow
+- 🎨 **Function calling:** Tool `call_valorador_workflow` añadido a GPT-4o
+- 📊 **System prompt actualizado:** Instrucciones detalladas para usar workflow
+- ⚡ **Activación:** Botón "Informe de valoración" o keywords ("valora mi piso", "cuánto vale")
+- 📝 **Datos requeridos:** Dirección, metros cuadrados, tipo de propiedad
+- 🎯 **Output:** Informe profesional completo con análisis de mercado y comparables
+- 📚 **Documentación:** README.md actualizado con guía completa
+
+### ✅ ESTADO ANTERIOR - VERSIÓN 1.10.1
 
 **🔧 Hotfix Crítico v1.10.1 (11 Noviembre 2025) - Content Null DEFINITIVO:**
 - 🚨 **FIX DEFINITIVO:** Añadido filtro de seguridad antes de enviar a OpenAI
@@ -438,19 +613,20 @@ Una vez desplegado, verifica que funcione:
 
 ## 🚀 RESUMEN EJECUTIVO
 
-### ✅ **12 Funcionalidades FUNCIONANDO al 100%**
+### ✅ **13 Funcionalidades FUNCIONANDO al 100%**
 1. **Chat IA con GPT-4o** - Conversación inteligente con Sofía
-2. **Generación de imágenes DALL-E 3** - Marketing visual profesional
-3. **🆕 Edición REAL de imágenes (Replicate SDXL)** - Virtual staging preservando estructura original
-4. **🆕 Análisis de Visión (Caso C)** - Descripción, lectura de documentos y análisis sin editar
-5. **Lectura de voz (TTS)** - Text-to-Speech con Web Speech API
-6. **Búsqueda web Tavily** - Información en tiempo real
-7. **Autenticación completa** - Registro/Login con validación CIF/NIF
-8. **Email capture** - Captación automática al mensaje 3
-9. **Detección de propiedades** - IA identifica propiedades en chat
-10. **Panel CRM completo** - Gestión visual de propiedades
-11. **Dashboard con estadísticas** - Métricas en tiempo real
-12. **Filtros y CRUD** - Búsqueda avanzada y edición
+2. **🆕 Workflow Valorador (OpenAI)** - Agente especializado de valoración inmobiliaria profesional
+3. **Generación de imágenes DALL-E 3** - Marketing visual profesional
+4. **🆕 Edición REAL de imágenes (Replicate SDXL)** - Virtual staging preservando estructura original
+5. **🆕 Análisis de Visión (Caso C)** - Descripción, lectura de documentos y análisis sin editar
+6. **Lectura de voz (TTS)** - Text-to-Speech con Web Speech API
+7. **Búsqueda web Tavily** - Información en tiempo real
+8. **Autenticación completa** - Registro/Login con validación CIF/NIF
+9. **Email capture** - Captación automática al mensaje 3
+10. **Detección de propiedades** - IA identifica propiedades en chat
+11. **Panel CRM completo** - Gestión visual de propiedades
+12. **Dashboard con estadísticas** - Métricas en tiempo real
+13. **Filtros y CRUD** - Búsqueda avanzada y edición
 
 ### ⚠️ **3 Funcionalidades Parciales** (código existe, no testeadas)
 - Upload de documentos
@@ -1040,6 +1216,203 @@ El proyecto incluye guías detalladas:
 2. **`IMAGEN-UPLOAD-GUIDE.md`** - Cómo subir imágenes (6KB)
 3. **`PROMPT-EXAMPLES.md`** - Ejemplos efectivos Caso A (11KB)
 4. **`👁️_CASO_C_ANALISIS_VISION.md`** - Documentación completa Caso C (12KB)
+
+---
+
+## 🏠 Workflow Valorador - Agente Especializado de Valoración (v1.11.0) 🆕
+
+### ⭐ Tecnología: OpenAI Workflows
+
+Domus-IA integra un **agente especializado de valoración inmobiliaria** desarrollado como un Workflow de OpenAI. Este agente proporciona **valoraciones profesionales completas** con análisis de mercado, comparables y rangos de precio.
+
+### 🎯 Características del Workflow
+
+- **🤖 Workflow ID:** `wf_6913dc3786b48190a8dd6cabc850b94d0c51915bd5ba7b25`
+- **🧠 Especialización:** Valoraciones inmobiliarias profesionales con análisis de mercado
+- **📊 Output:** Informe completo con rangos (mín/medio/máx), €/m², comparables y factores de precio
+- **⚡ Velocidad:** 15-30 segundos por valoración completa
+- **🔄 Integración:** Completamente integrado con Sofía mediante Function Calling
+
+### 🚀 Cómo Funciona
+
+#### Activación Automática
+
+El workflow se activa automáticamente cuando:
+
+1. **Usuario pulsa botón "Informe de valoración"**
+2. **Usuario pregunta explícitamente:**
+   - "¿Cuánto vale mi piso?"
+   - "Valora mi propiedad"
+   - "Necesito una tasación"
+   - "Haz una estimación de precio"
+
+#### Datos Requeridos
+
+**Obligatorios:**
+- 📍 **Dirección completa** (calle, número, ciudad, código postal)
+- 📐 **Metros cuadrados** (superficie útil o construida)
+- 🏠 **Tipo de propiedad** (piso, casa, chalet, ático, etc.)
+
+**Opcionales (mejoran la precisión):**
+- 🛏️ Número de habitaciones
+- 🚿 Número de baños
+- ⚙️ Estado de conservación (nuevo/muy bueno/bueno/regular/a reformar)
+- ✨ Extras (garaje, trastero, piscina, jardín, terraza, ascensor)
+
+### 💡 Ejemplo de Uso
+
+```javascript
+// Flujo de conversación típico:
+
+Usuario: [Pulsa botón "Informe de valoración"]
+
+Sofía: "Perfecto, voy a prepararte una valoración profesional. 
+        Necesito:
+        1. Dirección completa de la propiedad
+        2. ¿Cuántos metros cuadrados tiene?"
+
+Usuario: "Calle Mayor 15, 3ºB, Madrid 28013. Tiene 95m²"
+
+Sofía: [Llama automáticamente a call_valorador_workflow]
+       "Un momento, estoy consultando datos del mercado y 
+        analizando comparables en tu zona..."
+       
+       [Recibe informe completo del workflow]
+       
+       "✅ He completado la valoración de tu piso en Calle Mayor 15:
+       
+       📊 **RANGO DE VALORACIÓN:**
+       - Mínimo: 285.000€ (3.000€/m²)
+       - Medio: 312.000€ (3.284€/m²)
+       - Máximo: 340.000€ (3.579€/m²)
+       
+       📈 **ANÁLISIS DE MERCADO:**
+       [Análisis detallado de zona, comparables y tendencias]
+       
+       ¿Quieres que profundicemos en algún aspecto 
+       o preparamos siguiente paso?"
+```
+
+### 🔧 Implementación Técnica
+
+#### Arquitectura
+
+```
+Usuario solicita valoración
+    ↓
+Sofía (GPT-4o) detecta intención mediante Function Calling
+    ↓
+Llama a tool: call_valorador_workflow
+    ↓
+Backend /api/valorador.js → OpenAI Workflows API
+    ↓
+Workflow especializado procesa datos y analiza mercado
+    ↓
+Devuelve informe profesional completo
+    ↓
+Sofía presenta resultado con formato profesional
+```
+
+#### Archivos Involucrados
+
+```
+api/valorador.js              # Endpoint que llama al workflow (4 KB)
+api/chat.js                   # Tool definition + handler (actualizado)
+└─ call_valorador_workflow    # Function calling tool
+└─ Handler con polling        # Maneja ejecución asíncrona
+```
+
+#### API Endpoint
+
+```javascript
+POST /api/valorador
+Content-Type: application/json
+
+{
+  "direccion": "Calle Mayor 15, Madrid 28013",
+  "metrosCuadrados": 95,
+  "habitaciones": 3,
+  "banos": 2,
+  "tipoPropiedad": "piso",
+  "estadoConservacion": "bueno",
+  "extras": "Garaje incluido, terraza 15m²",
+  "conversationContext": "Usuario busca vender en próximos 3 meses"
+}
+
+// Response:
+{
+  "success": true,
+  "workflowId": "run_abc123...",
+  "output": "[Informe completo de valoración]",
+  "propertyData": {...}
+}
+```
+
+### 🎯 Ventajas vs Valoración Manual
+
+| Aspecto | Valoración Manual | Workflow Valorador |
+|---------|-------------------|-------------------|
+| **Velocidad** | 10-15 minutos | 15-30 segundos |
+| **Precisión** | Depende del agente | Datos de mercado actualizados |
+| **Consistencia** | Variable | Siempre profesional |
+| **Comparables** | Búsqueda manual | Análisis automático |
+| **Actualización** | Requiere investigación | Siempre datos frescos |
+| **Coste** | Tiempo del agente | Automatizado |
+
+### 📚 Documentación del System Prompt
+
+Sofía ha sido entrenada específicamente para usar el workflow:
+
+```markdown
+### 6️⃣ Workflow Valorador - Agente Especializado de Valoración
+✅ TECNOLOGÍA: OpenAI Workflow especializado en valoraciones inmobiliarias
+✅ ÚSALO PARA: Valoraciones completas, informes profesionales, estimaciones
+✅ CUÁNDO USAR:
+   - Usuario pulsa botón "Informe de valoración"
+   - Usuario pregunta: "¿Cuánto vale mi piso/casa?"
+   - Usuario solicita valoración o estimación de precio
+
+FLUJO RECOMENDADO:
+1. Usuario solicita valoración
+2. SI FALTA INFORMACIÓN: Pregunta por dirección, m² y tipo (máximo 2 preguntas)
+3. CUANDO TENGAS LOS DATOS MÍNIMOS: Llama INMEDIATAMENTE a call_valorador_workflow
+4. El workflow devuelve informe profesional completo
+5. Presenta el informe de forma clara y profesional
+6. Ofrece aclaraciones o siguiente paso
+```
+
+### 🔒 Consideraciones de Seguridad
+
+- ✅ **API Key protegida:** OpenAI API key en variables de entorno
+- ✅ **Rate limiting:** Implementado en backend
+- ✅ **Validación de entrada:** Todos los parámetros validados
+- ✅ **Error handling:** Fallbacks en caso de fallo del workflow
+- ✅ **Timeout protection:** Máximo 30 segundos de espera
+
+### 🐛 Troubleshooting
+
+**Error: "Workflow no disponible"**
+- Verificar que `OPENAI_API_KEY` está configurada en Vercel
+- Confirmar que el workflow ID es correcto
+- Revisar logs de Vercel para más detalles
+
+**Error: "Timeout al ejecutar workflow"**
+- El workflow puede tardar hasta 30 segundos
+- Verificar conectividad con OpenAI API
+- Revisar estado de OpenAI en status.openai.com
+
+**Valoración incompleta o incorrecta**
+- Verificar que se pasaron todos los datos obligatorios
+- Asegurarse de que la dirección es completa y válida
+- Revisar el output del workflow en logs
+
+### 📈 Métricas y Monitoreo
+
+El sistema registra:
+- ⏱️ Tiempo de ejecución de cada workflow
+- ✅ Tasa de éxito/fallo
+- 📊 Workflow IDs para auditoría
+- 🔍 Parámetros de entrada para debugging
 
 ---
 
