@@ -58,6 +58,21 @@ class DomusIA {
         this.startCountdown();
         this.loadConversationHistory();
         
+        // Detectar si acaba de hacer login
+        const justLoggedIn = localStorage.getItem('domusIA_justLoggedIn');
+        if (justLoggedIn === 'true') {
+            console.log('✅ Detectado login reciente - Abriendo chat con bienvenida personalizada');
+            localStorage.removeItem('domusIA_justLoggedIn');
+            
+            // Forzar mensaje de bienvenida personalizado
+            localStorage.removeItem('domusIA_hasSeenWelcome');
+            
+            // Abrir chat después de un breve delay
+            setTimeout(() => {
+                this.openChat();
+            }, 800);
+        }
+        
         // Abrir chat automáticamente si viene de CRM
         if (urlParams.get('openChat') === 'true') {
             setTimeout(() => {
@@ -501,9 +516,10 @@ class DomusIA {
     }
 
     getOnboardingWelcomeMessage() {
-        return `# ¡Bienvenido/a a DomusIA, Profesional! 🎉
+        const userName = this.userName || 'Profesional';
+        return `# ¡Hola ${userName}! Bienvenido/a a DomusIA 🎉
 
-Soy **Sofia**, tu asistente de IA especializada en el sector inmobiliario.
+Soy **Sofía**, tu asistente de IA especializada en el sector inmobiliario.
 
 Antes de comenzar, me gustaría **conocer tu empresa** para poder ayudarte mejor. Voy a hacerte algunas preguntas sobre:
 
