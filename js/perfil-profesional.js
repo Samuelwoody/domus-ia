@@ -11,7 +11,7 @@ let currentAgents = [];
 
 // Cloudinary config
 const CLOUDINARY_CLOUD_NAME = 'di5ecu2co'; // Cloud name correcto
-const CLOUDINARY_UPLOAD_PRESET = 'di5ecu2co'; // Preset unsigned para logos (mismo valor)
+const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_logos'; // Preset específico para logos
 
 // ============================================
 // INICIALIZACIÓN
