@@ -1156,53 +1156,39 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             onboarding_completed: true
           };
           
-          // Guardar directamente en Supabase (sin llamada HTTP)
+          // Guardar directamente en Supabase usando funciones del módulo
           console.log('Guardando perfil directamente en Supabase...');
           
-          // Buscar usuario
-          const { data: user, error: userError } = await supabaseClient.supabase
-            .from('users')
-            .select('id, email, name, user_type')
-            .eq('email', userEmail)
-            .single();
+          // Buscar o crear usuario
+          const user = await supabaseClient.getOrCreateUser(userEmail, userName, userType);
           
-          if (userError || !user) {
-            throw new Error('Usuario no encontrado en base de datos');
+          if (!user) {
+            throw new Error('No se pudo obtener o crear el usuario en la base de datos');
           }
           
+          console.log('✅ Usuario obtenido/creado:', user.id);
+          
           // Verificar si perfil ya existe
-          const { data: existingProfile } = await supabaseClient.supabase
-            .from('professional_profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
+          const existingProfile = await supabaseClient.getProfessionalProfile(user.id);
           
           let profileResult;
           
           if (existingProfile) {
             // Actualizar perfil existente
-            const { data, error } = await supabaseClient.supabase
-              .from('professional_profiles')
-              .update(profileData)
-              .eq('user_id', user.id)
-              .select()
-              .single();
+            console.log('📝 Actualizando perfil existente...');
+            profileResult = await supabaseClient.updateProfessionalProfile(user.id, profileData);
             
-            if (error) throw new Error(`Error actualizando perfil: ${error.message}`);
-            profileResult = data;
+            if (!profileResult) {
+              throw new Error('Error actualizando perfil profesional');
+            }
           } else {
             // Crear nuevo perfil
-            const { data, error } = await supabaseClient.supabase
-              .from('professional_profiles')
-              .insert({
-                user_id: user.id,
-                ...profileData
-              })
-              .select()
-              .single();
+            console.log('🆕 Creando nuevo perfil...');
+            profileResult = await supabaseClient.createProfessionalProfile(user.id, profileData);
             
-            if (error) throw new Error(`Error creando perfil: ${error.message}`);
-            profileResult = data;
+            if (!profileResult) {
+              throw new Error('Error creando perfil profesional');
+            }
           }
           
           console.log('Professional profile saved successfully:', profileResult);
