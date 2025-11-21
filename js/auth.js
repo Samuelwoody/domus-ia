@@ -176,7 +176,7 @@ class AuthSystem {
             window.domusIA.userType = null;
             window.domusIA.subscriptionPlan = 'free';
             window.domusIA.dailyMessageCount = 0;
-            window.domusIA.saveUserData();
+            // NO llamar a saveUserData() aquí - ya limpiamos localStorage manualmente
         }
         
         // Forzar limpieza de UI antes de redirigir
