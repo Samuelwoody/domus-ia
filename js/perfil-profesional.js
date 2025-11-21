@@ -11,7 +11,7 @@ let currentAgents = [];
 
 // Cloudinary config
 const CLOUDINARY_CLOUD_NAME = 'dbtkvvp3o';
-const CLOUDINARY_UPLOAD_PRESET = 'xh5qy5qd';
+const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_logos'; // Preset unsigned para logos
 
 // ============================================
 // INICIALIZACIÓN
@@ -502,7 +502,7 @@ async function handleLogoUpload(event) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        formData.append('folder', 'domus-ia/logos');
+        // Folder ya está definido en el preset (domus-ia/logos)
         
         const response = await fetch(
             `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
