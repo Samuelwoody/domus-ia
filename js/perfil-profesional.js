@@ -10,8 +10,8 @@ let isEditMode = false;
 let currentAgents = [];
 
 // Cloudinary config
-const CLOUDINARY_CLOUD_NAME = 'dbtkvvp3o';
-const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_logos'; // Preset unsigned para logos
+const CLOUDINARY_CLOUD_NAME = 'di5ecu2co'; // Cloud name correcto
+const CLOUDINARY_UPLOAD_PRESET = 'di5ecu2co'; // Preset unsigned para logos (mismo valor)
 
 // ============================================
 // INICIALIZACIÓN
@@ -496,6 +496,9 @@ async function handleLogoUpload(event) {
     }
     
     console.log('📤 Subiendo logo a Cloudinary...');
+    console.log('🔍 Cloud Name:', CLOUDINARY_CLOUD_NAME);
+    console.log('🔍 Upload Preset:', CLOUDINARY_UPLOAD_PRESET);
+    console.log('🔍 File:', file.name, file.type, file.size);
     showToast('Subiendo logo...', 'info');
     
     try {
@@ -504,16 +507,21 @@ async function handleLogoUpload(event) {
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         // Folder ya está definido en el preset (domus-ia/logos)
         
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
+        const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        console.log('🔍 URL:', url);
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+        
+        console.log('🔍 Response Status:', response.status);
+        console.log('🔍 Response OK:', response.ok);
         
         if (!response.ok) {
-            throw new Error('Error al subir imagen');
+            const errorData = await response.json().catch(() => null);
+            console.error('❌ Error Response:', errorData);
+            throw new Error(errorData?.error?.message || 'Error al subir imagen');
         }
         
         const data = await response.json();
