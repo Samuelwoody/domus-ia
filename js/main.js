@@ -61,11 +61,11 @@ class DomusIA {
         // Detectar si acaba de hacer login
         const justLoggedIn = localStorage.getItem('domusIA_justLoggedIn');
         if (justLoggedIn === 'true') {
-            console.log('✅ Detectado login reciente - Abriendo chat con bienvenida personalizada');
+            console.log('✅ Detectado login reciente - Abriendo chat con saludo personalizado');
             localStorage.removeItem('domusIA_justLoggedIn');
             
-            // Forzar mensaje de bienvenida personalizado
-            localStorage.removeItem('domusIA_hasSeenWelcome');
+            // Marcar que debe mostrar saludo de login (no el mensaje largo de primera vez)
+            localStorage.setItem('domusIA_showLoginGreeting', 'true');
             
             // Abrir chat después de un breve delay
             setTimeout(() => {
@@ -476,11 +476,58 @@ class DomusIA {
     }
 
     async initializeChat() {
-        // 🔥 NUEVO: Solo mostrar mensaje de bienvenida la primera vez
+        // Verificar si debe mostrar un mensaje (primera vez o login)
         const hasSeenWelcome = localStorage.getItem('domusIA_hasSeenWelcome');
+        const showLoginGreeting = localStorage.getItem('domusIA_showLoginGreeting');
         
+        // 🎯 CASO 1: Login reciente (saludo contextual)
+        if (showLoginGreeting === 'true') {
+            console.log('🔑 Login detectado - Mostrando saludo contextual');
+            localStorage.removeItem('domusIA_showLoginGreeting');
+            
+            // Verificar si usuario profesional necesita completar perfil
+            let needsProfileCompletion = false;
+            
+            if (this.isAuthenticated && this.userType === 'profesional' && this.userEmail) {
+                try {
+                    console.log('🔍 Verificando estado del perfil profesional...');
+                    const response = await fetch(`/api/professional-profile?email=${encodeURIComponent(this.userEmail)}`);
+                    const data = await response.json();
+                    
+                    needsProfileCompletion = !data.profile || !data.profile.onboarding_completed;
+                    console.log(`✅ Perfil ${needsProfileCompletion ? 'INCOMPLETO' : 'COMPLETO'}`);
+                } catch (error) {
+                    console.error('❌ Error verificando perfil:', error);
+                    needsProfileCompletion = false;
+                }
+            }
+            
+            // Mostrar saludo apropiado según estado del perfil
+            const userName = this.userName || 'Usuario';
+            let greetingMessage;
+            
+            if (needsProfileCompletion) {
+                greetingMessage = `¡Hola ${userName}! 👋
+
+Veo que aún no has completado tu perfil profesional. ¿Te gustaría que te ayude a completarlo ahora? Solo te haré algunas preguntas sobre tu empresa y en pocos minutos tendrás tu perfil listo para usar en materiales de marketing y documentos.
+
+¿Empezamos? 😊`;
+            } else if (this.userType === 'profesional') {
+                greetingMessage = `¡Hola ${userName}! ¿En qué puedo ayudarte hoy? 😊`;
+            } else {
+                greetingMessage = `¡Hola ${userName}! ¿En qué puedo ayudarte? 😊`;
+            }
+            
+            this.addMessage('assistant', greetingMessage, false);
+            console.log('✅ Saludo de login mostrado');
+            return;
+        }
+        
+        // 🎯 CASO 2: Primera visita absoluta (mensaje largo de bienvenida)
         if (!hasSeenWelcome) {
-            // 🎯 FASE 2: Verificar si usuario profesional necesita onboarding
+            console.log('🆕 Primera visita - Mostrando mensaje de bienvenida completo');
+            
+            // Verificar si usuario profesional necesita onboarding
             let needsOnboarding = false;
             
             if (this.isAuthenticated && this.userType === 'profesional' && this.userEmail) {
@@ -493,7 +540,7 @@ class DomusIA {
                     console.log(`✅ Estado onboarding: ${needsOnboarding ? 'NECESITA' : 'COMPLETADO'}`);
                 } catch (error) {
                     console.error('❌ Error verificando onboarding:', error);
-                    needsOnboarding = false; // En caso de error, usar mensaje normal
+                    needsOnboarding = false;
                 }
             }
             
@@ -507,9 +554,11 @@ class DomusIA {
             // Marcar que ya vio el mensaje de bienvenida
             localStorage.setItem('domusIA_hasSeenWelcome', 'true');
             console.log('✅ Mensaje de bienvenida mostrado (primera vez)');
-        } else {
-            console.log('ℹ️ Usuario ya vio mensaje de bienvenida, saltando...');
+            return;
         }
+        
+        // 🎯 CASO 3: Usuario recurrente navegando normalmente
+        console.log('ℹ️ Usuario recurrente - Sin mensaje automático');
         
         // API status check removed - GPT-4o is always active
         // No need to show demo message since backend is configured
