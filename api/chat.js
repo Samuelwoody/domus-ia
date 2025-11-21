@@ -1205,10 +1205,28 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           
         } catch (error) {
           console.error('Error completing professional profile:', error);
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            functionArgs: functionArgs
+          });
           
           return res.status(200).json({
             success: true,
-            message: 'He tenido un problema al guardar tu perfil profesional. Por favor, intenta proporcionarme los datos de nuevo o accede manualmente a tu Perfil Profesional desde el menu para completarlo.\n\nDisculpa las molestias. Puedo ayudarte con algo mas mientras tanto?',
+            message: `Perfecto ${userName}, he recopilado todos los datos de tu perfil:\n\n` +
+                     `📋 Datos recopilados:\n` +
+                     `- Empresa: ${functionArgs.company_name}\n` +
+                     (functionArgs.city ? `- Ubicacion: ${functionArgs.city}\n` : '') +
+                     `- Email: ${functionArgs.corporate_email}\n` +
+                     (functionArgs.mobile_phone ? `- Telefono: ${functionArgs.mobile_phone}\n` : '') +
+                     (functionArgs.website_url ? `- Web: ${functionArgs.website_url}\n` : '') +
+                     `\n💡 Para guardar estos datos permanentemente:\n` +
+                     `1. Ve al menu superior y haz clic en "Perfil Profesional"\n` +
+                     `2. Haz clic en el boton "Editar Perfil"\n` +
+                     `3. Rellena los campos con los datos que te he pedido\n` +
+                     `4. Haz clic en "Guardar Cambios"\n\n` +
+                     `Una vez guardado, podre usar automaticamente estos datos cuando crees imagenes publicitarias, documentos o materiales de marketing.\n\n` +
+                     `En que mas puedo ayudarte?`,
             profileCompleted: false,
             profileError: error.message,
             tokensUsed: data.usage.total_tokens,
