@@ -359,36 +359,39 @@ async function saveProfile() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     
     try {
+        // Helper: Convertir strings vacíos a null
+        const toNullIfEmpty = (value) => value && value.trim() !== '' ? value.trim() : null;
+        
         // Recopilar datos del formulario
         const profileData = {
             company_name: companyName,
-            company_slogan: document.getElementById('companySlogan').value.trim(),
+            company_slogan: toNullIfEmpty(document.getElementById('companySlogan').value),
             company_logo_url: document.getElementById('logoImage').src && document.getElementById('logoImage').src !== '' && document.getElementById('logoImage').src !== window.location.href ? document.getElementById('logoImage').src : null,
             
-            street_address: document.getElementById('streetAddress').value.trim(),
-            city: document.getElementById('city').value.trim(),
-            state_province: document.getElementById('stateProvince').value.trim(),
-            postal_code: document.getElementById('postalCode').value.trim(),
-            country: document.getElementById('country').value.trim() || 'España',
+            street_address: toNullIfEmpty(document.getElementById('streetAddress').value),
+            city: toNullIfEmpty(document.getElementById('city').value),
+            state_province: toNullIfEmpty(document.getElementById('stateProvince').value),
+            postal_code: toNullIfEmpty(document.getElementById('postalCode').value),
+            country: toNullIfEmpty(document.getElementById('country').value) || 'España',
             
             corporate_email: corporateEmail,
-            corporate_phone: document.getElementById('corporatePhone').value.trim(),
-            mobile_phone: document.getElementById('mobilePhone').value.trim(),
+            corporate_phone: toNullIfEmpty(document.getElementById('corporatePhone').value),
+            mobile_phone: toNullIfEmpty(document.getElementById('mobilePhone').value),
             
-            website_url: document.getElementById('websiteUrl').value.trim(),
-            facebook_url: document.getElementById('facebookUrl').value.trim(),
-            instagram_url: document.getElementById('instagramUrl').value.trim(),
-            linkedin_url: document.getElementById('linkedinUrl').value.trim(),
-            twitter_url: document.getElementById('twitterUrl').value.trim(),
-            youtube_url: document.getElementById('youtubeUrl').value.trim(),
+            website_url: toNullIfEmpty(document.getElementById('websiteUrl').value),
+            facebook_url: toNullIfEmpty(document.getElementById('facebookUrl').value),
+            instagram_url: toNullIfEmpty(document.getElementById('instagramUrl').value),
+            linkedin_url: toNullIfEmpty(document.getElementById('linkedinUrl').value),
+            twitter_url: toNullIfEmpty(document.getElementById('twitterUrl').value),
+            youtube_url: toNullIfEmpty(document.getElementById('youtubeUrl').value),
             
-            manager_name: document.getElementById('managerName').value.trim(),
-            manager_position: document.getElementById('managerPosition').value.trim(),
-            manager_email: document.getElementById('managerEmail').value.trim(),
-            manager_phone: document.getElementById('managerPhone').value.trim(),
-            manager_bio: document.getElementById('managerBio').value.trim(),
+            manager_name: toNullIfEmpty(document.getElementById('managerName').value),
+            manager_position: toNullIfEmpty(document.getElementById('managerPosition').value),
+            manager_email: toNullIfEmpty(document.getElementById('managerEmail').value),
+            manager_phone: toNullIfEmpty(document.getElementById('managerPhone').value),
+            manager_bio: toNullIfEmpty(document.getElementById('managerBio').value),
             
-            agents: currentAgents
+            agents: currentAgents || []
         };
         
         console.log('📊 Datos a guardar:', profileData);
@@ -432,7 +435,8 @@ async function saveProfile() {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al guardar perfil');
+            console.error('❌ Error del servidor:', errorData);
+            throw new Error(errorData.error || errorData.details || 'Error al guardar perfil');
         }
         
         const result = await response.json();
