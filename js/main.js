@@ -56,9 +56,11 @@ class DomusIA {
                 // Esperar a que el chat esté visible
                 setTimeout(() => {
                     const userInput = document.getElementById('userInput');
-                    if (userInput) {
+                    const sendButton = document.getElementById('sendButton');
+                    if (userInput && sendButton) {
                         userInput.value = pendingMessage;
-                        userInput.focus();
+                        // Enviar el mensaje automáticamente
+                        sendButton.click();
                     }
                     // Limpiar el mensaje pendiente
                     localStorage.removeItem('pendingChatMessage');
