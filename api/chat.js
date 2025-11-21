@@ -1156,6 +1156,7 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           };
           
           const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+          console.log('Checking profile at URL:', `${baseUrl}/api/professional-profile?email=${userEmail}`);
           const checkResponse = await fetch(`${baseUrl}/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
           let profileExists = false;
           
@@ -1176,8 +1177,10 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
           });
           
           if (!profileResponse.ok) {
-            const errorData = await profileResponse.json();
-            throw new Error(errorData.error || 'Error saving professional profile');
+            const responseText = await profileResponse.text();
+            console.error('Profile API response status:', profileResponse.status);
+            console.error('Profile API response body:', responseText.substring(0, 500));
+            throw new Error(`Profile API error (${profileResponse.status}): ${responseText.substring(0, 200)}`);
           }
           
           const profileResult = await profileResponse.json();
