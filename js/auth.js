@@ -342,6 +342,9 @@ window.handleLogin = async function(event) {
         alert(result.message);
         window.closeAuthModals();
         
+        // Marcar que debe abrir chat después del reload
+        localStorage.setItem('domusIA_justLoggedIn', 'true');
+        
         // Recargar página para actualizar UI
         setTimeout(() => window.location.reload(), 500);
         
