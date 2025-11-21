@@ -35,8 +35,13 @@ class DomusIA {
         // Detectar si viene de un logout
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('logout') === 'true') {
-            // Forzar limpieza completa de localStorage
-            localStorage.clear();
+            // Limpiar SOLO los datos de autenticación (no todo localStorage)
+            localStorage.removeItem('domusIA_session');
+            localStorage.removeItem('domusIA_state');
+            localStorage.removeItem('domusIA_userName');
+            localStorage.removeItem('domusIA_userEmail');
+            localStorage.removeItem('domusIA_userType');
+            
             this.isAuthenticated = false;
             this.userName = null;
             this.userEmail = null;
@@ -362,26 +367,6 @@ class DomusIA {
                 if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.remove('hidden');
                 if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.remove('hidden');
             }
-        } else {
-            // Usuario NO autenticado - restaurar estado original
-            if (loginBtn) {
-                loginBtn.textContent = 'Acceder';
-                loginBtn.onclick = () => showLoginModal();
-            }
-            if (registerBtn) {
-                registerBtn.textContent = 'Comenzar';
-                registerBtn.onclick = () => showRegisterModal();
-            }
-            
-            // Ocultar links de CRM y Perfil Profesional
-            if (crmNavLink) crmNavLink.classList.add('hidden');
-            if (crmNavLinkMobile) crmNavLinkMobile.classList.add('hidden');
-            
-            const perfilProfesionalNavLink = document.getElementById('perfilProfesionalNavLink');
-            const perfilProfesionalNavLinkMobile = document.getElementById('perfilProfesionalNavLinkMobile');
-            if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.add('hidden');
-            if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.add('hidden');
-        }
             
             // Añadir botón al CRM si no existe
             if (!document.getElementById('crmBtn')) {
@@ -395,10 +380,12 @@ class DomusIA {
                 registerBtn.parentElement.insertBefore(crmBtn, registerBtn);
             }
         } else {
+            // Usuario NO autenticado - restaurar estado original
             loginBtn.textContent = 'Acceder';
-            registerBtn.textContent = 'Comenzar Gratis';
+            registerBtn.textContent = 'Comenzar';
             
             // Restaurar el onclick original
+            loginBtn.onclick = () => showLoginModal();
             registerBtn.onclick = () => showRegisterModal();
             
             // Ocultar links de CRM en navegación
