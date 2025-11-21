@@ -159,7 +159,14 @@ class AuthSystem {
     // Cerrar sesión
     logout() {
         console.log('👋 Cerrando sesión:', this.currentUser?.name || 'Usuario');
+        
+        // Limpiar TODAS las sesiones y localStorage
         this.clearSession();
+        localStorage.removeItem('domusIA_session');
+        localStorage.removeItem('domusIA_state');
+        localStorage.removeItem('domusIA_userName');
+        localStorage.removeItem('domusIA_userEmail');
+        localStorage.removeItem('domusIA_userType');
         
         // Asegurar que main.js también limpie su estado
         if (window.domusIA) {
@@ -167,11 +174,22 @@ class AuthSystem {
             window.domusIA.userName = null;
             window.domusIA.userEmail = null;
             window.domusIA.userType = null;
+            window.domusIA.subscriptionPlan = 'free';
+            window.domusIA.dailyMessageCount = 0;
             window.domusIA.saveUserData();
         }
         
-        // Recargar página para resetear UI
-        window.location.href = '/';
+        // Forzar limpieza de UI antes de redirigir
+        const crmLinks = document.querySelectorAll('#crmNavLink, #crmNavLinkMobile, #perfilProfesionalNavLink, #perfilProfesionalNavLinkMobile');
+        crmLinks.forEach(link => link && link.classList.add('hidden'));
+        
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        if (loginBtn) loginBtn.textContent = 'Acceder';
+        if (registerBtn) registerBtn.textContent = 'Comenzar';
+        
+        // Recargar página para resetear UI completamente
+        window.location.href = '/?logout=true';
     }
 
     // Obtener usuario actual
