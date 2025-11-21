@@ -409,8 +409,18 @@ async function saveProfile() {
             throw new Error('No se pudo obtener el email del usuario');
         }
         
+        // Primero verificar si el perfil existe
+        const checkResponse = await fetch(`/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
+        let profileExists = false;
+        
+        if (checkResponse.ok) {
+            const checkData = await checkResponse.json();
+            profileExists = checkData.profile !== null;
+        }
+        
+        // Usar POST (crear) o PUT (actualizar) según corresponda
         const response = await fetch('/api/professional-profile', {
-            method: 'PUT',
+            method: profileExists ? 'PUT' : 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
