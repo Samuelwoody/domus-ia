@@ -32,6 +32,21 @@ class DomusIA {
     }
 
     init() {
+        // Detectar si viene de un logout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('logout') === 'true') {
+            // Forzar limpieza completa de localStorage
+            localStorage.clear();
+            this.isAuthenticated = false;
+            this.userName = null;
+            this.userEmail = null;
+            this.userType = null;
+            this.subscriptionPlan = 'free';
+            this.dailyMessageCount = 0;
+            // Limpiar el parámetro de la URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
         this.loadUserData();
         this.bindEvents();
         this.updateUI();
@@ -39,7 +54,6 @@ class DomusIA {
         this.loadConversationHistory();
         
         // Abrir chat automáticamente si viene de CRM
-        const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('openChat') === 'true') {
             setTimeout(() => {
                 this.openChat();
@@ -348,6 +362,26 @@ class DomusIA {
                 if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.remove('hidden');
                 if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.remove('hidden');
             }
+        } else {
+            // Usuario NO autenticado - restaurar estado original
+            if (loginBtn) {
+                loginBtn.textContent = 'Acceder';
+                loginBtn.onclick = () => showLoginModal();
+            }
+            if (registerBtn) {
+                registerBtn.textContent = 'Comenzar';
+                registerBtn.onclick = () => showRegisterModal();
+            }
+            
+            // Ocultar links de CRM y Perfil Profesional
+            if (crmNavLink) crmNavLink.classList.add('hidden');
+            if (crmNavLinkMobile) crmNavLinkMobile.classList.add('hidden');
+            
+            const perfilProfesionalNavLink = document.getElementById('perfilProfesionalNavLink');
+            const perfilProfesionalNavLinkMobile = document.getElementById('perfilProfesionalNavLinkMobile');
+            if (perfilProfesionalNavLink) perfilProfesionalNavLink.classList.add('hidden');
+            if (perfilProfesionalNavLinkMobile) perfilProfesionalNavLinkMobile.classList.add('hidden');
+        }
             
             // Añadir botón al CRM si no existe
             if (!document.getElementById('crmBtn')) {
