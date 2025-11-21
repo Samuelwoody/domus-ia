@@ -1118,8 +1118,9 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
       }
       
       if (toolCall.function.name === 'complete_professional_profile') {
+        let functionArgs; // Declarar fuera para acceso en catch
         try {
-          const functionArgs = JSON.parse(toolCall.function.arguments);
+          functionArgs = JSON.parse(toolCall.function.arguments);
           console.log('Professional profile completion requested:', functionArgs);
           
           if (userType !== 'profesional') {
@@ -1155,35 +1156,55 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             onboarding_completed: true
           };
           
-          const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
-          console.log('Checking profile at URL:', `${baseUrl}/api/professional-profile?email=${userEmail}`);
-          const checkResponse = await fetch(`${baseUrl}/api/professional-profile?email=${encodeURIComponent(userEmail)}`);
-          let profileExists = false;
+          // Guardar directamente en Supabase (sin llamada HTTP)
+          console.log('Guardando perfil directamente en Supabase...');
           
-          if (checkResponse.ok) {
-            const checkData = await checkResponse.json();
-            profileExists = checkData.profile !== null;
+          // Buscar usuario
+          const { data: user, error: userError } = await supabaseClient.supabase
+            .from('users')
+            .select('id, email, name, user_type')
+            .eq('email', userEmail)
+            .single();
+          
+          if (userError || !user) {
+            throw new Error('Usuario no encontrado en base de datos');
           }
           
-          const profileResponse = await fetch(`${baseUrl}/api/professional-profile`, {
-            method: profileExists ? 'PUT' : 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: userEmail,
-              profileData
-            })
-          });
+          // Verificar si perfil ya existe
+          const { data: existingProfile } = await supabaseClient.supabase
+            .from('professional_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
           
-          if (!profileResponse.ok) {
-            const responseText = await profileResponse.text();
-            console.error('Profile API response status:', profileResponse.status);
-            console.error('Profile API response body:', responseText.substring(0, 500));
-            throw new Error(`Profile API error (${profileResponse.status}): ${responseText.substring(0, 200)}`);
+          let profileResult;
+          
+          if (existingProfile) {
+            // Actualizar perfil existente
+            const { data, error } = await supabaseClient.supabase
+              .from('professional_profiles')
+              .update(profileData)
+              .eq('user_id', user.id)
+              .select()
+              .single();
+            
+            if (error) throw new Error(`Error actualizando perfil: ${error.message}`);
+            profileResult = data;
+          } else {
+            // Crear nuevo perfil
+            const { data, error } = await supabaseClient.supabase
+              .from('professional_profiles')
+              .insert({
+                user_id: user.id,
+                ...profileData
+              })
+              .select()
+              .single();
+            
+            if (error) throw new Error(`Error creando perfil: ${error.message}`);
+            profileResult = data;
           }
           
-          const profileResult = await profileResponse.json();
           console.log('Professional profile saved successfully:', profileResult);
           
           return res.status(200).json({
@@ -1211,22 +1232,30 @@ ${functionArgs.include_logo ? '.logo { position: absolute; top: 20px; left: 20px
             functionArgs: functionArgs
           });
           
+          // Construir mensaje con datos si están disponibles
+          let errorMessage = `He tenido un problema al guardar tu perfil profesional.\n\n`;
+          
+          if (functionArgs && functionArgs.company_name) {
+            errorMessage += `📋 Datos que recopile:\n` +
+                           `- Empresa: ${functionArgs.company_name}\n` +
+                           (functionArgs.city ? `- Ubicacion: ${functionArgs.city}\n` : '') +
+                           `- Email: ${functionArgs.corporate_email}\n` +
+                           (functionArgs.mobile_phone ? `- Telefono: ${functionArgs.mobile_phone}\n` : '') +
+                           (functionArgs.website_url ? `- Web: ${functionArgs.website_url}\n` : '') +
+                           `\n`;
+          }
+          
+          errorMessage += `💡 Para guardar estos datos:\n` +
+                         `1. Ve al menu "Perfil Profesional"\n` +
+                         `2. Haz clic en "Editar Perfil"\n` +
+                         `3. Rellena los campos\n` +
+                         `4. Guarda los cambios\n\n` +
+                         `Error tecnico: ${error.message}\n\n` +
+                         `En que mas puedo ayudarte?`;
+          
           return res.status(200).json({
             success: true,
-            message: `Perfecto ${userName}, he recopilado todos los datos de tu perfil:\n\n` +
-                     `📋 Datos recopilados:\n` +
-                     `- Empresa: ${functionArgs.company_name}\n` +
-                     (functionArgs.city ? `- Ubicacion: ${functionArgs.city}\n` : '') +
-                     `- Email: ${functionArgs.corporate_email}\n` +
-                     (functionArgs.mobile_phone ? `- Telefono: ${functionArgs.mobile_phone}\n` : '') +
-                     (functionArgs.website_url ? `- Web: ${functionArgs.website_url}\n` : '') +
-                     `\n💡 Para guardar estos datos permanentemente:\n` +
-                     `1. Ve al menu superior y haz clic en "Perfil Profesional"\n` +
-                     `2. Haz clic en el boton "Editar Perfil"\n` +
-                     `3. Rellena los campos con los datos que te he pedido\n` +
-                     `4. Haz clic en "Guardar Cambios"\n\n` +
-                     `Una vez guardado, podre usar automaticamente estos datos cuando crees imagenes publicitarias, documentos o materiales de marketing.\n\n` +
-                     `En que mas puedo ayudarte?`,
+            message: errorMessage,
             profileCompleted: false,
             profileError: error.message,
             tokensUsed: data.usage.total_tokens,
