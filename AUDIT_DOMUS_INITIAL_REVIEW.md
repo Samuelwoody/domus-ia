@@ -3,7 +3,7 @@
 - **Fecha:** 2026-02-13
 - **Rama:** `audit/domus-initial-review`
 - **Repo:** `https://github.com/Samuelwoody/domus-ia`
-- **Estado de push:** ❌ No se ha hecho push (según instrucción)
+- **Estado de push:** ✅ Rama `audit/domus-initial-review` publicada en remoto (sin cambios directos en `main`)
 
 ---
 
