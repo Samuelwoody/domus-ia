@@ -28,32 +28,32 @@ export default async function handler(req, res) {
     
     // Límites por plan
     plans: {
-      particular: {
-        name: 'PARTICULAR',
-        price: '€99/mes',
-        messages: 500,
-        dalleImages: 10,
-        visionAnalysis: 100,
-        documentUploads: 50,
-        webSearches: 'ilimitadas'
+      free: {
+        name: 'FREE',
+        price: '€0/mes',
+        agentsAllowed: 1,
+        funnelsPerMonth: 0,
+        voiceAgent: false,
+        leadRouter: false,
+        automationLevel: 'basic'
       },
       profesional: {
-        name: 'PROFESIONAL',
-        price: '€199/mes',
-        messages: 1000,
-        dalleImages: 30,
-        visionAnalysis: 300,
-        documentUploads: 150,
-        webSearches: 'ilimitadas'
+        name: 'PRO_49',
+        price: '€49/mes',
+        agentsAllowed: 1,
+        funnelsPerMonth: 1,
+        voiceAgent: true,
+        leadRouter: 'basic',
+        automationLevel: 'advanced'
       },
       premium: {
-        name: 'PREMIUM',
-        price: '€399/mes',
-        messages: 3000,
-        dalleImages: 100,
-        visionAnalysis: 'ilimitadas',
-        documentUploads: 500,
-        webSearches: 'ilimitadas'
+        name: 'PREMIUM_999',
+        price: '€999/mes',
+        agentsAllowed: 'unlimited',
+        funnelsPerMonth: 'unlimited',
+        voiceAgent: true,
+        leadRouter: 'full',
+        automationLevel: 'enterprise'
       }
     },
     

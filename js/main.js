@@ -1827,15 +1827,17 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
     }
 
     handlePricingSelect(e) {
-        const buttonText = e.target.textContent;
+        const buttonText = e.target.textContent.toLowerCase();
         let planType = 'free';
-        
-        if (buttonText.includes('Profesional')) {
+
+        if (buttonText.includes('premium')) {
+            planType = 'premium';
+        } else if (buttonText.includes('pro') || buttonText.includes('profesional')) {
             planType = 'profesional';
-        } else if (buttonText.includes('Particular')) {
+        } else if (buttonText.includes('particular')) {
             planType = 'particular';
         }
-        
+
         if (planType === 'free') {
             this.showAuthModal('register');
         } else {
@@ -1847,18 +1849,18 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
         const planInfo = {
             'particular': {
                 name: 'Plan Particular',
-                price: '€99/mes',
-                features: ['500 mensajes/mes', '10 imágenes DALL-E', '100 análisis Vision', '50 documentos']
+                price: '€49/mes',
+                features: ['1 agente IA especializado', '1 agente vocal', '1 embudo automatizado/mes', 'CRM con scoring automático']
             },
             'profesional': {
-                name: 'Plan Profesional',
-                price: '€199/mes',
-                features: ['1,000 mensajes/mes', '30 imágenes DALL-E', '300 análisis Vision', '150 documentos']
+                name: 'Plan Pro',
+                price: '€49/mes',
+                features: ['1 agente IA especializado', '1 agente vocal', '1 embudo automatizado/mes', 'Automatizaciones avanzadas']
             },
             'premium': {
                 name: 'Plan Premium',
-                price: '€399/mes',
-                features: ['3,000 mensajes/mes', '100 imágenes DALL-E', 'Vision ilimitado', '500 documentos']
+                price: '€999/mes',
+                features: ['Todos los agentes IA', 'Automatizaciones ilimitadas', 'Lead Router inteligente', 'Tutoría semanal 1-a-1']
             }
         };
         
@@ -3019,8 +3021,8 @@ function openContactModal(event) {
                         <i class="fas fa-phone text-domus-accent text-xl"></i>
                         <div>
                             <p class="text-sm text-domus-sage">Teléfono</p>
-                            <a href="tel:+34900123456" class="text-domus-navy font-semibold hover:text-domus-accent">
-                                +34 900 123 456
+                            <a href="tel:+34742094169" class="text-domus-navy font-semibold hover:text-domus-accent">
+                                +34 742 09 41 69
                             </a>
                         </div>
                     </div>
@@ -3030,7 +3032,7 @@ function openContactModal(event) {
                         <i class="fab fa-whatsapp text-domus-accent text-xl"></i>
                         <div>
                             <p class="text-sm text-domus-sage">WhatsApp</p>
-                            <a href="https://wa.me/34900123456" target="_blank" class="text-domus-navy font-semibold hover:text-domus-accent">
+                            <a href="https://wa.me/34742094169" target="_blank" class="text-domus-navy font-semibold hover:text-domus-accent">
                                 Chatear por WhatsApp
                             </a>
                         </div>
