@@ -11,45 +11,45 @@ class PaymentSystem {
         this.plans = {
             particular: {
                 id: 'particular',
-                name: 'Particular',
-                price: 99,
+                name: 'Pro 49',
+                price: 49,
                 currency: 'EUR',
                 interval: 'month',
                 features: {
-                    messages: 500,
-                    dalle: 10,
-                    vision: 100,
-                    documents: 50
+                    agentsAllowed: 1,
+                    funnelsPerMonth: 1,
+                    voiceAgent: true,
+                    leadRouter: 'basic'
                 },
-                stripePriceId: 'price_particular_xxx' // TODO: Configurar en producción
+                stripePriceId: 'domus_pro_49' // Stripe demo mapping
             },
             profesional: {
                 id: 'profesional',
-                name: 'Profesional',
-                price: 199,
+                name: 'Pro 49',
+                price: 49,
                 currency: 'EUR',
                 interval: 'month',
                 features: {
-                    messages: 1000,
-                    dalle: 30,
-                    vision: 300,
-                    documents: 150
+                    agentsAllowed: 1,
+                    funnelsPerMonth: 1,
+                    voiceAgent: true,
+                    leadRouter: 'basic'
                 },
-                stripePriceId: 'price_profesional_xxx' // TODO: Configurar en producción
+                stripePriceId: 'domus_pro_49' // Stripe demo mapping
             },
             premium: {
                 id: 'premium',
-                name: 'Premium',
-                price: 399,
+                name: 'Premium 999',
+                price: 999,
                 currency: 'EUR',
                 interval: 'month',
                 features: {
-                    messages: 3000,
-                    dalle: 100,
-                    vision: 'unlimited',
-                    documents: 500
+                    agentsAllowed: 'unlimited',
+                    funnelsPerMonth: 'unlimited',
+                    voiceAgent: true,
+                    leadRouter: 'full'
                 },
-                stripePriceId: 'price_premium_xxx' // TODO: Configurar en producción
+                stripePriceId: 'domus_premium_999' // Stripe demo mapping
             }
         };
     }
