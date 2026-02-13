@@ -2254,15 +2254,13 @@ Para brindarte la mejor ayuda, ¿podrías decirme tu nombre y si eres propietari
             this.showUploadProgress('Subiendo imagen a la nube...');
             
             // CONFIGURACIÓN CLOUDINARY
-            const CLOUDINARY_CLOUD_NAME = 'di5ecu2co'; // Cloud name correcto
-            const CLOUDINARY_API_KEY = '963855782996925';
+            const CLOUDINARY_CLOUD_NAME = 'di5ecu2co'; // Cloud name público
             const CLOUDINARY_UPLOAD_PRESET = 'domus_ia_properties';
             
-            // Crear FormData
+            // Crear FormData (unsigned preset; no API key en frontend)
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            formData.append('api_key', CLOUDINARY_API_KEY);
             formData.append('folder', 'domus-properties');
             
             // Upload a Cloudinary
